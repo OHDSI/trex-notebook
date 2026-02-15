@@ -1,0 +1,58 @@
+name: d2e-plugin build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+    paths:
+      - "example/d2e-plugin/**"
+      - "src/**"
+      - ".github/workflows/d2e-plugin-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "example/d2e-plugin/**"
+      - "src/**"
+      - ".github/workflows/d2e-plugin-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: example/d2e-plugin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install root dependencies
+        run: npm ci
+        working-directory: .
+
+      - name: Install plugin dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npx vite build
+
+      - name: Verify build output
+        run: |
+          test -f dist/lifecycles.js || { echo "ERROR: dist/lifecycles.js not found"; exit 1; }
+          # Check SystemJS format
+          head -c 200 dist/lifecycles.js | grep -q "System.register" || { echo "ERROR: output is not SystemJS format"; exit 1; }
+          echo "Build output OK: dist/lifecycles.js ($(wc -c < dist/lifecycles.js) bytes)"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: d2e-plugin-lifecycles
+          path: example/d2e-plugin/dist/
+          retention-days: 14
