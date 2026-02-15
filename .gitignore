@@ -2,6 +2,7 @@
 CLAUDE.md
 specs/
 .specify/
+.claude/
 
 # Dependencies
 node_modules/
