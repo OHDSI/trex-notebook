@@ -31,6 +31,6 @@ export default defineConfig({
     rollupOptions: {
       external: ['react', 'react-dom'],
     },
-    outDir: 'dist',
+    outDir: 'resources/notebook',
   },
 })

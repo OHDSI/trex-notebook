@@ -1,5 +1,5 @@
 {
-  "name": "d2e-notebook-plugin",
+  "name": "@data2evidence/d2e-notebook-plugin",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,6 +7,35 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
+  },
+  "trex": {
+    "ui": {
+      "routes": [
+        {
+          "source": "/resources/notebook",
+          "target": "/resources/notebook"
+        }
+      ],
+      "uiplugins": {
+        "researcher": [
+          {
+            "enabled": true,
+            "type": "app",
+            "featureFlag": "notebook",
+            "name": "Notebooks",
+            "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
+            "pluginPath": "/resources/notebook/lifecycles.js",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "notebook",
+            "data": {
+              "uiFilesUrl": "https://$$FQDN$$/"
+            }
+          }
+        ]
+      }
+    }
   },
   "dependencies": {
     "axios": "^1.7.0",
