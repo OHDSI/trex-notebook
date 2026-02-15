@@ -2,7 +2,7 @@ import type { PyodideInterface } from 'pyodide'
 import strategusSpecBuilderSource from './strategus_spec_builder.py?raw'
 
 // Import all pyqe package files as raw strings for virtual filesystem installation
-const pyqeModules: Record<string, string> = import.meta.glob('./pyqe/**/*.py', {
+const pyqeModules: Record<string, string> = import.meta.glob('./pyqe/**/*.{py,yaml,yml,json,txt}', {
   query: '?raw',
   eager: true,
   import: 'default',
@@ -14,6 +14,7 @@ export interface WorkerRequest {
   code?: string
   indexUrl?: string
   preloadPackages?: string[]
+  envVars?: Record<string, string>
 }
 
 export interface WorkerResponse {
@@ -30,7 +31,7 @@ function sendMessage(msg: WorkerResponse) {
   self.postMessage(msg)
 }
 
-async function initialize(indexUrl?: string, preloadPackages?: string[]) {
+async function initialize(indexUrl?: string, preloadPackages?: string[], envVars?: Record<string, string>) {
   if (isInitialized) return
 
   sendMessage({ type: 'status', id: '', data: { state: 'connecting' } })
@@ -112,6 +113,35 @@ if "/home/pyodide" not in sys.path:
       console.warn('Failed to load pyqe package:', e)
     }
 
+    // Pre-install pyqe's core dependencies (needed for `from pyqe import *`)
+    try {
+      await pyodide.loadPackage('micropip')
+      await pyodide.runPythonAsync(`
+import micropip
+_pyqe_deps = ['requests', 'pyyaml', 'six', 'PyJWT', 'python-dotenv']
+for _dep in _pyqe_deps:
+    try:
+        await micropip.install(_dep)
+    except Exception:
+        pass
+del _pyqe_deps, _dep
+`)
+    } catch (e) {
+      console.warn('Failed to pre-install pyqe dependencies:', e)
+    }
+
+    // Set Python environment variables (e.g. PYQE_URL, TOKEN)
+    if (envVars && Object.keys(envVars).length > 0) {
+      try {
+        const envEntries = Object.entries(envVars)
+          .map(([key, value]) => `os.environ['${key}'] = '''${value}'''`)
+          .join('\n')
+        pyodide.runPython(`import os\n${envEntries}`)
+      } catch (e) {
+        console.warn('Failed to set environment variables:', e)
+      }
+    }
+
     isInitialized = true
     sendMessage({ type: 'ready', id: '' })
     sendMessage({ type: 'status', id: '', data: { state: 'idle' } })
@@ -127,6 +157,28 @@ if "/home/pyodide" not in sys.path:
     })
     sendMessage({ type: 'status', id: '', data: { state: 'error' } })
   }
+}
+
+/**
+ * Extract missing module name from a ModuleNotFoundError message.
+ * Matches patterns like: "No module named 'requests'"
+ */
+function extractMissingModule(errorMessage: string): string | null {
+  const match = errorMessage.match(/No module named '([^'.]+)'/)
+  return match ? match[1] : null
+}
+
+/** Map Python import names to their PyPI/micropip package names */
+const MODULE_TO_PACKAGE: Record<string, string> = {
+  jwt: 'PyJWT',
+  yaml: 'pyyaml',
+  dotenv: 'python-dotenv',
+  cv2: 'opencv-python',
+  PIL: 'Pillow',
+  sklearn: 'scikit-learn',
+  bs4: 'beautifulsoup4',
+  attr: 'attrs',
+  msal: 'msal',
 }
 
 async function execute(id: string, code: string) {
@@ -177,7 +229,38 @@ except ImportError:
       // matplotlib not available
     }
 
-    const result = await pyodide.runPythonAsync(code)
+    // Execute with auto-retry on missing modules (up to 5 times for transitive deps)
+    let result: unknown
+    const MAX_RETRIES = 5
+    for (let attempt = 0; ; attempt++) {
+      try {
+        result = await pyodide.runPythonAsync(code)
+        break
+      } catch (execError) {
+        const msg = execError instanceof Error ? execError.message : String(execError)
+        const missingModule = extractMissingModule(msg)
+
+        if (!missingModule || attempt >= MAX_RETRIES) {
+          throw execError
+        }
+
+        // Auto-install the missing module and retry
+        const packageName = MODULE_TO_PACKAGE[missingModule] || missingModule
+        sendMessage({ type: 'stderr', id, data: `Installing ${packageName}...` })
+        try {
+          await pyodide.loadPackage(packageName)
+        } catch {
+          // Not in Pyodide distribution, try micropip
+          try {
+            await pyodide.runPythonAsync(
+              `import micropip; await micropip.install("${packageName}")`
+            )
+          } catch {
+            throw execError // Can't install, propagate original error
+          }
+        }
+      }
+    }
 
     // Skip matplotlib figure objects in result display
     if (result !== undefined && result !== null) {
@@ -237,11 +320,11 @@ except ImportError:
 }
 
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
-  const { type, id, code, indexUrl, preloadPackages } = event.data
+  const { type, id, code, indexUrl, preloadPackages, envVars } = event.data
 
   switch (type) {
     case 'init':
-      await initialize(indexUrl, preloadPackages)
+      await initialize(indexUrl, preloadPackages, envVars)
       break
     case 'execute':
       if (code) {

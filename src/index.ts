@@ -57,7 +57,7 @@ export type { UseCellExecutionOptions, UseCellExecutionReturn } from './hooks/us
 
 // Components
 export { Notebook } from './components/notebook/Notebook'
-export type { NotebookProps, NotebookHandle } from './components/notebook/Notebook'
+export type { NotebookProps, NotebookHandle, NotebookTheme } from './components/notebook/Notebook'
 export { Cell } from './components/notebook/Cell'
 export type { CellProps } from './components/notebook/Cell'
 export { CodeCell } from './components/notebook/CodeCell'

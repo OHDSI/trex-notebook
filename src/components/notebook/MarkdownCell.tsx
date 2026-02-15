@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import { githubLight } from '@uiw/codemirror-theme-github'
 import { cn } from '@/lib/utils'
 
 export interface MarkdownCellProps {
@@ -92,6 +93,7 @@ export function MarkdownCell({
               autocompletion: false,
               tabSize: 2,
             }}
+            theme={githubLight}
             className={cn(
               'overflow-hidden rounded-md border bg-background text-sm',
               isSelected && 'ring-1 ring-ring'

@@ -3,43 +3,74 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
+import { readFileSync, writeFileSync } from 'fs'
 import type { Plugin } from 'vite'
 
+// Read .R source files at build time and inject via define.
+// Vite's ?raw uses JS template literals which mangle R escape sequences
+// (\n, \\, \t). JSON.stringify produces properly escaped double-quoted strings.
+const rD2ESource = readFileSync(
+  path.resolve(__dirname, '../../src/kernels/webr/rD2E.R'),
+  'utf-8'
+)
+
 /**
- * Rollup doesn't emit SystemJS export calls when there are no external
- * dependencies (empty System.register([],...)). This plugin patches the
- * output to properly export the single-spa lifecycle functions.
+ * Post-build plugin that patches the entry chunk on disk:
+ * 1. Prepends a `process` polyfill (some deps reference process.env.NODE_ENV)
+ * 2. Fixes SystemJS lifecycle exports for single-spa
+ *
+ * Uses writeBundle (runs after all generateBundle hooks, including
+ * vite-plugin-css-injected-by-js which has enforce:'post') so our
+ * changes are guaranteed to be the final state of the files.
  */
-function systemjsExportPlugin(): Plugin {
+function postBuildPatchPlugin(): Plugin {
+  const processPolyfill =
+    'if(typeof process==="undefined"){globalThis.process={env:{NODE_ENV:"production"},nextTick:function(cb){setTimeout(cb,0)},emit:function(){}};};\n'
+  let resolvedOutDir = ''
   return {
-    name: 'systemjs-lifecycle-exports',
-    generateBundle(_, bundle) {
-      for (const chunk of Object.values(bundle)) {
+    name: 'post-build-patch',
+    enforce: 'post',
+    configResolved(config) {
+      resolvedOutDir = path.resolve(config.root, config.build.outDir)
+    },
+    writeBundle(_, bundle) {
+      for (const [fileName, chunk] of Object.entries(bundle)) {
         if (chunk.type !== 'chunk' || !chunk.isEntry) continue
-        // Match the tail pattern: varName.bootstrap,varName.mount,varName.unmount
-        // Find the export function name (first arg to System.register callback)
-        const exportFnMatch = chunk.code.match(
-          /System\.register\(\[\],\(function\((\w+),/
+
+        const filePath = path.resolve(resolvedOutDir, fileName)
+        let code = readFileSync(filePath, 'utf-8')
+
+        // 1. Prepend process polyfill
+        code = processPolyfill + code
+
+        // 2. Fix SystemJS lifecycle exports
+        const exportFnMatch = code.match(
+          /System\.register\(\[.*?\],\(function\((\w+),/
         )
-        if (!exportFnMatch) continue
-        const exportFn = exportFnMatch[1]
-        // Match: varName.bootstrap,varName.mount,varName.unmount})}}));
-        const match = chunk.code.match(
-          /(\w+)\.bootstrap,\1\.mount,\1\.unmount\}\)\}\}\)\);\s*$/
-        )
-        if (!match) continue
-        const v = match[1]
-        chunk.code = chunk.code.replace(
-          new RegExp(`${v}\\.bootstrap,${v}\\.mount,${v}\\.unmount\\}\\)\\}\\}\\)\\);\\s*$`),
-          `${exportFn}("bootstrap",${v}.bootstrap),${exportFn}("mount",${v}.mount),${exportFn}("unmount",${v}.unmount)})}}));\n`
-        )
+        if (exportFnMatch) {
+          const exportFn = exportFnMatch[1]
+          const match = code.match(
+            /(\w+)\.bootstrap,\1\.mount,\1\.unmount\}\)\}\}\)\);\s*$/
+          )
+          if (match) {
+            const v = match[1]
+            code = code.replace(
+              new RegExp(
+                `${v}\\.bootstrap,${v}\\.mount,${v}\\.unmount\\}\\)\\}\\}\\)\\);\\s*$`
+              ),
+              `${exportFn}("bootstrap",${v}.bootstrap),${exportFn}("mount",${v}.mount),${exportFn}("unmount",${v}.unmount)})}}));\n`
+            )
+          }
+        }
+
+        writeFileSync(filePath, code)
       }
     },
   }
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cssInjectedByJsPlugin(), systemjsExportPlugin()],
+  plugins: [react(), tailwindcss(), cssInjectedByJsPlugin(), postBuildPatchPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '../../src'),
@@ -56,6 +87,9 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
+  },
+  define: {
+    __RD2E_SOURCE__: JSON.stringify(rD2ESource),
   },
   base: './',
   build: {

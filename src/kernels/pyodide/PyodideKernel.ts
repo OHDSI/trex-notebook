@@ -79,6 +79,7 @@ export class PyodideKernel implements KernelPlugin {
           id: 'init',
           indexUrl: config.indexUrl,
           preloadPackages: config.preloadPackages,
+          envVars: config.envVars,
         }
         this.worker.postMessage(initMessage)
       } catch (error) {

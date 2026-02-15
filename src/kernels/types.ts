@@ -6,11 +6,15 @@ export interface PyodideKernelConfig {
   type: 'pyodide'
   preloadPackages?: string[]
   indexUrl?: string
+  /** Environment variables to set in the Python os.environ (e.g. PYQE_URL, TOKEN) */
+  envVars?: Record<string, string>
 }
 
 export interface WebRKernelConfig {
   type: 'webr'
   preloadPackages?: string[]
+  /** Environment variables to set in the R environment (e.g. TREX__ENDPOINT_URL, TREX__AUTHORIZATION_TOKEN) */
+  envVars?: Record<string, string>
 }
 
 export interface JupyterKernelConfig {

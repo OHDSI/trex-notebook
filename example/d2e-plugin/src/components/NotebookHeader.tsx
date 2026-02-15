@@ -14,6 +14,9 @@ interface NotebookHeaderProps {
   isShared: boolean
 }
 
+const btnClass =
+  'bg-transparent border-0 outline-none cursor-pointer px-3 py-1 text-sm font-medium hover:opacity-70'
+
 export function NotebookHeader({
   notebooks,
   activeNotebook,
@@ -28,10 +31,14 @@ export function NotebookHeader({
   isShared,
 }: NotebookHeaderProps) {
   return (
-    <header className="flex items-center justify-between border-b border-border bg-white px-4 py-2.5">
+    <header
+      className="flex items-center justify-between border-b px-4 py-2.5"
+      style={{ backgroundColor: '#fff', borderColor: '#dde3ed' }}
+    >
       <div className="flex items-center gap-2">
         <select
-          className="rounded border border-input bg-white px-2 py-1.5 text-sm"
+          className="rounded border px-2 py-1.5 text-sm"
+          style={{ backgroundColor: '#fff', borderColor: '#dde3ed' }}
           value={activeNotebook?.id ?? ''}
           onChange={(e) => onSelect(e.target.value)}
         >
@@ -47,7 +54,8 @@ export function NotebookHeader({
 
         {onRename && (
           <button
-            className="px-1 py-1 text-sm text-primary hover:text-primary/70"
+            className={btnClass}
+            style={{ color: '#000080' }}
             onClick={onRename}
             title="Rename"
           >
@@ -58,42 +66,34 @@ export function NotebookHeader({
 
       <div className="flex items-center">
         {onToggleShare && (
-          <label className="flex items-center gap-1.5 px-3 py-1 text-sm font-medium text-primary">
+          <label className="flex items-center gap-1.5 px-3 py-1 text-sm font-medium" style={{ color: '#000080' }}>
             <input
               type="checkbox"
               checked={isShared}
               onChange={onToggleShare}
-              className="accent-primary"
+              style={{ accentColor: '#000080' }}
             />
             Shared
           </label>
         )}
 
         {onExport && (
-          <button
-            className="px-3 py-1 text-sm font-medium text-primary hover:text-primary/70"
-            onClick={onExport}
-          >
+          <button className={btnClass} style={{ color: '#000080' }} onClick={onExport}>
             Export
           </button>
         )}
 
-        <button
-          className="px-3 py-1 text-sm font-medium text-primary hover:text-primary/70"
-          onClick={onImport}
-        >
+        <button className={btnClass} style={{ color: '#000080' }} onClick={onImport}>
           Import
         </button>
 
-        <button
-          className="px-3 py-1 text-sm font-medium text-primary hover:text-primary/70"
-          onClick={onCreate}
-        >
+        <button className={btnClass} style={{ color: '#000080' }} onClick={onCreate}>
           New
         </button>
 
         <button
-          className="px-3 py-1 text-sm font-medium text-primary hover:text-primary/70 disabled:opacity-50"
+          className={`${btnClass} disabled:opacity-50`}
+          style={{ color: '#000080' }}
           onClick={onSave}
           disabled={!activeNotebook}
         >
@@ -101,10 +101,7 @@ export function NotebookHeader({
         </button>
 
         {onDelete && (
-          <button
-            className="px-3 py-1 text-sm font-medium text-primary hover:text-primary/70"
-            onClick={onDelete}
-          >
+          <button className={btnClass} style={{ color: '#000080' }} onClick={onDelete}>
             Delete
           </button>
         )}

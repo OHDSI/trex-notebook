@@ -36,17 +36,64 @@ import type { KernelPlugin, KernelConfig, KernelStatus } from '@/kernels/types'
 /** Threshold above which cells use content-visibility: auto for performance */
 const VIRTUALIZATION_THRESHOLD = 50
 
+/** Theme overrides applied as CSS custom properties on the notebook wrapper */
+export interface NotebookTheme {
+  /** Primary color (e.g. selected cells, primary buttons) */
+  primary?: string
+  /** Text color on primary backgrounds */
+  primaryForeground?: string
+  /** Main background color */
+  background?: string
+  /** Main text color */
+  foreground?: string
+  /** Secondary/hover background */
+  secondary?: string
+  /** Text on secondary backgrounds */
+  secondaryForeground?: string
+  /** Accent/active state background */
+  accent?: string
+  /** Text on accent backgrounds */
+  accentForeground?: string
+  /** Border color */
+  border?: string
+  /** Input border color */
+  input?: string
+  /** Focus ring color */
+  ring?: string
+  /** Muted/disabled color */
+  muted?: string
+  /** Muted text color */
+  mutedForeground?: string
+  /** Destructive/error color */
+  destructive?: string
+  /** Success color */
+  success?: string
+  /** Warning color */
+  warning?: string
+  /** Card background */
+  card?: string
+  /** Card text color */
+  cardForeground?: string
+}
+
 export interface NotebookProps {
   initialData?: NotebookData
   data?: NotebookData
   onChange?: (data: NotebookData) => void
   kernels?: KernelPlugin[]
   defaultKernelConfig?: KernelConfig
+  /** Configs for all kernels — each kernel is auto-connected with its matching config.
+   *  When provided, cells are automatically routed to the correct kernel by language. */
+  kernelConfigs?: KernelConfig[]
   onKernelStatusChange?: (status: KernelStatus) => void
   showToolbar?: boolean
   showLineNumbers?: boolean
   readOnly?: boolean
   className?: string
+  /** Theme overrides — sets CSS custom properties on the notebook wrapper */
+  theme?: NotebookTheme
+  /** Whether to show the kernel selector dropdown in the toolbar (default: true) */
+  showKernelSelector?: boolean
   onCellSelect?: (cellId: CellId | null) => void
   onCellExecuteStart?: (cellId: CellId) => void
   onCellExecuteEnd?: (cellId: CellId, success: boolean) => void
@@ -88,6 +135,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
     onChange,
     kernels,
     defaultKernelConfig,
+    kernelConfigs,
     onKernelStatusChange,
     onCellExecuteStart,
     onCellExecuteEnd,
@@ -95,9 +143,40 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
     showLineNumbers = true,
     readOnly = false,
     className,
+    theme,
+    showKernelSelector = true,
     onCellSelect,
     virtualizationThreshold = VIRTUALIZATION_THRESHOLD,
   } = props
+
+  const themeStyle = useMemo(() => {
+    if (!theme) return undefined
+    const vars: Record<string, string> = {}
+    const map: [keyof NotebookTheme, string][] = [
+      ['primary', '--color-primary'],
+      ['primaryForeground', '--color-primary-foreground'],
+      ['background', '--color-background'],
+      ['foreground', '--color-foreground'],
+      ['secondary', '--color-secondary'],
+      ['secondaryForeground', '--color-secondary-foreground'],
+      ['accent', '--color-accent'],
+      ['accentForeground', '--color-accent-foreground'],
+      ['border', '--color-border'],
+      ['input', '--color-input'],
+      ['ring', '--color-ring'],
+      ['muted', '--color-muted'],
+      ['mutedForeground', '--color-muted-foreground'],
+      ['destructive', '--color-destructive'],
+      ['success', '--color-success'],
+      ['warning', '--color-warning'],
+      ['card', '--color-card'],
+      ['cardForeground', '--color-card-foreground'],
+    ]
+    for (const [key, cssVar] of map) {
+      if (theme[key]) vars[cssVar] = theme[key]
+    }
+    return vars
+  }, [theme])
 
   const hookOptions: UseNotebookOptions = {
     initialData: data ?? initialData,
@@ -114,19 +193,24 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
   const {
     kernel,
     status: kernelStatus,
+    aggregateStatus,
     availableKernels,
     activeKernelId,
     connect: connectKernel,
     disconnect: disconnectKernel,
     switchKernel,
+    getKernelForLanguage,
+    kernelStatuses,
   } = useKernel({
     kernels,
     defaultConfig: defaultKernelConfig,
+    kernelConfigs,
     onStatusChange: onKernelStatusChange,
   })
 
   const cellExecution = useCellExecution({
     kernel,
+    getKernelForLanguage,
     onCellExecutionStart: onCellExecuteStart,
     onCellExecutionEnd: onCellExecuteEnd,
     onCellOutputAppend: actions.appendCellOutput,
@@ -136,6 +220,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
   })
 
   const { isExecuting } = cellExecution
+  // Use aggregate status when multiple kernels are connected
+  const effectiveStatus = kernelConfigs ? aggregateStatus : kernelStatus
+  const kernelReady = effectiveStatus === 'idle' || effectiveStatus === 'busy'
 
   const runCell = useCallback(
     async (cellId: CellId) => {
@@ -222,7 +309,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
     clearAllOutputs: actions.clearAllOutputs,
     connectKernel,
     disconnectKernel,
-    getKernelStatus: () => kernelStatus,
+    getKernelStatus: () => effectiveStatus,
     undo: actions.undo,
     redo: actions.redo,
     canUndo: () => history.canUndo,
@@ -400,15 +487,17 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
   }, [actions, selectedCellId, notebook.cells, handleDeleteCell, runCell])
 
   return (
-    <div className={cn('flex flex-col gap-4', className)}>
+    <div className={cn('flex flex-col gap-4', className)} style={themeStyle}>
       {showToolbar && (
         <NotebookToolbar
-          kernelStatus={kernelStatus}
+          kernelStatus={effectiveStatus}
           isExecuting={isExecuting}
           canUndo={history.canUndo}
           canRedo={history.canRedo}
           availableKernels={availableKernels}
           activeKernelId={activeKernelId}
+          showKernelSelector={showKernelSelector}
+          kernelStatuses={kernelStatuses}
           onKernelChange={switchKernel}
           onAddCodeCell={handleAddCodeCell}
           onAddMarkdownCell={handleAddMarkdownCell}
@@ -466,6 +555,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
                   isSelected={selectedCellId === cell.id}
                   showLineNumbers={showLineNumbers}
                   readOnly={readOnly}
+                  kernelReady={kernelReady}
                   useVirtualization={useVirtualization}
                   onSelect={() => handleSelectCell(cell.id)}
                   onUpdateSource={(source) => actions.updateCellSource(cell.id, source)}

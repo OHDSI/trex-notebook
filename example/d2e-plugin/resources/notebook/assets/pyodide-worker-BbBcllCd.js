@@ -1,4 +1,4 @@
-var d=`"""
+var f=`"""
 Module \`pyqe\` is the python interface to QE. The goal of
 this module is to help researchers to build rule-based cohorts for
 further analysis.
@@ -61,12 +61,12 @@ __all__ = [
     'OriginSelection',
     'TargetSelection'
 ]
-`,p=`"""
+`,u=`"""
 About
 -------------
 \`pyqe.api\` submodule of \`pyqe\` contains all api classes
 """
-`,f=`import os
+`,m=`import os
 import json
 import logging
 import requests
@@ -111,7 +111,7 @@ class _StarboardApi():
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'GET {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
-        response = await pyfetch(url=url, method="GET", headers=headers, **kwargs)
+        response = await pyfetch(url, method="GET", headers=headers, **kwargs)
         return response
 
     async def _post(self, path: str, data=None, **kwargs) -> FetchResponse:
@@ -122,7 +122,7 @@ class _StarboardApi():
         headers = {
             "Authorization": f'Bearer {os.getenv("TOKEN")}', "Content-Type": "application/json"}
 
-        response = await pyfetch(url=url, method="POST", body=json.dumps(data), headers=headers, **kwargs)
+        response = await pyfetch(url, method="POST", body=json.dumps(data), headers=headers, **kwargs)
         return response
 
     async def _put(self, path: str, data=None) -> FetchResponse:
@@ -132,7 +132,7 @@ class _StarboardApi():
         logger.debug(f'PUT {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
         response = await pyfetch(
-            url=url, method="PUT", body=json.dumps(data), headers=headers)
+            url, method="PUT", body=json.dumps(data), headers=headers)
         return response
 
     async def _delete(self, path: str, **kwargs) -> FetchResponse:
@@ -141,7 +141,7 @@ class _StarboardApi():
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'DELETE {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
-        response = await pyfetch(url=url, method="DELETE", headers=headers, **kwargs)
+        response = await pyfetch(url, method="DELETE", headers=headers, **kwargs)
         return response
 
     def _load_environment_variables(self) -> None:
@@ -295,7 +295,7 @@ class _AuthApi(_StarboardApi):
             raise PermissionError(f'Access is not permitted ({method} {url})')
 
         response.raise_for_status()
-`,u=`import json
+`,g=`import json
 import logging
 import os
 from pyqe.api.base import _AuthApi
@@ -355,7 +355,7 @@ class Cohort(_EncodeQueryStringMixin, _AuthApi):
 
         response = await self._post('/analytics-svc/api/services/cohort', json=cohort_definition)
         return response.string()
-`,m=`import logging
+`,y=`import logging
 import json
 from typing import List, Optional
 from pyqe.api.base import _AuthApi
@@ -542,7 +542,7 @@ class Concept:
     def __init__(self, concept_code: str, include_descendants: bool = True):
         self.concept_code = concept_code
         self.include_descendants = include_descendants
-`,g=`import os
+`,h=`import os
 import logging
 import json
 import pandas as pd
@@ -663,7 +663,7 @@ class ConceptSetQuery(_AuthApi):
             return []
 
         return concept_set_concepts.iloc[0]["concepts"]
-`,y=`import json
+`,v=`import json
 import logging
 from pyqe.api.base import _AuthApi
 from pyqe.setup import setup_simple_console_log
@@ -688,7 +688,7 @@ class DataSource(_AuthApi):
     def get_table_data(self, schemaName: str, tableName: str):
         response = self._get("/analytics-svc/api/services/customDBs/{}/{}".format(schemaName, tableName), {})
         return json.loads(response.text)
-`,h=`import json
+`,b=`import json
 import logging
 import os
 from pyqe.api.base import _AuthApi
@@ -736,7 +736,7 @@ class PAConfig(_AuthApi):
         response = await self._get('/analytics-svc/pa/services/analytics.xsjs', params)
         if response.ok:
             return await response.json()
-`,v=`import logging
+`,T=`import logging
 import json
 # import requests
 import pyodide.http
@@ -1184,7 +1184,7 @@ class Query(_AuthApi):
                     dynamic_entities[entity_name] = [col]
 
         return dynamic_entities
-`,b=`import logging
+`,E=`import logging
 from typing import Type
 import pandas as pd
 import os
@@ -1417,7 +1417,7 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
             g.write(bytes.fromhex(response.text))
 
         return f"{filename}.enc created"
-`,T=`import json
+`,C=`import json
 import logging
 import os
 from pyqe.api.base import _AuthApi
@@ -1440,12 +1440,12 @@ class Study(_AuthApi):
         response = await self._get('/system-portal/dataset/list', params)
         if response.ok:
             return await response.json()
-        `,E=`"""
+        `,q=`"""
 About
 -------------
 \`pyqe.azure\` submodule of \`pyqe\` contains all azure classes
 """
-`,C=`import msal
+`,S=`import msal
 
 
 class _MsalCredentials():
@@ -1474,7 +1474,7 @@ class _MsalCredentials():
             error = result.get('error_description') or result.get('error')
             message = f'{error_prefix}: {error}'
         raise RuntimeError(message)
-`,q=`import sys
+`,A=`import sys
 import json
 import logging
 import os
@@ -1511,7 +1511,7 @@ class _PasswordCredential(_MsalCredentials):
             self._handle_error(result, "Authentication failed")
 
         return result
-`,S=`from pyqe.azure.msal_credentials import _MsalCredentials
+`,w=`from pyqe.azure.msal_credentials import _MsalCredentials
 
 
 class _RefreshToken(_MsalCredentials):
@@ -1530,13 +1530,13 @@ class _RefreshToken(_MsalCredentials):
             raise RuntimeError(message)
 
         return result
-`,A=`"""
+`,N=`"""
 About
 -------------
 \`pyqe.ql\` submodule of \`pyqe\` contains all query language class definitions
 
 """
-`,N=`import logging
+`,I=`import logging
 import re
 from ..shared import decorator
 from ..setup import setup_simple_console_log
@@ -1806,7 +1806,7 @@ class AdvanceTimeFilter():
             timeFilterDataObject.append(otherObject)
 
         return [{"and": timeFilterDataObject}]
-`,w=`import logging
+`,D=`import logging
 from pyqe.setup import setup_simple_console_log
 from pyqe.shared import decorator
 from pyqe.ql.date_period import DatePeriod
@@ -1959,7 +1959,7 @@ class DateConstraint(Constraint):
 
     def _is_after(self, date: str):
         self._add(ComparisonOperator.MORE_THAN_EQUAL, date)
-`,I=`import os
+`,O=`import os
 import json
 from pyqe.api.base import _AuthApi
 from pyqe.types.enum_types import ConfigPath
@@ -2002,7 +2002,7 @@ class Config:
         return attributes
 
     def find_interaction(self, name: str) -> dict:
-        return self._interactions[name]`,D=`import logging
+        return self._interactions[name]`,x=`import logging
 from pyqe.setup import setup_simple_console_log
 from pyqe.shared import decorator
 from pyqe.ql.filter_card import FilterCard
@@ -2052,7 +2052,7 @@ class CriteriaGroup:
             criteria_group.add_exclusive_group(criteria_group)
         """
         self._groups.append(criteria_group)
-`,O=`import logging
+`,P=`import logging
 import datetime
 import enum
 from pyqe.setup import setup_simple_console_log
@@ -2152,7 +2152,7 @@ class CurrentDatePeriod(DatePeriod):
 
     def _get_today(self):
         return datetime.date.today().strftime(DATE_FORMAT)
-`,x=`import logging
+`,L=`import logging
 from pyqe.ql.advanced_time_filter import AdvanceTimeFilter
 from pyqe.setup import setup_simple_console_log
 from pyqe.shared import decorator
@@ -2293,7 +2293,7 @@ class FilterCard():
             }
         else:
             raise ValueError(f'Invalid filter card type: {self.card_type}')
-`,P=`import logging
+`,R=`import logging
 from ..shared import decorator
 from ..setup import setup_simple_console_log
 from .filter_card import FilterCard
@@ -2395,7 +2395,7 @@ class Interactions():
     @staticmethod
     def _get_interaction_class_name(value: str):
         return value.replace(' ', '').replace(',', '').replace('/', '').replace('(', '').replace(')', '')
-`,L=`import logging
+`,F=`import logging
 from ..shared import decorator
 from ..setup import setup_simple_console_log
 from ..types.enum_types import FilterInfo, CardType
@@ -2443,7 +2443,9 @@ class Person():
         build_attribute_function(frontend_config)
 
         setattr(Person, 'Patient', globals()['Patient'])
-`,R=`import os
+`,k=`feature-flags:
+  azure-identity: true
+`,j=`import os
 import logging
 import logging.config
 import yaml
@@ -2487,13 +2489,13 @@ def setup_simple_console_log(
     logging.basicConfig(format=default_format, datefmt=default_datefmt)
     logger = logging.getLogger("pyqe")
     logger.setLevel(default_level)
-`,F=`"""
+`,M=`"""
 About
 -------------
 \`pyqe.shared\` submodule of \`pyqe\` contains shared functions
 
 """
-`,k=`import json
+`,U=`import json
 import base64
 import zlib
 from urllib.parse import unquote, quote_from_bytes
@@ -2524,7 +2526,7 @@ class _EncodeQueryStringMixin():
         compressed_data = compress.compress(bytes(unquote(data), 'iso-8859-1'))
         compressed_data += compress.flush()
         return compressed_data
-`,j=`import functools
+`,Q=`import functools
 import inspect
 import logging
 import uuid
@@ -2605,7 +2607,7 @@ def _require_masking(func_name: str) -> bool:
                 return True
 
     return False
-`,M=`import pkgutil
+`,Y=`import pkgutil
 import yaml
 from typing import Any
 
@@ -2621,13 +2623,13 @@ def is_feature(feature_name: str) -> bool:
         return settings[setting_name][feature_name]
 
     return False
-`,U=`"""
+`,V=`"""
 About
 -------------
 \`pyqe.types\` submodule of \`pyqe\` contains enum definitions
 
 """
-`,Q=`import enum
+`,z=`import enum
 
 
 class ConfigPath(enum.Enum):
@@ -2721,7 +2723,7 @@ class TargetSelection(enum.Enum):
     AFTER_START = 'after_start'
     BEFORE_END = 'before_end'
     AFTER_END = 'after_end'
-`,Y=`from dataclasses import dataclass
+`,G=`from dataclasses import dataclass
 from typing import List
 
 
@@ -2743,13 +2745,13 @@ class ConceptSet:
     modifiedBy: str
     createdDate: str
     modifiedDate: str
-`,V=`"""
+`,B=`"""
 About
 -------------
 \`pyqe.utils\` submodule of \`pyqe\` contains utility functions and constants
 
 """
-`,z=`"""
+`,H=`"""
 Strategus Spec Builder for Pyodide
 
 Standalone Strategus Analysis Specification Builder for Pyodide (browser-based Python).
@@ -3463,7 +3465,7 @@ if __name__ == "__main__":
 
     # Step 4: Serialize to JSON
     print(spec.to_json())
-`;const G=Object.assign({"./pyqe/__init__.py":d,"./pyqe/api/__init__.py":p,"./pyqe/api/base.py":f,"./pyqe/api/cohort.py":u,"./pyqe/api/concept_query.py":m,"./pyqe/api/concept_set_query.py":g,"./pyqe/api/datasource.py":y,"./pyqe/api/pa_config.py":h,"./pyqe/api/query.py":v,"./pyqe/api/result.py":b,"./pyqe/api/study.py":T,"./pyqe/azure/__init__.py":E,"./pyqe/azure/msal_credentials.py":C,"./pyqe/azure/password_grant.py":q,"./pyqe/azure/refresh_token.py":S,"./pyqe/ql/__init__.py":A,"./pyqe/ql/advanced_time_filter.py":N,"./pyqe/ql/attribute.py":w,"./pyqe/ql/config.py":I,"./pyqe/ql/criteria_group.py":D,"./pyqe/ql/date_period.py":O,"./pyqe/ql/filter_card.py":x,"./pyqe/ql/interaction.py":P,"./pyqe/ql/person.py":L,"./pyqe/setup.py":R,"./pyqe/shared/__init__.py":F,"./pyqe/shared/b64encode_query.py":k,"./pyqe/shared/decorator.py":j,"./pyqe/shared/settings.py":M,"./pyqe/types/__init__.py":U,"./pyqe/types/enum_types.py":Q,"./pyqe/types/types.py":Y,"./pyqe/utils/__init__.py":V});let t=null,c=!1,_=null;function i(s){self.postMessage(s)}async function B(s,r){if(!c){i({type:"status",id:"",data:{state:"connecting"}});try{if(t=await(await import("./pyodide-B3WfjYbf.js")).loadPyodide({indexURL:s||"https://cdn.jsdelivr.net/pyodide/v0.29.0/full/",stdout:e=>{_&&i({type:"stdout",id:_,data:e})},stderr:e=>{_&&i({type:"stderr",id:_,data:e})}}),r&&r.length>0){await t.loadPackagesFromImports("import micropip");const e=t.pyimport("micropip");for(const o of r)try{await e.install(o)}catch(a){console.warn(`Failed to install ${o}:`,a)}}t.runPython(`
+`;const J=Object.assign({"./pyqe/__init__.py":f,"./pyqe/api/__init__.py":u,"./pyqe/api/base.py":m,"./pyqe/api/cohort.py":g,"./pyqe/api/concept_query.py":y,"./pyqe/api/concept_set_query.py":h,"./pyqe/api/datasource.py":v,"./pyqe/api/pa_config.py":b,"./pyqe/api/query.py":T,"./pyqe/api/result.py":E,"./pyqe/api/study.py":C,"./pyqe/azure/__init__.py":q,"./pyqe/azure/msal_credentials.py":S,"./pyqe/azure/password_grant.py":A,"./pyqe/azure/refresh_token.py":w,"./pyqe/ql/__init__.py":N,"./pyqe/ql/advanced_time_filter.py":I,"./pyqe/ql/attribute.py":D,"./pyqe/ql/config.py":O,"./pyqe/ql/criteria_group.py":x,"./pyqe/ql/date_period.py":P,"./pyqe/ql/filter_card.py":L,"./pyqe/ql/interaction.py":R,"./pyqe/ql/person.py":F,"./pyqe/settings.yaml":k,"./pyqe/setup.py":j,"./pyqe/shared/__init__.py":M,"./pyqe/shared/b64encode_query.py":U,"./pyqe/shared/decorator.py":Q,"./pyqe/shared/settings.py":Y,"./pyqe/types/__init__.py":V,"./pyqe/types/enum_types.py":z,"./pyqe/types/types.py":G,"./pyqe/utils/__init__.py":B});let n=null,p=!1,c=null;function i(s){self.postMessage(s)}async function W(s,r,o){if(!p){i({type:"status",id:"",data:{state:"connecting"}});try{if(n=await(await import("./pyodide-B3WfjYbf.js")).loadPyodide({indexURL:s||"https://cdn.jsdelivr.net/pyodide/v0.29.0/full/",stdout:e=>{c&&i({type:"stdout",id:c,data:e})},stderr:e=>{c&&i({type:"stderr",id:c,data:e})}}),r&&r.length>0){await n.loadPackagesFromImports("import micropip");const e=n.pyimport("micropip");for(const t of r)try{await e.install(t)}catch(a){console.warn(`Failed to install ${t}:`,a)}}n.runPython(`
 def _capture_open_figures():
     try:
         import matplotlib.pyplot as plt
@@ -3479,19 +3481,30 @@ def _capture_open_figures():
         results.append(base64.b64encode(buf.read()).decode('utf-8'))
     plt.close('all')
     return results
-`);try{t.runPython(z)}catch(e){console.warn("Failed to load Strategus spec builder:",e)}try{for(const[e,o]of Object.entries(G)){const a="/home/pyodide/"+e.replace("./",""),l=a.substring(0,a.lastIndexOf("/"));t.runPython(`
+`);try{n.runPython(H)}catch(e){console.warn("Failed to load Strategus spec builder:",e)}try{for(const[e,t]of Object.entries(J)){const a="/home/pyodide/"+e.replace("./",""),l=a.substring(0,a.lastIndexOf("/"));n.runPython(`
 import os
 os.makedirs("${l}", exist_ok=True)
-`),t.FS.writeFile(a,o)}t.runPython(`
+`),n.FS.writeFile(a,t)}n.runPython(`
 import sys
 if "/home/pyodide" not in sys.path:
     sys.path.insert(0, "/home/pyodide")
-`)}catch(e){console.warn("Failed to load pyqe package:",e)}c=!0,i({type:"ready",id:""}),i({type:"status",id:"",data:{state:"idle"}})}catch(n){i({type:"error",id:"",data:{ename:"InitializationError",evalue:n instanceof Error?n.message:String(n),traceback:[]}}),i({type:"status",id:"",data:{state:"error"}})}}}async function H(s,r){if(!t||!c){i({type:"error",id:s,data:{ename:"NotInitializedError",evalue:"Pyodide is not initialized",traceback:[]}});return}_=s,i({type:"status",id:s,data:{state:"busy"}});try{try{t.globals.set("__user_code__",r);const e=t.runPython("from pyodide.code import find_imports as _fi; list(_fi(__user_code__))"),o=e.toJs();e.destroy(),t.globals.delete("__user_code__"),o.length>0&&await t.loadPackage(o)}catch{await t.loadPackagesFromImports(r)}try{t.runPython(`
+`)}catch(e){console.warn("Failed to load pyqe package:",e)}try{await n.loadPackage("micropip"),await n.runPythonAsync(`
+import micropip
+_pyqe_deps = ['requests', 'pyyaml', 'six', 'PyJWT', 'python-dotenv']
+for _dep in _pyqe_deps:
+    try:
+        await micropip.install(_dep)
+    except Exception:
+        pass
+del _pyqe_deps, _dep
+`)}catch(e){console.warn("Failed to pre-install pyqe dependencies:",e)}if(o&&Object.keys(o).length>0)try{const e=Object.entries(o).map(([t,a])=>`os.environ['${t}'] = '''${a}'''`).join(`
+`);n.runPython(`import os
+${e}`)}catch(e){console.warn("Failed to set environment variables:",e)}p=!0,i({type:"ready",id:""}),i({type:"status",id:"",data:{state:"idle"}})}catch(_){i({type:"error",id:"",data:{ename:"InitializationError",evalue:_ instanceof Error?_.message:String(_),traceback:[]}}),i({type:"status",id:"",data:{state:"error"}})}}}function K(s){const r=s.match(/No module named '([^'.]+)'/);return r?r[1]:null}const $={jwt:"PyJWT",yaml:"pyyaml",dotenv:"python-dotenv",cv2:"opencv-python",PIL:"Pillow",sklearn:"scikit-learn",bs4:"beautifulsoup4",attr:"attrs",msal:"msal"};async function X(s,r){if(!n||!p){i({type:"error",id:s,data:{ename:"NotInitializedError",evalue:"Pyodide is not initialized",traceback:[]}});return}c=s,i({type:"status",id:s,data:{state:"busy"}});try{try{n.globals.set("__user_code__",r);const e=n.runPython("from pyodide.code import find_imports as _fi; list(_fi(__user_code__))"),t=e.toJs();e.destroy(),n.globals.delete("__user_code__"),t.length>0&&await n.loadPackage(t)}catch{await n.loadPackagesFromImports(r)}try{n.runPython(`
 try:
     import matplotlib
     matplotlib.use('agg')
 except ImportError:
     pass
-`)}catch{}const n=await t.runPythonAsync(r);if(n!=null){const e=String(n);if(!e.includes("matplotlib.figure.Figure")){let o=e;try{o=t.runPython(`repr(${r.split(`
-`).pop()})`)||e}catch{}i({type:"result",id:s,data:{"text/plain":o}})}}try{const e=await t.runPythonAsync("_capture_open_figures()"),o=e.toJs();for(const a of o)i({type:"display_data",id:s,data:{"image/png":a}});e.destroy()}catch{}i({type:"status",id:s,data:{state:"idle"}})}catch(n){const e=n instanceof Error?n.message:String(n),o=n instanceof Error&&n.stack?n.stack.split(`
-`):[];i({type:"error",id:s,data:{ename:n instanceof Error?n.constructor.name:"Error",evalue:e,traceback:o}}),i({type:"status",id:s,data:{state:"idle"}})}finally{_=null}}self.onmessage=async s=>{const{type:r,id:n,code:e,indexUrl:o,preloadPackages:a}=s.data;switch(r){case"init":await B(o,a);break;case"execute":e&&await H(n,e);break}};
+`)}catch{}let o;const _=5;for(let e=0;;e++)try{o=await n.runPythonAsync(r);break}catch(t){const a=t instanceof Error?t.message:String(t),l=K(a);if(!l||e>=_)throw t;const d=$[l]||l;i({type:"stderr",id:s,data:`Installing ${d}...`});try{await n.loadPackage(d)}catch{try{await n.runPythonAsync(`import micropip; await micropip.install("${d}")`)}catch{throw t}}}if(o!=null){const e=String(o);if(!e.includes("matplotlib.figure.Figure")){let t=e;try{t=n.runPython(`repr(${r.split(`
+`).pop()})`)||e}catch{}i({type:"result",id:s,data:{"text/plain":t}})}}try{const e=await n.runPythonAsync("_capture_open_figures()"),t=e.toJs();for(const a of t)i({type:"display_data",id:s,data:{"image/png":a}});e.destroy()}catch{}i({type:"status",id:s,data:{state:"idle"}})}catch(o){const _=o instanceof Error?o.message:String(o),e=o instanceof Error&&o.stack?o.stack.split(`
+`):[];i({type:"error",id:s,data:{ename:o instanceof Error?o.constructor.name:"Error",evalue:_,traceback:e}}),i({type:"status",id:s,data:{state:"idle"}})}finally{c=null}}self.onmessage=async s=>{const{type:r,id:o,code:_,indexUrl:e,preloadPackages:t,envVars:a}=s.data;switch(r){case"init":await W(e,t,a);break;case"execute":_&&await X(o,_);break}};

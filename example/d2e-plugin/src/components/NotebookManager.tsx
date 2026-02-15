@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Notebook,
   type NotebookHandle,
   type NotebookData,
+  type NotebookTheme,
   PyodideKernel,
   WebRKernel,
   createEmptyNotebook,
@@ -15,9 +16,28 @@ import { NotebookHeader } from './NotebookHeader'
 import { EmptyState } from './EmptyState'
 import { DeleteDialog } from './DeleteDialog'
 import { RenameDialog } from './RenameDialog'
+import { CodingAssistant } from './CodingAssistant'
 
 const pyodideKernel = new PyodideKernel()
 const webRKernel = new WebRKernel()
+
+const portalTheme: NotebookTheme = {
+  primary: '#000080',
+  primaryForeground: '#ffffff',
+  background: '#ffffff',
+  foreground: '#1a1a2e',
+  secondary: '#000080',
+  secondaryForeground: '#ffffff',
+  accent: '#edf2f7',
+  accentForeground: '#000080',
+  ring: '#000080',
+  border: '#dde3ed',
+  input: '#dde3ed',
+  muted: '#6b7280',
+  mutedForeground: '#555555',
+  card: '#ffffff',
+  cardForeground: '#1a1a2e',
+}
 
 interface NotebookManagerProps {
   datasetId: string
@@ -25,15 +45,46 @@ interface NotebookManagerProps {
   getToken?: () => Promise<string>
 }
 
-export function NotebookManager({ datasetId }: NotebookManagerProps) {
+export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
   const [notebooks, setNotebooks] = useState<NotebookRecord[]>([])
   const [activeNotebook, setActiveNotebook] = useState<NotebookRecord | null>(null)
   const [notebookData, setNotebookData] = useState<NotebookData>(createEmptyNotebook())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<NotebookRecord | null>(null)
   const [renameTarget, setRenameTarget] = useState<NotebookRecord | null>(null)
+  const [chatOpen, setChatOpen] = useState(false)
+
+  // Fetch auth token for pyqe environment
+  useEffect(() => {
+    if (getToken) {
+      getToken().then(setToken).catch(console.error)
+    }
+  }, [getToken])
+
+  // Build kernel configs — both kernels connect automatically, cells route by language
+  const kernelConfigs = useMemo(() => {
+    const envVars: Record<string, string> = {
+      PYQE_URL: 'analytics-svc/',
+      PYQE_TLS_CLIENT_CA_CERT_PATH: '',
+    }
+    if (token) {
+      envVars.TOKEN = token
+    }
+    const webREnvVars: Record<string, string> = {
+      TREX__ENDPOINT_URL: window.location.origin,
+      TREX__DATASET_ID: datasetId,
+    }
+    if (token) {
+      webREnvVars.TREX__AUTHORIZATION_TOKEN = token
+    }
+    return [
+      { type: 'pyodide' as const, envVars },
+      { type: 'webr' as const, envVars: webREnvVars },
+    ]
+  }, [token, datasetId])
 
   const notebookRef = useRef<NotebookHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -59,19 +110,25 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
 
   useEffect(() => {
     if (!activeNotebook) {
-      setNotebookData(createEmptyNotebook())
+      const empty = createEmptyNotebook()
+      setNotebookData(empty)
+      notebookRef.current?.setNotebookData(empty)
       return
     }
     try {
+      let parsed: NotebookData
       if (activeNotebook.notebookContent) {
-        const parsed = parseNotebookContent(activeNotebook.notebookContent)
-        setNotebookData(parsed)
+        parsed = parseNotebookContent(activeNotebook.notebookContent)
       } else {
-        setNotebookData(createEmptyNotebook())
+        parsed = createEmptyNotebook()
       }
+      setNotebookData(parsed)
+      notebookRef.current?.setNotebookData(parsed)
     } catch {
       console.error('Failed to parse notebook content, starting with empty notebook')
-      setNotebookData(createEmptyNotebook())
+      const empty = createEmptyNotebook()
+      setNotebookData(empty)
+      notebookRef.current?.setNotebookData(empty)
     }
   }, [activeNotebook])
 
@@ -203,6 +260,10 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
     [datasetId]
   )
 
+  const getNotebookContent = useCallback(() => {
+    return serializeIpynb(notebookData)
+  }, [notebookData])
+
   const handleExport = useCallback(() => {
     if (!activeNotebook) return
     const content = serializeIpynb(notebookData)
@@ -226,7 +287,7 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
   }
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1 h-full overflow-hidden">
       {error && (
         <div className="mx-4 mt-2 rounded border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
           {error}
@@ -258,25 +319,52 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
         onChange={handleFileChange}
       />
 
-      <main className="flex-1 p-8">
+      <main className="relative flex flex-1 min-h-0 overflow-hidden">
         {!activeNotebook ? (
-          <EmptyState
-            hasNotebooks={notebooks.length > 0}
-            onCreate={handleCreate}
-            onImport={handleImport}
-          />
-        ) : (
-          <div className="rounded-lg bg-white p-8 shadow-sm">
-            <Notebook
-              ref={notebookRef}
-              data={notebookData}
-              onChange={setNotebookData}
-              kernels={[pyodideKernel, webRKernel]}
-              defaultKernelConfig={{ type: 'pyodide' }}
-              showToolbar={true}
-              showLineNumbers={true}
+          <div className="flex-1 p-8">
+            <EmptyState
+              hasNotebooks={notebooks.length > 0}
+              onCreate={handleCreate}
+              onImport={handleImport}
             />
           </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-auto p-8" style={{ flex: chatOpen ? '6 1 0%' : '1 1 100%' }}>
+              <div className="notebook-card rounded-lg bg-white p-8 shadow-sm">
+                <Notebook
+                  ref={notebookRef}
+                  data={notebookData}
+                  onChange={setNotebookData}
+                  kernels={[pyodideKernel, webRKernel]}
+                  kernelConfigs={kernelConfigs}
+                  showToolbar={true}
+                  showLineNumbers={true}
+                  showKernelSelector={false}
+                  theme={portalTheme}
+                />
+              </div>
+            </div>
+
+            <CodingAssistant
+              open={chatOpen}
+              onClose={() => setChatOpen(false)}
+              datasetId={datasetId}
+              getNotebookContent={getNotebookContent}
+              getToken={getToken}
+            />
+
+            <button
+              className="fixed bottom-8 right-12 z-50 flex h-14 w-14 items-center justify-center rounded-full border-none bg-[#000080] text-white shadow-lg outline-none hover:bg-[#000080]/90 focus:outline-none"
+              onClick={() => setChatOpen((prev) => !prev)}
+              title="Coding Assistant"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+                <path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/>
+              </svg>
+            </button>
+          </>
         )}
       </main>
 

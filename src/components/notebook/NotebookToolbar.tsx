@@ -26,6 +26,9 @@ export interface NotebookToolbarProps {
   canRedo: boolean
   activeKernelId?: string
   availableKernels?: KernelInfo[]
+  showKernelSelector?: boolean
+  /** Per-kernel status map (kernel id → status) for multi-kernel display */
+  kernelStatuses?: Map<string, KernelStatus>
   onAddCodeCell?: (language?: CellLanguage) => void
   onAddMarkdownCell?: () => void
   onRunAllCells?: () => void
@@ -36,6 +39,12 @@ export interface NotebookToolbarProps {
   className?: string
 }
 
+/** Display label for a kernel status */
+function statusLabel(status: KernelStatus): string {
+  if (status === 'connecting') return 'loading'
+  return status
+}
+
 export function NotebookToolbar({
   kernelStatus,
   isExecuting,
@@ -43,6 +52,8 @@ export function NotebookToolbar({
   canRedo,
   activeKernelId,
   availableKernels = [],
+  showKernelSelector = true,
+  kernelStatuses,
   onAddCodeCell,
   onAddMarkdownCell,
   onRunAllCells,
@@ -53,6 +64,7 @@ export function NotebookToolbar({
   className,
 }: NotebookToolbarProps) {
   const activeKernel = availableKernels.find((k) => k.id === activeKernelId)
+  const hasPerKernelStatuses = kernelStatuses && kernelStatuses.size > 0
   return (
     <div
       className={cn(
@@ -131,8 +143,8 @@ export function NotebookToolbar({
         <Redo2 className="h-4 w-4" />
       </Button>
 
-      <div className="ml-auto flex items-center gap-2 px-2 text-sm">
-        {availableKernels.length > 0 && (
+      <div className="ml-auto flex items-center gap-3 px-2 text-sm">
+        {showKernelSelector && availableKernels.length > 0 && (
           <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -172,7 +184,31 @@ export function NotebookToolbar({
             <Separator orientation="vertical" className="h-6" />
           </>
         )}
-        {kernelStatus !== 'disconnected' && (
+        {hasPerKernelStatuses ? (
+          availableKernels.map((k, i) => {
+            const st = kernelStatuses.get(k.id) ?? 'disconnected'
+            return (
+              <React.Fragment key={k.id}>
+                {i > 0 && <Separator orientation="vertical" className="h-4" />}
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={cn(
+                      'h-2 w-2 shrink-0 rounded-full',
+                      st === 'idle' && 'bg-success',
+                      st === 'busy' && 'bg-warning animate-pulse',
+                      st === 'connecting' && 'bg-warning animate-pulse',
+                      st === 'error' && 'bg-destructive',
+                      st === 'disconnected' && 'bg-muted'
+                    )}
+                  />
+                  <span className="whitespace-nowrap text-muted-foreground">
+                    {k.languages.includes('r') ? 'R' : 'Python'}
+                  </span>
+                </div>
+              </React.Fragment>
+            )
+          })
+        ) : kernelStatus !== 'disconnected' ? (
           <>
             <div
               className={cn(
@@ -183,9 +219,9 @@ export function NotebookToolbar({
                 kernelStatus === 'error' && 'bg-destructive'
               )}
             />
-            <span className="capitalize text-muted-foreground">{kernelStatus}</span>
+            <span className="capitalize text-muted-foreground">{statusLabel(kernelStatus)}</span>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   )

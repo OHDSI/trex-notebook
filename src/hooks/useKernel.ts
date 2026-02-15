@@ -5,6 +5,8 @@ import type { KernelInfo } from '@/components/notebook/NotebookToolbar'
 export interface UseKernelOptions {
   kernels?: KernelPlugin[]
   defaultConfig?: KernelConfig
+  /** Configs for all kernels — each kernel is auto-connected with its matching config */
+  kernelConfigs?: KernelConfig[]
   onStatusChange?: (status: KernelStatus) => void
 }
 
@@ -19,16 +21,36 @@ export interface UseKernelReturn {
   execute: (code: string, language: 'python' | 'r') => AsyncIterable<KernelOutput>
   interrupt: () => Promise<void>
   switchKernel: (kernelId: string) => Promise<void>
+  /** Get the appropriate kernel for a given language */
+  getKernelForLanguage: (language: 'python' | 'r') => KernelPlugin | null
+  /** Aggregate status across all connected kernels */
+  aggregateStatus: KernelStatus
+  /** Per-kernel status map (kernel id → status) */
+  kernelStatuses: Map<string, KernelStatus>
+}
+
+/** Compute a single status from multiple kernel statuses */
+function computeAggregateStatus(statuses: KernelStatus[]): KernelStatus {
+  if (statuses.length === 0) return 'disconnected'
+  if (statuses.some((s) => s === 'error')) return 'error'
+  if (statuses.some((s) => s === 'busy')) return 'busy'
+  if (statuses.some((s) => s === 'connecting')) return 'connecting'
+  if (statuses.every((s) => s === 'idle')) return 'idle'
+  if (statuses.some((s) => s === 'idle')) return 'idle'
+  return 'disconnected'
 }
 
 export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
-  const { kernels = [], defaultConfig, onStatusChange } = options
+  const { kernels = [], defaultConfig, kernelConfigs, onStatusChange } = options
 
   const [kernel, setKernel] = useState<KernelPlugin | null>(null)
   const [status, setStatus] = useState<KernelStatus>('disconnected')
+  const [kernelStatuses, setKernelStatuses] = useState<Map<string, KernelStatus>>(new Map())
   const [isConnecting, setIsConnecting] = useState(false)
   const unsubscribeRef = useRef<(() => void) | null>(null)
+  const unsubscribesRef = useRef<Map<string, () => void>>(new Map())
   const lastConfigRef = useRef<KernelConfig | null>(null)
+  const multiKernelInitRef = useRef(false)
 
   const availableKernels = useMemo<KernelInfo[]>(
     () =>
@@ -42,9 +64,24 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
 
   const activeKernelId = kernel?.id
 
+  const aggregateStatus = useMemo(() => {
+    if (kernelStatuses.size === 0) return status
+    return computeAggregateStatus(Array.from(kernelStatuses.values()))
+  }, [kernelStatuses, status])
+
   const findKernel = useCallback(
     (config: KernelConfig): KernelPlugin | undefined => {
       return kernels.find((k) => k.id === config.type)
+    },
+    [kernels]
+  )
+
+  const getKernelForLanguage = useCallback(
+    (language: 'python' | 'r'): KernelPlugin | null => {
+      const k = kernels.find(
+        (k) => k.languages.includes(language) && k.status !== 'disconnected'
+      )
+      return k ?? null
     },
     [kernels]
   )
@@ -121,15 +158,62 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
     [kernels, connect]
   )
 
+  // Multi-kernel auto-connect: connect all kernels from kernelConfigs
   useEffect(() => {
+    if (!kernelConfigs || kernelConfigs.length === 0 || kernels.length === 0) return
+    if (multiKernelInitRef.current) return
+    multiKernelInitRef.current = true
+
+    const connectAll = async () => {
+      const promises = kernelConfigs.map(async (config) => {
+        const k = kernels.find((k) => k.id === config.type)
+        if (!k || k.status !== 'disconnected') return
+
+        const unsub = k.onStatusChange((newStatus) => {
+          setKernelStatuses((prev) => {
+            const next = new Map(prev)
+            next.set(k.id, newStatus)
+            return next
+          })
+        })
+        unsubscribesRef.current.set(k.id, unsub)
+
+        try {
+          await k.connect(config)
+          setKernelStatuses((prev) => {
+            const next = new Map(prev)
+            next.set(k.id, k.status)
+            return next
+          })
+        } catch (e) {
+          console.warn(`Failed to connect kernel ${k.id}:`, e)
+          setKernelStatuses((prev) => {
+            const next = new Map(prev)
+            next.set(k.id, 'error')
+            return next
+          })
+        }
+      })
+      await Promise.all(promises)
+    }
+
+    connectAll()
+  }, [kernelConfigs, kernels])
+
+  // Single-kernel auto-connect (backward compat): connect only the default kernel
+  useEffect(() => {
+    if (kernelConfigs && kernelConfigs.length > 0) return // multi-kernel mode
     if (defaultConfig && kernels.length > 0 && !kernel) {
       connect(defaultConfig).catch(console.error)
     }
-  }, [defaultConfig, kernels, kernel, connect])
+  }, [defaultConfig, kernels, kernel, connect, kernelConfigs])
 
   useEffect(() => {
     return () => {
       unsubscribeRef.current?.()
+      for (const unsub of unsubscribesRef.current.values()) {
+        unsub()
+      }
       kernel?.disconnect()
     }
   }, [kernel])
@@ -145,5 +229,8 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
     execute,
     interrupt,
     switchKernel,
+    getKernelForLanguage,
+    aggregateStatus,
+    kernelStatuses,
   }
 }

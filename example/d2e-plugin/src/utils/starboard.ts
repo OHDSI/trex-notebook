@@ -2,8 +2,13 @@ import type { NotebookData, CellLanguage } from '@/types/notebook'
 import { createCodeCell, createMarkdownCell } from '@/types/notebook'
 import { parseIpynb } from '@/index'
 
-const CELL_DELIMITER = /^# %%\s*\[(\w+)\]/gm
-const CELL_METADATA_BLOCK = /%%---[\s\S]*?---%%/g
+/**
+ * Detect whether source code looks like R (vs Python).
+ * Checks for common R patterns like `library(...)`, `<-` assignment, `$` accessor.
+ */
+function looksLikeR(source: string): boolean {
+  return /\blibrary\s*\(/.test(source) || /\w+\s*<-\s/.test(source)
+}
 
 export function parseStarboard(content: string): NotebookData {
   let body = content
@@ -20,10 +25,11 @@ export function parseStarboard(content: string): NotebookData {
     body = body.slice(frontMatterMatch[0].length)
   }
 
-  // Find all cell delimiters
+  // Find all cell delimiters — supports both `# %% [type]` and `# %%--- [type]`
+  const cellDelimiter = /^# %%(?:---)?[ \t]*\[(\w+)\]/gm
   const delimiters: { type: string; index: number; fullMatchLength: number }[] = []
   let match: RegExpExecArray | null
-  while ((match = CELL_DELIMITER.exec(body)) !== null) {
+  while ((match = cellDelimiter.exec(body)) !== null) {
     delimiters.push({
       type: match[1].toLowerCase(),
       index: match.index,
@@ -45,8 +51,9 @@ export function parseStarboard(content: string): NotebookData {
     const sourceEnd = i < delimiters.length - 1 ? delimiters[i + 1].index : body.length
     let source = body.slice(sourceStart, sourceEnd)
 
-    // Strip cell metadata blocks (%%--- ... ---%)
-    source = source.replace(CELL_METADATA_BLOCK, '')
+    // Strip cell metadata blocks: `# properties: {...}\n# ---%%` or `%%---...---%%`
+    source = source.replace(/^[\s\S]*?#\s*---%%\s*\n?/, '')
+    source = source.replace(/%%---[\s\S]*?---%%/g, '')
 
     // Trim leading newline and trailing whitespace between cells
     source = source.replace(/^\n/, '').replace(/\n$/, '')
@@ -55,7 +62,15 @@ export function parseStarboard(content: string): NotebookData {
       return createMarkdownCell(source)
     }
 
-    const language: CellLanguage = delim.type === 'r' ? 'r' : 'python'
+    // `[jupyter]` is the generic code cell type in old starboard — detect language from content
+    let language: CellLanguage
+    if (delim.type === 'r') {
+      language = 'r'
+    } else if (delim.type === 'jupyter' && looksLikeR(source)) {
+      language = 'r'
+    } else {
+      language = 'python'
+    }
     return createCodeCell(language, source)
   })
 

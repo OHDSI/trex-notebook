@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { python } from '@codemirror/lang-python'
 import { StreamLanguage } from '@codemirror/language'
 import { r } from '@codemirror/legacy-modes/mode/r'
+import { githubLight } from '@uiw/codemirror-theme-github'
 import { cn } from '@/lib/utils'
 import type { CellLanguage, ExecutionState } from '@/types/notebook'
 
@@ -99,6 +100,7 @@ export function CodeCell({
             lintKeymap: true,
             tabSize: 4,
           }}
+          theme={githubLight}
           className={cn(
             'overflow-hidden rounded-md border bg-background text-sm',
             isSelected && 'ring-1 ring-ring'

@@ -7,6 +7,10 @@ import type {
 } from '../types'
 import { KernelConnectionError } from '../types'
 import strategusSpecBuilderSource from './StrategusSpecBuilder.R?raw'
+// rD2E source is injected at build time via Vite define (__RD2E_SOURCE__)
+// because ?raw uses template literals which corrupt R escape sequences.
+declare const __RD2E_SOURCE__: string
+const rD2ESource: string = typeof __RD2E_SOURCE__ !== 'undefined' ? __RD2E_SOURCE__ : ''
 
 export class WebRKernel implements KernelPlugin {
   readonly id = 'webr'
@@ -43,6 +47,25 @@ export class WebRKernel implements KernelPlugin {
 
       await (this.webR as { init: () => Promise<void> }).init()
 
+      // Set R environment variables (e.g. TREX__ENDPOINT_URL, TREX__AUTHORIZATION_TOKEN)
+      if (config.envVars && Object.keys(config.envVars).length > 0) {
+        try {
+          const envEntries = Object.entries(config.envVars)
+            .map(
+              ([key, value]) =>
+                `Sys.setenv("${key}" = "${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`
+            )
+            .join('\n')
+          await (
+            this.webR as {
+              evalRVoid: (code: string) => Promise<void>
+            }
+          ).evalRVoid(envEntries)
+        } catch (e) {
+          console.warn('Failed to set R environment variables:', e)
+        }
+      }
+
       if (config.preloadPackages && config.preloadPackages.length > 0) {
         for (const pkg of config.preloadPackages) {
           try {
@@ -59,19 +82,125 @@ export class WebRKernel implements KernelPlugin {
 
       // Autoload Strategus spec builder library
       try {
-        // Install checkmate dependency (required by StrategusSpecBuilder.R)
+        // Install dependencies (checkmate for StrategusSpecBuilder.R, jsonlite for rD2E.R)
         await (
           this.webR as {
             evalRVoid: (code: string) => Promise<void>
           }
-        ).evalRVoid(`webr::install("checkmate")`)
+        ).evalRVoid(`webr::install(c("checkmate", "jsonlite"))`)
+        // Source the spec builder functions into the global environment
         await (
           this.webR as {
             evalRVoid: (code: string) => Promise<void>
           }
         ).evalRVoid(strategusSpecBuilderSource)
+        // Shim library() so library(Strategus) succeeds without a real installed package.
+        // The functions are already in the global env from sourcing above.
+        await (
+          this.webR as {
+            evalRVoid: (code: string) => Promise<void>
+          }
+        ).evalRVoid(`
+local({
+  shimmed <- c("Strategus", "rD2E")
+  base_env <- as.environment("package:base")
+
+  # Shim library()
+  orig_library <- base::library
+  library_shim <- function(package, ...) {
+    pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    if (pkg %in% shimmed) {
+      return(invisible(pkg))
+    }
+    tryCatch(
+      orig_library(package = pkg, character.only = TRUE, ...),
+      error = function(e) {
+        message(paste0("Installing ", pkg, "..."))
+        webr::install(pkg)
+        orig_library(package = pkg, character.only = TRUE, ...)
+      }
+    )
+  }
+  unlockBinding("library", base_env)
+  assign("library", library_shim, envir = base_env)
+  lockBinding("library", base_env)
+
+  # Shim require()
+  orig_require <- base::require
+  require_shim <- function(package, ...) {
+    pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    if (pkg %in% shimmed) {
+      return(invisible(TRUE))
+    }
+    orig_require(package = pkg, character.only = TRUE, ...)
+  }
+  unlockBinding("require", base_env)
+  assign("require", require_shim, envir = base_env)
+  lockBinding("require", base_env)
+
+  # Shim :: so rD2E::fn and Strategus::fn resolve from .GlobalEnv
+  # (avoids loadNamespace which requires a real installed package)
+  dcolon_shim <- function(pkg, name) {
+    pkg_str <- as.character(substitute(pkg))
+    name_str <- as.character(substitute(name))
+    if (pkg_str %in% shimmed && exists(name_str, envir = .GlobalEnv)) {
+      return(get(name_str, envir = .GlobalEnv))
+    }
+    getExportedValue(asNamespace(pkg_str), name_str)
+  }
+  unlockBinding("::", base_env)
+  assign("::", dcolon_shim, envir = base_env)
+  lockBinding("::", base_env)
+
+  # Shim ::: similarly
+  tcolon_shim <- function(pkg, name) {
+    pkg_str <- as.character(substitute(pkg))
+    name_str <- as.character(substitute(name))
+    if (pkg_str %in% shimmed && exists(name_str, envir = .GlobalEnv)) {
+      return(get(name_str, envir = .GlobalEnv))
+    }
+    get(name_str, envir = asNamespace(pkg_str))
+  }
+  unlockBinding(":::", base_env)
+  assign(":::", tcolon_shim, envir = base_env)
+  lockBinding(":::", base_env)
+})
+`)
       } catch (e) {
         console.warn('Failed to load Strategus spec builder:', e)
+      }
+
+      // Autoload rD2E library (WebR-compatible port — no external deps needed)
+      // Source the rD2E functions, then attach to the search path so they're
+      // accessible from Shelter.captureR() which may use a different env.
+      try {
+        await (
+          this.webR as {
+            evalRVoid: (code: string) => Promise<void>
+          }
+        ).evalRVoid(rD2ESource)
+        // Attach rD2E functions to the search path
+        await (
+          this.webR as {
+            evalRVoid: (code: string) => Promise<void>
+          }
+        ).evalRVoid(`local({
+  rD2E_fns <- c("get_cohort_definition_set", "create_cohort_definition",
+                "run_strategus_flow", "create_options",
+                ".rD2E_to_json", ".rD2E_from_json",
+                ".rD2E_GET", ".rD2E_POST",
+                ".rD2E_js_escape",
+                ".rD2E_getCohortDefinition", ".rD2E_getDeployment")
+  env <- new.env(parent = emptyenv())
+  for (fn in rD2E_fns) {
+    if (exists(fn, envir = .GlobalEnv)) {
+      assign(fn, get(fn, envir = .GlobalEnv), envir = env)
+    }
+  }
+  attach(env, name = "rD2E")
+})`)
+      } catch (e) {
+        console.error('Failed to load rD2E library:', e)
       }
 
       this.setStatus('idle')
@@ -114,7 +243,8 @@ export class WebRKernel implements KernelPlugin {
         evalR: (code: string) => Promise<unknown>
         Shelter: new () => Promise<{
           captureR: (
-            code: string
+            code: string,
+            options?: { env?: unknown }
           ) => Promise<{
             output: Array<{ type: string; data: string }>
             images: string[]
@@ -131,26 +261,60 @@ export class WebRKernel implements KernelPlugin {
         const result = await Shelter.captureR(code)
 
         for (const output of result.output) {
+          // Ensure output.data is a plain string, not a WebR proxy
+          let text: string
+          try {
+            text = typeof output.data === 'string'
+              ? output.data
+              : typeof output.data?.values !== 'undefined'
+                ? String(output.data.values)
+                : String(output.data)
+          } catch {
+            text = '[output]'
+          }
           yield {
             type: 'stream',
             name: output.type === 'stderr' ? 'stderr' : 'stdout',
-            text: output.data,
+            text,
           } as KernelOutput
         }
 
         for (const imageData of result.images) {
+          const img = typeof imageData === 'string'
+            ? imageData
+            : typeof imageData?.values !== 'undefined'
+              ? String(imageData.values)
+              : String(imageData)
           yield {
             type: 'display_data',
             data: {
-              'image/png': imageData,
+              'image/png': img,
             },
           } as KernelOutput
         }
 
         if (result.result !== null && result.result !== undefined) {
           try {
-            const resultStr = String(result.result)
-            if (resultStr && resultStr !== '[object Object]') {
+            const proxy = result.result as Record<string, unknown>
+            let resultStr: string
+            // WebR proxy objects may have toJs/toArray; plain objects may have {values}
+            if (typeof proxy.toArray === 'function') {
+              const arr = await (proxy.toArray as () => Promise<unknown[]>)()
+              resultStr = arr.map(String).join('\n')
+            } else if (typeof proxy.toJs === 'function') {
+              const jsVal = await (proxy.toJs as () => Promise<unknown>)()
+              if (jsVal && typeof jsVal === 'object' && 'values' in jsVal) {
+                const vals = (jsVal as { values: unknown }).values
+                resultStr = Array.isArray(vals) ? vals.map(String).join('\n') : String(vals)
+              } else if (Array.isArray(jsVal)) {
+                resultStr = jsVal.map(String).join('\n')
+              } else {
+                resultStr = String(jsVal)
+              }
+            } else {
+              resultStr = String(proxy)
+            }
+            if (resultStr && resultStr !== '[object Object]' && resultStr !== 'undefined') {
               yield {
                 type: 'execute_result',
                 executionCount: execCount,
@@ -160,7 +324,7 @@ export class WebRKernel implements KernelPlugin {
               } as KernelOutput
             }
           } catch {
-            // proxy can't be converted to string
+            // proxy can't be converted
           }
         }
       } finally {

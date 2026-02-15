@@ -589,3 +589,87 @@ createTreatmentPatternsModuleSpecifications <- function(cohorts,
   return(.createModuleSpecifications("TreatmentPatternsModule", moduleSettings))
 }
 
+# =============================================================================
+# R5 Reference Class Wrappers (for notebook compatibility)
+# =============================================================================
+# Notebooks use CohortGeneratorModule$new(), TreatmentPatternsModule$new(),
+# etc. These wrappers delegate to the standalone functions above.
+
+CohortGeneratorModule <- setRefClass("CohortGeneratorModule",
+  methods = list(
+    createCohortSharedResourceSpecifications = function(cohortDefinitionSet) {
+      createCohortSharedResourceSpecifications(cohortDefinitionSet)
+    },
+    createModuleSpecifications = function(generateStats = TRUE) {
+      createCohortGeneratorModuleSpecifications(generateStats = generateStats)
+    }
+  )
+)
+
+CohortDiagnosticsModule <- setRefClass("CohortDiagnosticsModule",
+  methods = list(
+    createModuleSpecifications = function(...) {
+      createCohortDiagnosticsModuleSpecifications(...)
+    }
+  )
+)
+
+CohortIncidenceModule <- setRefClass("CohortIncidenceModule",
+  methods = list(
+    createModuleSpecifications = function(irDesign = NULL) {
+      createCohortIncidenceModuleSpecifications(irDesign = irDesign)
+    }
+  )
+)
+
+CohortMethodModule <- setRefClass("CohortMethodModule",
+  methods = list(
+    createModuleSpecifications = function(...) {
+      createCohortMethodModuleSpecifications(...)
+    }
+  )
+)
+
+CharacterizationModule <- setRefClass("CharacterizationModule",
+  methods = list(
+    createModuleSpecifications = function(...) {
+      createCharacterizationModuleSpecifications(...)
+    }
+  )
+)
+
+PatientLevelPredictionModule <- setRefClass("PatientLevelPredictionModule",
+  methods = list(
+    createModuleSpecifications = function(modelDesignList, ...) {
+      createPatientLevelPredictionModuleSpecifications(modelDesignList = modelDesignList, ...)
+    }
+  )
+)
+
+SelfControlledCaseSeriesModule <- setRefClass("SelfControlledCaseSeriesModule",
+  methods = list(
+    createModuleSpecifications = function(sccsAnalysesSpecifications) {
+      createSelfControlledCaseSeriesModuleSpecifications(sccsAnalysesSpecifications)
+    }
+  )
+)
+
+EvidenceSynthesisModule <- setRefClass("EvidenceSynthesisModule",
+  methods = list(
+    createModuleSpecifications = function(...) {
+      createEvidenceSynthesisModuleSpecifications(...)
+    }
+  )
+)
+
+TreatmentPatternsModule <- setRefClass("TreatmentPatternsModule",
+  methods = list(
+    createModuleSpecifications = function(...) {
+      createTreatmentPatternsModuleSpecifications(...)
+    }
+  )
+)
+
+# Typo-tolerant alias used in some notebooks
+createEmptyAnalysisSpecificiations <- createEmptyAnalysisSpecifications
+

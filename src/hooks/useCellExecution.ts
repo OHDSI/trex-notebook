@@ -19,6 +19,8 @@ export class ExecutionTimeoutError extends Error {
 
 export interface UseCellExecutionOptions {
   kernel: KernelPlugin | null
+  /** Resolve the appropriate kernel for a given language (used for multi-kernel setups) */
+  getKernelForLanguage?: (language: 'python' | 'r') => KernelPlugin | null
   executionTimeout?: number
   onCellExecutionStart?: (cellId: CellId) => void
   onCellExecutionEnd?: (cellId: CellId, success: boolean) => void
@@ -52,6 +54,7 @@ export function useCellExecution(
 ): UseCellExecutionReturn {
   const {
     kernel,
+    getKernelForLanguage,
     executionTimeout = DEFAULT_EXECUTION_TIMEOUT,
     onCellExecutionStart,
     onCellExecutionEnd,
@@ -102,13 +105,15 @@ export function useCellExecution(
 
   const executeCell = useCallback(
     async (cellId: CellId, code: string, language: 'python' | 'r') => {
-      if (!kernel) {
+      // Resolve the appropriate kernel for this language
+      const targetKernel = getKernelForLanguage?.(language) ?? kernel
+      if (!targetKernel) {
         onNoKernel?.(cellId)
         throw new NoKernelError()
       }
 
-      if (kernel.status !== 'idle' && kernel.status !== 'busy') {
-        throw new Error(`Kernel is not ready (status: ${kernel.status})`)
+      if (targetKernel.status !== 'idle' && targetKernel.status !== 'busy') {
+        throw new Error(`Kernel is not ready (status: ${targetKernel.status})`)
       }
 
       const executionCount = ++globalExecutionCount
@@ -129,14 +134,14 @@ export function useCellExecution(
           ? new Promise<never>((_, reject) => {
               timeoutId = setTimeout(() => {
                 interruptedRef.current = true
-                kernel.interrupt().catch(() => {}) // Best effort interrupt
+                targetKernel.interrupt().catch(() => {}) // Best effort interrupt
                 reject(new ExecutionTimeoutError(executionTimeout))
               }, executionTimeout)
             })
           : null
 
         const executePromise = (async () => {
-          for await (const output of kernel.execute(code, language)) {
+          for await (const output of targetKernel.execute(code, language)) {
             if (interruptedRef.current) {
               break
             }
@@ -195,6 +200,7 @@ export function useCellExecution(
     },
     [
       kernel,
+      getKernelForLanguage,
       executionTimeout,
       convertOutput,
       onCellExecutionStart,
