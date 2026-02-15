@@ -23,13 +23,15 @@ export default defineConfig({
     },
   },
   build: {
+    lib: {
+      entry: path.resolve(__dirname, 'src/lifecycles.tsx'),
+      fileName: () => 'lifecycles.js',
+      formats: ['system'],
+    },
     rollupOptions: {
-      input: path.resolve(__dirname, 'src/lifecycles.tsx'),
       external: [],
       output: {
-        format: 'system',
-        entryFileNames: 'lifecycles.js',
-        chunkFileNames: 'assets/[name]-[hash].js',
+        inlineDynamicImports: true,
       },
     },
     outDir: 'resources/notebook',
