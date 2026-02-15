@@ -25,7 +25,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: path.resolve(__dirname, 'src/lifecycles.tsx'),
-      external: ['react', 'react-dom'],
+      external: [],
       output: {
         format: 'system',
         entryFileNames: 'lifecycles.js',
