@@ -4,18 +4,20 @@ import {
   type NotebookHandle,
   type NotebookData,
   PyodideKernel,
+  WebRKernel,
   createEmptyNotebook,
-  parseIpynb,
   serializeIpynb,
 } from '@/index'
 import * as notebookApi from '../api/notebook-api'
 import type { NotebookRecord } from '../types'
+import { parseNotebookContent } from '../utils/starboard'
 import { NotebookHeader } from './NotebookHeader'
 import { EmptyState } from './EmptyState'
 import { DeleteDialog } from './DeleteDialog'
 import { RenameDialog } from './RenameDialog'
 
 const pyodideKernel = new PyodideKernel()
+const webRKernel = new WebRKernel()
 
 interface NotebookManagerProps {
   datasetId: string
@@ -62,7 +64,7 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
     }
     try {
       if (activeNotebook.notebookContent) {
-        const parsed = parseIpynb(activeNotebook.notebookContent)
+        const parsed = parseNotebookContent(activeNotebook.notebookContent)
         setNotebookData(parsed)
       } else {
         setNotebookData(createEmptyNotebook())
@@ -184,15 +186,15 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string
-          parseIpynb(content) // validate
+          parseNotebookContent(content) // validate
 
-          const name = file.name.replace(/\.ipynb$/, '')
+          const name = file.name.replace(/\.(ipynb|sb|sbnb)$/, '')
           const created = await notebookApi.createNotebook(datasetId, name, content)
           setNotebooks((prev) => [...prev, created])
           setActiveNotebook(created)
         } catch (err) {
           console.error('Failed to import notebook:', err)
-          setError('Failed to import notebook. Check that it is a valid .ipynb file.')
+          setError('Failed to import notebook. Check that it is a valid .ipynb or starboard file.')
         }
       }
       reader.readAsText(file)
@@ -251,12 +253,12 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".ipynb"
+        accept=".ipynb,.sb,.sbnb"
         className="hidden"
         onChange={handleFileChange}
       />
 
-      <main className="flex-1 px-4 py-4">
+      <main className="flex-1 p-8">
         {!activeNotebook ? (
           <EmptyState
             hasNotebooks={notebooks.length > 0}
@@ -264,15 +266,17 @@ export function NotebookManager({ datasetId }: NotebookManagerProps) {
             onImport={handleImport}
           />
         ) : (
-          <Notebook
-            ref={notebookRef}
-            data={notebookData}
-            onChange={setNotebookData}
-            kernels={[pyodideKernel]}
-            defaultKernelConfig={{ type: 'pyodide' }}
-            showToolbar={true}
-            showLineNumbers={true}
-          />
+          <div className="rounded-lg bg-white p-8 shadow-sm">
+            <Notebook
+              ref={notebookRef}
+              data={notebookData}
+              onChange={setNotebookData}
+              kernels={[pyodideKernel, webRKernel]}
+              defaultKernelConfig={{ type: 'pyodide' }}
+              showToolbar={true}
+              showLineNumbers={true}
+            />
+          </div>
         )}
       </main>
 

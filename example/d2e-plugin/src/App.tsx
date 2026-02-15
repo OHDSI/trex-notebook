@@ -33,7 +33,7 @@ export default function App(props: PortalProps) {
   }, [props.appId])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="flex flex-col text-foreground">
       <NotebookManager
         datasetId={mergedProps.datasetId ?? ''}
         userId={mergedProps.username ?? mergedProps.idpUserId ?? ''}
