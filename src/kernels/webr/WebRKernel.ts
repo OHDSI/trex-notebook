@@ -261,30 +261,15 @@ local({
         const result = await Shelter.captureR(code)
 
         for (const output of result.output) {
-          // Ensure output.data is a plain string, not a WebR proxy
-          let text: string
-          try {
-            text = typeof output.data === 'string'
-              ? output.data
-              : typeof output.data?.values !== 'undefined'
-                ? String(output.data.values)
-                : String(output.data)
-          } catch {
-            text = '[output]'
-          }
           yield {
             type: 'stream',
             name: output.type === 'stderr' ? 'stderr' : 'stdout',
-            text,
+            text: output.data,
           } as KernelOutput
         }
 
         for (const imageData of result.images) {
-          const img = typeof imageData === 'string'
-            ? imageData
-            : typeof imageData?.values !== 'undefined'
-              ? String(imageData.values)
-              : String(imageData)
+          const img = imageData
           yield {
             type: 'display_data',
             data: {
