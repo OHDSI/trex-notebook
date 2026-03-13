@@ -102,7 +102,7 @@ export class WebRKernel implements KernelPlugin {
           }
         ).evalRVoid(`
 local({
-  shimmed <- c("Strategus", "rD2E")
+  shimmed <- c("Strategus", "rD2E", "CohortMethod", "FeatureExtraction", "Cyclops", "CohortSurvival", "SelfControlledCaseSeries", "PatientLevelPrediction", "EvidenceSynthesis", "CohortIncidence", "Characterization")
   base_env <- as.environment("package:base")
 
   # Shim library()
@@ -143,8 +143,15 @@ local({
   dcolon_shim <- function(pkg, name) {
     pkg_str <- as.character(substitute(pkg))
     name_str <- as.character(substitute(name))
-    if (pkg_str %in% shimmed && exists(name_str, envir = .GlobalEnv)) {
-      return(get(name_str, envir = .GlobalEnv))
+    if (pkg_str %in% shimmed) {
+      # Check for package-specific override first (e.g. .sccs_createCreateStudyPopulationArgs)
+      pkg_specific <- paste0(".", pkg_str, "_", name_str)
+      if (exists(pkg_specific, envir = .GlobalEnv)) {
+        return(get(pkg_specific, envir = .GlobalEnv))
+      }
+      if (exists(name_str, envir = .GlobalEnv)) {
+        return(get(name_str, envir = .GlobalEnv))
+      }
     }
     getExportedValue(asNamespace(pkg_str), name_str)
   }
@@ -156,8 +163,14 @@ local({
   tcolon_shim <- function(pkg, name) {
     pkg_str <- as.character(substitute(pkg))
     name_str <- as.character(substitute(name))
-    if (pkg_str %in% shimmed && exists(name_str, envir = .GlobalEnv)) {
-      return(get(name_str, envir = .GlobalEnv))
+    if (pkg_str %in% shimmed) {
+      pkg_specific <- paste0(".", pkg_str, "_", name_str)
+      if (exists(pkg_specific, envir = .GlobalEnv)) {
+        return(get(pkg_specific, envir = .GlobalEnv))
+      }
+      if (exists(name_str, envir = .GlobalEnv)) {
+        return(get(name_str, envir = .GlobalEnv))
+      }
     }
     get(name_str, envir = asNamespace(pkg_str))
   }
