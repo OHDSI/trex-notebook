@@ -42,6 +42,17 @@ export class PyodideKernel implements KernelPlugin {
       throw new KernelConnectionError('Invalid config type for PyodideKernel')
     }
 
+    // Guard against re-entrant connect calls
+    if (this._status === 'connecting') {
+      return
+    }
+
+    // Clean up existing worker before creating a new one
+    if (this.worker) {
+      this.worker.terminate()
+      this.worker = null
+    }
+
     this.config = config
     this.setStatus('connecting')
 

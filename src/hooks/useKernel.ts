@@ -51,6 +51,13 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
   const unsubscribesRef = useRef<Map<string, () => void>>(new Map())
   const lastConfigRef = useRef<KernelConfig | null>(null)
   const multiKernelInitRef = useRef(false)
+  const connectingRef = useRef(false)
+
+  // Stabilize references to avoid re-triggering effects on every render
+  const defaultConfigRef = useRef(defaultConfig)
+  defaultConfigRef.current = defaultConfig
+  const kernelsRef = useRef(kernels)
+  kernelsRef.current = kernels
 
   const availableKernels = useMemo<KernelInfo[]>(
     () =>
@@ -88,26 +95,31 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
 
   const connect = useCallback(
     async (config: KernelConfig) => {
-      if (kernel && kernel.status !== 'disconnected') {
-        await kernel.disconnect()
-        unsubscribeRef.current?.()
-      }
-
-      const newKernel = findKernel(config)
-      if (!newKernel) {
-        throw new Error(`No kernel found for type: ${config.type}`)
-      }
-
-      setKernel(newKernel)
-      setIsConnecting(true)
-      lastConfigRef.current = config
-
-      unsubscribeRef.current = newKernel.onStatusChange((newStatus) => {
-        setStatus(newStatus)
-        onStatusChange?.(newStatus)
-      })
+      if (connectingRef.current) return
+      connectingRef.current = true
 
       try {
+        if (kernel && kernel.status !== 'disconnected') {
+          await kernel.disconnect()
+        }
+
+        // Clean up previous subscription before setting a new one
+        unsubscribeRef.current?.()
+
+        const newKernel = findKernel(config)
+        if (!newKernel) {
+          throw new Error(`No kernel found for type: ${config.type}`)
+        }
+
+        setKernel(newKernel)
+        setIsConnecting(true)
+        lastConfigRef.current = config
+
+        unsubscribeRef.current = newKernel.onStatusChange((newStatus) => {
+          setStatus(newStatus)
+          onStatusChange?.(newStatus)
+        })
+
         await newKernel.connect(config)
         setStatus(newKernel.status)
       } catch (error) {
@@ -115,6 +127,7 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
         throw error
       } finally {
         setIsConnecting(false)
+        connectingRef.current = false
       }
     },
     [kernel, findKernel, onStatusChange]
@@ -201,12 +214,16 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
   }, [kernelConfigs, kernels])
 
   // Single-kernel auto-connect (backward compat): connect only the default kernel
+  // Uses refs for defaultConfig/kernels to avoid re-firing on every render
   useEffect(() => {
     if (kernelConfigs && kernelConfigs.length > 0) return // multi-kernel mode
-    if (defaultConfig && kernels.length > 0 && !kernel) {
-      connect(defaultConfig).catch(console.error)
+    const config = defaultConfigRef.current
+    const availKernels = kernelsRef.current
+    if (config && availKernels.length > 0 && !kernel && !connectingRef.current) {
+      connect(config).catch(console.error)
     }
-  }, [defaultConfig, kernels, kernel, connect, kernelConfigs])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kernel, connect, kernelConfigs])
 
   useEffect(() => {
     return () => {

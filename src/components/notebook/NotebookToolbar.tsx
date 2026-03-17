@@ -208,7 +208,7 @@ export function NotebookToolbar({
               </React.Fragment>
             )
           })
-        ) : kernelStatus !== 'disconnected' ? (
+        ) : availableKernels.length > 0 ? (
           <>
             <div
               className={cn(
@@ -216,7 +216,8 @@ export function NotebookToolbar({
                 kernelStatus === 'idle' && 'bg-success',
                 kernelStatus === 'busy' && 'bg-warning animate-pulse',
                 kernelStatus === 'connecting' && 'bg-warning animate-pulse',
-                kernelStatus === 'error' && 'bg-destructive'
+                kernelStatus === 'error' && 'bg-destructive',
+                kernelStatus === 'disconnected' && 'bg-muted'
               )}
             />
             <span className="capitalize text-muted-foreground">{statusLabel(kernelStatus)}</span>

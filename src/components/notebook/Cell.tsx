@@ -12,7 +12,7 @@ import { CodeCell } from './CodeCell'
 import { MarkdownCell } from './MarkdownCell'
 import { CellOutput } from './CellOutput'
 import { cn } from '@/lib/utils'
-import type { CellData } from '@/types/notebook'
+import type { CellData, CellLanguage } from '@/types/notebook'
 import { isCodeCell } from '@/types/notebook'
 
 export interface CellProps {
@@ -29,6 +29,7 @@ export interface CellProps {
   onMoveUp?: () => void
   onMoveDown?: () => void
   onDuplicate?: () => void
+  onChangeLanguage?: (language: CellLanguage) => void
   canMoveUp?: boolean
   canMoveDown?: boolean
 }
@@ -46,6 +47,7 @@ export function Cell({
   onMoveUp,
   onMoveDown,
   onDuplicate,
+  onChangeLanguage,
   canMoveUp = true,
   canMoveDown = true,
 }: CellProps) {
@@ -83,11 +85,32 @@ export function Cell({
           isSelected && 'opacity-100'
         )}
       >
-        <span className="px-1.5 text-xs font-medium text-primary select-none">
-          {isCodeCell(cell)
-            ? cell.language === 'r' ? 'R' : 'Python'
-            : 'Markdown'}
-        </span>
+        {isCodeCell(cell) ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-1.5 text-xs font-medium text-primary select-none"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {cell.language === 'r' ? 'R' : 'Python'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => onChangeLanguage?.('python')}>
+                Python
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onChangeLanguage?.('r')}>
+                R
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <span className="px-1.5 text-xs font-medium text-primary select-none">
+            Markdown
+          </span>
+        )}
 
         {isCodeCell(cell) && (
           <Button

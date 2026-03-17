@@ -43,6 +43,7 @@ export interface UseNotebookReturn {
     redo: () => void
     setCellExecutionState: (cellId: CellId, state: CodeCellData['executionState']) => void
     appendCellOutput: (cellId: CellId, output: CodeCellData['outputs'][number]) => void
+    setCellLanguage: (cellId: CellId, language: CellLanguage) => void
     setCellExecutionCount: (cellId: CellId, count: number | null) => void
     setNotebook: (notebook: NotebookData) => void
   }
@@ -142,6 +143,20 @@ export function useNotebook(options: UseNotebookOptions = {}): UseNotebookReturn
         ...prev,
         cells: prev.cells.map((cell) =>
           cell.id === cellId ? { ...cell, source } : cell
+        ),
+      }))
+    },
+    [updateNotebook]
+  )
+
+  const setCellLanguage = useCallback(
+    (cellId: CellId, language: CellLanguage) => {
+      updateNotebook((prev) => ({
+        ...prev,
+        cells: prev.cells.map((cell) =>
+          cell.id === cellId && isCodeCell(cell) && cell.language !== language
+            ? { ...cell, language, outputs: [], executionCount: null, executionState: 'idle' as const }
+            : cell
         ),
       }))
     },
@@ -303,6 +318,7 @@ export function useNotebook(options: UseNotebookOptions = {}): UseNotebookReturn
       deleteCell,
       moveCell,
       updateCellSource,
+      setCellLanguage,
       selectCell,
       runCell,
       runAllCells,
@@ -323,6 +339,7 @@ export function useNotebook(options: UseNotebookOptions = {}): UseNotebookReturn
       deleteCell,
       moveCell,
       updateCellSource,
+      setCellLanguage,
       selectCell,
       runCell,
       runAllCells,

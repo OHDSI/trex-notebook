@@ -22,6 +22,7 @@ export class WebRKernel implements KernelPlugin {
   private webR: unknown = null
   private config: WebRKernelConfig | null = null
   private executionCount = 0
+  private executionAborted = false
 
   get status(): KernelStatus {
     return this._status
@@ -249,11 +250,13 @@ local({
 
     this.executionCount++
     const execCount = this.executionCount
+    this.executionAborted = false
     this.setStatus('busy')
 
     try {
       const webR = this.webR as {
         evalR: (code: string) => Promise<unknown>
+        evalRVoid: (code: string) => Promise<void>
         Shelter: new () => Promise<{
           captureR: (
             code: string,
@@ -267,11 +270,35 @@ local({
         }>
       }
 
+      // Pre-install packages referenced by library()/require() calls so that
+      // installation happens outside captureR(). This prevents long package
+      // downloads (e.g. dplyr with ~15 deps) from running inside captureR()
+      // where a timeout would corrupt the Shelter state.
+      const libraryPattern = /(?:library|require)\s*\(\s*(?:["']([^"']+)["']|(\w+))/g
+      let match
+      while ((match = libraryPattern.exec(code)) !== null) {
+        const pkg = match[1] || match[2]
+        if (pkg) {
+          try {
+            await webR.evalRVoid(
+              `if (!requireNamespace("${pkg}", quietly = TRUE)) webr::install("${pkg}")`
+            )
+          } catch {
+            // Let captureR handle the error naturally
+          }
+          if (this.executionAborted) return
+        }
+      }
+
+      if (this.executionAborted) return
+
       // Shelter provides safe R evaluation with automatic cleanup
       const Shelter = await new webR.Shelter()
 
       try {
         const result = await Shelter.captureR(code)
+
+        if (this.executionAborted) return
 
         for (const output of result.output) {
           yield {
@@ -326,11 +353,19 @@ local({
           }
         }
       } finally {
-        Shelter.purge()
+        try {
+          Shelter.purge()
+        } catch {
+          // Shelter may be invalid if WebR was destroyed by interrupt
+        }
       }
 
-      this.setStatus('idle')
+      if (!this.executionAborted) {
+        this.setStatus('idle')
+      }
     } catch (error) {
+      if (this.executionAborted) return
+
       const errorMessage = error instanceof Error ? error.message : String(error)
       const traceback = error instanceof Error && error.stack ? error.stack.split('\n') : []
 
@@ -346,18 +381,21 @@ local({
   }
 
   async interrupt(): Promise<void> {
+    this.executionAborted = true
+
     if (this.webR) {
       try {
         await (this.webR as { interrupt: () => void }).interrupt()
+        this.setStatus('idle')
       } catch {
         // Interrupt failed, recreate the kernel
+        // connect() will set status to 'idle' on success
         await this.disconnect()
         if (this.config) {
           await this.connect(this.config)
         }
       }
     }
-    this.setStatus('idle')
   }
 
   onStatusChange(callback: (status: KernelStatus) => void): () => void {

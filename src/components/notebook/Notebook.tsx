@@ -446,14 +446,18 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
       if (event.key === 'a' && selectedCellId) {
         event.preventDefault()
         const index = notebook.cells.findIndex((c) => c.id === selectedCellId)
-        actions.addCell('code', index, 'python')
+        const selectedCell = notebook.cells[index]
+        const lang: CellLanguage = selectedCell && isCodeCell(selectedCell) ? selectedCell.language : 'python'
+        actions.addCell('code', index, lang)
         return
       }
 
       if (event.key === 'b' && selectedCellId) {
         event.preventDefault()
         const index = notebook.cells.findIndex((c) => c.id === selectedCellId)
-        actions.addCell('code', index + 1, 'python')
+        const selectedCell = notebook.cells[index]
+        const lang: CellLanguage = selectedCell && isCodeCell(selectedCell) ? selectedCell.language : 'python'
+        actions.addCell('code', index + 1, lang)
         return
       }
 
@@ -564,6 +568,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
                   onMoveUp={() => handleMoveCell(cell.id, 'up')}
                   onMoveDown={() => handleMoveCell(cell.id, 'down')}
                   onDuplicate={() => handleDuplicateCell(cell.id)}
+                  onChangeLanguage={(lang) => actions.setCellLanguage(cell.id, lang)}
                   canMoveUp={index > 0}
                   canMoveDown={index < notebook.cells.length - 1}
                 />
@@ -592,7 +597,16 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(function Noteb
                   className="gap-1 text-muted-foreground hover:text-foreground"
                 >
                   <Plus className="h-4 w-4" />
-                  Code
+                  Python
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAddCodeCell('r')}
+                  className="gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4" />
+                  R
                 </Button>
                 <Button
                   variant="ghost"
