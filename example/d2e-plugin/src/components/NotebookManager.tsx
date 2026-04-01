@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import './NotebookManager.scss'
 import {
   Notebook,
   type NotebookHandle,
@@ -16,7 +17,9 @@ import { NotebookHeader } from './NotebookHeader'
 import { EmptyState } from './EmptyState'
 import { DeleteDialog } from './DeleteDialog'
 import { RenameDialog } from './RenameDialog'
+import { CreateNotebookDialog } from './CreateNotebookDialog'
 import { CodingAssistant } from './CodingAssistant'
+import { Snackbar } from './Snackbar'
 
 const pyodideKernel = new PyodideKernel()
 const webRKernel = new WebRKernel()
@@ -50,12 +53,18 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
   const [activeNotebook, setActiveNotebook] = useState<NotebookRecord | null>(null)
   const [notebookData, setNotebookData] = useState<NotebookData>(createEmptyNotebook())
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<NotebookRecord | null>(null)
   const [renameTarget, setRenameTarget] = useState<NotebookRecord | null>(null)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showFeedback = useCallback((type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message })
+  }, [])
 
   // Fetch auth token for pyqe environment
   useEffect(() => {
@@ -93,16 +102,15 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
     if (!datasetId) return
     try {
       setLoading(true)
-      setError(null)
       const list = await notebookApi.getNotebookList(datasetId)
       setNotebooks(list)
     } catch (err) {
-      setError('Failed to load notebooks.')
       console.error('Failed to fetch notebooks:', err)
+      showFeedback('error', 'Failed to load notebooks.')
     } finally {
       setLoading(false)
     }
-  }, [datasetId])
+  }, [datasetId, showFeedback])
 
   useEffect(() => {
     fetchNotebooks()
@@ -140,19 +148,28 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
     [notebooks]
   )
 
-  const handleCreate = useCallback(async () => {
-    if (!datasetId) return
-    try {
-      const empty = createEmptyNotebook()
-      const content = serializeIpynb(empty)
-      const created = await notebookApi.createNotebook(datasetId, 'Untitled', content)
-      setNotebooks((prev) => [...prev, created])
-      setActiveNotebook(created)
-    } catch (err) {
-      console.error('Failed to create notebook:', err)
-      setError('Failed to create notebook.')
-    }
-  }, [datasetId])
+  const handleCreate = useCallback(() => {
+    setCreateDialogOpen(true)
+  }, [])
+
+  const handleCreateConfirm = useCallback(
+    async (name: string) => {
+      setCreateDialogOpen(false)
+      if (!datasetId) return
+      try {
+        const empty = createEmptyNotebook()
+        const content = serializeIpynb(empty)
+        const created = await notebookApi.createNotebook(datasetId, name, content)
+        setNotebooks((prev) => [...prev, created])
+        setActiveNotebook(created)
+        showFeedback('success', `Notebook "${name}" created.`)
+      } catch (err) {
+        console.error('Failed to create notebook:', err)
+        showFeedback('error', 'Failed to create notebook.')
+      }
+    },
+    [datasetId, showFeedback]
+  )
 
   const handleSave = useCallback(async () => {
     if (!activeNotebook || !datasetId) return
@@ -167,26 +184,29 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       )
       setActiveNotebook(updated)
       setNotebooks((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
+      showFeedback('success', 'Notebook saved.')
     } catch (err) {
       console.error('Failed to save notebook:', err)
-      setError('Failed to save notebook.')
+      showFeedback('error', 'Failed to save notebook.')
     }
-  }, [activeNotebook, notebookData, datasetId])
+  }, [activeNotebook, notebookData, datasetId, showFeedback])
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget || !datasetId) return
     try {
       await notebookApi.deleteNotebook(deleteTarget.id, datasetId)
+      const name = deleteTarget.name
       setNotebooks((prev) => prev.filter((n) => n.id !== deleteTarget.id))
       if (activeNotebook?.id === deleteTarget.id) {
         setActiveNotebook(null)
       }
       setDeleteTarget(null)
+      showFeedback('success', `Notebook "${name}" deleted.`)
     } catch (err) {
       console.error('Failed to delete notebook:', err)
-      setError('Failed to delete notebook.')
+      showFeedback('error', 'Failed to delete notebook.')
     }
-  }, [deleteTarget, activeNotebook, datasetId])
+  }, [deleteTarget, activeNotebook, datasetId, showFeedback])
 
   const handleRenameConfirm = useCallback(
     async (newName: string) => {
@@ -204,12 +224,13 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
           setActiveNotebook(updated)
         }
         setRenameTarget(null)
+        showFeedback('success', 'Notebook renamed.')
       } catch (err) {
         console.error('Failed to rename notebook:', err)
-        setError('Failed to rename notebook.')
+        showFeedback('error', 'Failed to rename notebook.')
       }
     },
-    [renameTarget, activeNotebook, datasetId]
+    [renameTarget, activeNotebook, datasetId, showFeedback]
   )
 
   const handleToggleShare = useCallback(async () => {
@@ -226,9 +247,9 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       setNotebooks((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
     } catch (err) {
       console.error('Failed to toggle sharing:', err)
-      setError('Failed to update sharing.')
+      showFeedback('error', 'Failed to update sharing.')
     }
-  }, [activeNotebook, datasetId])
+  }, [activeNotebook, datasetId, showFeedback])
 
   const handleImport = useCallback(() => {
     fileInputRef.current?.click()
@@ -249,15 +270,16 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
           const created = await notebookApi.createNotebook(datasetId, name, content)
           setNotebooks((prev) => [...prev, created])
           setActiveNotebook(created)
+          showFeedback('success', `Notebook "${name}" imported.`)
         } catch (err) {
           console.error('Failed to import notebook:', err)
-          setError('Failed to import notebook. Check that it is a valid .ipynb or starboard file.')
+          showFeedback('error', 'Failed to import notebook. Check that it is a valid .ipynb or starboard file.')
         }
       }
       reader.readAsText(file)
       event.target.value = ''
     },
-    [datasetId]
+    [datasetId, showFeedback]
   )
 
   const getNotebookContent = useCallback(() => {
@@ -278,6 +300,8 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
     URL.revokeObjectURL(url)
   }, [activeNotebook, notebookData])
 
+  const notebookNames = useMemo(() => notebooks.map((n) => n.name), [notebooks])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -287,16 +311,7 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden">
-      {error && (
-        <div className="mx-4 mt-2 rounded border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-          {error}
-          <button className="ml-2 underline" onClick={() => setError(null)}>
-            Dismiss
-          </button>
-        </div>
-      )}
-
+    <div className="notebook-manager">
       <NotebookHeader
         notebooks={notebooks}
         activeNotebook={activeNotebook}
@@ -319,19 +334,19 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
         onChange={handleFileChange}
       />
 
-      <main className="relative flex flex-1 min-h-0 overflow-hidden">
-        {!activeNotebook ? (
-          <div className="flex-1 p-8">
-            <EmptyState
-              hasNotebooks={notebooks.length > 0}
-              onCreate={handleCreate}
-              onImport={handleImport}
-            />
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-auto p-8" style={{ flex: chatOpen ? '6 1 0%' : '1 1 100%' }}>
-              <div className="notebook-card rounded-lg bg-white p-8 shadow-sm">
+      {!activeNotebook ? (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <EmptyState
+            hasNotebooks={notebooks.length > 0}
+            onCreate={handleCreate}
+            onImport={handleImport}
+          />
+        </div>
+      ) : (
+        <div className="notebook-manager__card">
+          <div className="notebook-manager__content">
+            <div className="notebook-manager__root">
+              <div className="notebook-card">
                 <Notebook
                   ref={notebookRef}
                   data={notebookData}
@@ -354,19 +369,29 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
               getToken={getToken}
             />
 
-            <button
-              className="fixed bottom-8 right-12 z-50 flex h-14 w-14 items-center justify-center rounded-full border-none bg-[#000080] text-white shadow-lg outline-none hover:bg-[#000080]/90 focus:outline-none"
-              onClick={() => setChatOpen((prev) => !prev)}
-              title="Coding Assistant"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
-                <path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/>
-              </svg>
-            </button>
-          </>
-        )}
-      </main>
+            <div className="notebook-manager__fab">
+              <button
+                className="notebook-fab"
+                onClick={() => setChatOpen((prev) => !prev)}
+                title="Coding Assistant"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+                  <path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {createDialogOpen && (
+        <CreateNotebookDialog
+          onConfirm={handleCreateConfirm}
+          onCancel={() => setCreateDialogOpen(false)}
+          existingNames={notebookNames}
+        />
+      )}
 
       {deleteTarget && (
         <DeleteDialog
@@ -379,8 +404,17 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       {renameTarget && (
         <RenameDialog
           currentName={renameTarget.name}
+          existingNames={notebookNames}
           onConfirm={handleRenameConfirm}
           onCancel={() => setRenameTarget(null)}
+        />
+      )}
+
+      {feedback && (
+        <Snackbar
+          type={feedback.type}
+          message={feedback.message}
+          onClose={() => setFeedback(null)}
         />
       )}
     </div>

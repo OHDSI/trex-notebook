@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type FC } from 'react'
+import './Dialog.scss'
 
 interface DeleteDialogProps {
   notebookName: string
@@ -6,35 +7,39 @@ interface DeleteDialogProps {
   onCancel: () => void
 }
 
-export function DeleteDialog({ notebookName, onConfirm, onCancel }: DeleteDialogProps) {
+export const DeleteDialog: FC<DeleteDialogProps> = ({ notebookName, onConfirm, onCancel }) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     dialogRef.current?.showModal()
   }, [])
 
+  const handleConfirm = () => {
+    onConfirm()
+    onCancel()
+  }
+
   return (
-    <dialog
-      ref={dialogRef}
-      className="rounded-lg border bg-background p-6 shadow-lg backdrop:bg-black/50"
-      onClose={onCancel}
-    >
-      <h2 className="text-lg font-semibold">Delete Notebook</h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Are you sure you want to delete <strong>{notebookName}</strong>? This action cannot be
-        undone.
-      </p>
-      <div className="mt-4 flex justify-end gap-2">
-        <button
-          className="rounded border border-input px-3 py-1.5 text-sm hover:bg-accent"
-          onClick={onCancel}
-        >
+    <dialog ref={dialogRef} className="portal-dialog" onClose={onCancel}>
+      <div className="portal-dialog__title">
+        <span>Delete Notebook</span>
+        <button className="portal-dialog__close" onClick={onCancel} aria-label="Close">
+          ×
+        </button>
+      </div>
+      <hr className="portal-dialog__divider" />
+      <div className="portal-dialog__content">
+        <div>Are you sure you want to delete the following notebook:</div>
+        <div>
+          <strong>&quot;{notebookName}&quot;</strong>?
+        </div>
+      </div>
+      <hr className="portal-dialog__divider" />
+      <div className="portal-dialog__actions">
+        <button className="portal-dialog__btn portal-dialog__btn--outlined" onClick={onCancel}>
           Cancel
         </button>
-        <button
-          className="rounded bg-destructive px-3 py-1.5 text-sm text-destructive-foreground hover:bg-destructive/90"
-          onClick={onConfirm}
-        >
+        <button className="portal-dialog__btn portal-dialog__btn--primary" onClick={handleConfirm}>
           Delete
         </button>
       </div>

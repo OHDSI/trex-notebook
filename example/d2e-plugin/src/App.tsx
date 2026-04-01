@@ -33,7 +33,7 @@ export default function App(props: PortalProps) {
   }, [props.appId])
 
   return (
-    <div className="flex flex-col text-foreground" style={{ height: 'calc(100vh - 96px)' }}>
+    <div className="flex flex-col text-foreground" style={{ height: '100%' }}>
       <NotebookManager
         datasetId={mergedProps.datasetId ?? ''}
         userId={mergedProps.username ?? mergedProps.idpUserId ?? ''}
