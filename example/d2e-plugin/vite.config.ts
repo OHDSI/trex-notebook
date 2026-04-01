@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
-import path from 'path'
+import basicSsl from "@vitejs/plugin-basic-ssl"
+import react from '@vitejs/plugin-react'
 import { readFileSync, writeFileSync } from 'fs'
+import path from 'path'
 import type { Plugin } from 'vite'
+import { defineConfig } from 'vite'
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 
 // Read .R source files at build time and inject via define.
 // Vite's ?raw uses JS template literals which mangle R escape sequences
@@ -70,7 +71,18 @@ function postBuildPatchPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cssInjectedByJsPlugin(), postBuildPatchPlugin()],
+  plugins: [
+      react(),
+      tailwindcss(),
+      cssInjectedByJsPlugin(),
+      postBuildPatchPlugin(),
+      basicSsl({
+        name: "notebook-localhost",
+        domains: ["localhost"],
+        certDir: "./.devServer/cert",
+      })
+      ],
+      
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '../../src'),
@@ -82,10 +94,12 @@ export default defineConfig({
   },
   server: {
     port: 8084,
+    cors: true,
     headers: {
       // Required for WebR SharedArrayBuffer support
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Access-Control-Expose-Headers':'Content-Encoding'
     },
   },
   define: {
