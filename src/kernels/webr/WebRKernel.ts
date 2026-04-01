@@ -301,10 +301,29 @@ local({
         if (this.executionAborted) return
 
         for (const output of result.output) {
+          let text: string
+          if (typeof output.data === 'string') {
+            text = output.data
+          } else if (output.data == null) {
+            text = ''
+          } else {
+            // WebR proxy object — try toJs() then fall back to JSON
+            try {
+              const proxy = output.data as Record<string, unknown>
+              if (typeof proxy.toJs === 'function') {
+                const js = await (proxy.toJs as () => Promise<unknown>)()
+                text = typeof js === 'string' ? js : JSON.stringify(js) ?? ''
+              } else {
+                text = JSON.stringify(output.data) ?? ''
+              }
+            } catch {
+              text = ''
+            }
+          }
           yield {
             type: 'stream',
             name: output.type === 'stderr' ? 'stderr' : 'stdout',
-            text: output.data,
+            text,
           } as KernelOutput
         }
 

@@ -2241,6 +2241,7 @@ createEvidenceSynthesisModuleSpecifications <- function(evidenceSynthesisAnalysi
 createTreatmentPatternsModuleSpecifications <- function(cohorts,
                                                         includeTreatments = NULL,
                                                         indexDateOffset = NULL,
+                                                        windowEnd = NULL,
                                                         minEraDuration = 0,
                                                         splitEventCohorts = NULL,
                                                         splitTime = NULL,
@@ -2254,10 +2255,17 @@ createTreatmentPatternsModuleSpecifications <- function(cohorts,
                                                         censorType = "minCellCount",
                                                         overlapMethod = "truncate",
                                                         concatTargets = TRUE) {
+  # windowEnd maps to indexDateOffset in TreatmentPatterns >= 2.0:
+  # it defines the number of days after the target cohort start to include events.
+  # If both are supplied, indexDateOffset takes precedence.
+  if (!is.null(windowEnd) && is.null(indexDateOffset)) {
+    indexDateOffset <- windowEnd
+  }
   moduleSettings <- list(
     cohorts = cohorts,
     includeTreatments = includeTreatments,
     indexDateOffset = indexDateOffset,
+    windowEnd = windowEnd,
     minEraDuration = minEraDuration,
     splitEventCohorts = splitEventCohorts,
     splitTime = splitTime,
@@ -2320,7 +2328,9 @@ createCohortSurvivalModuleSpecifications <- function(targetCohortId,
 CohortGeneratorModule <- setRefClass("CohortGeneratorModule",
   methods = list(
     createCohortSharedResourceSpecifications = function(cohortDefinitionSet) {
-      createCohortSharedResourceSpecifications(cohortDefinitionSet)
+      # Explicitly look up the standalone global function to avoid infinite
+      # recursion caused by R5 resolving the method name before .GlobalEnv.
+      get("createCohortSharedResourceSpecifications", envir = .GlobalEnv)(cohortDefinitionSet)
     },
     createModuleSpecifications = function(generateStats = TRUE) {
       createCohortGeneratorModuleSpecifications(generateStats = generateStats)
