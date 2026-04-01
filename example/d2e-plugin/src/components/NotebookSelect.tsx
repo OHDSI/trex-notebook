@@ -35,7 +35,7 @@ export const NotebookSelect: FC<NotebookSelectProps> = ({ notebooks, activeNoteb
         type="button"
       >
         <span className="notebook-select__trigger-label">
-          {activeNotebook?.name ?? (notebooks[0]?.name ?? 'Notebooks')}
+          {activeNotebook?.name ?? 'Select notebook...'}
         </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"

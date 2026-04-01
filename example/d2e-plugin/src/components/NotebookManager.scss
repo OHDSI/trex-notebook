@@ -32,6 +32,15 @@ $primary: #000080;
     overflow: auto;
   }
 
+  &__empty {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    min-height: 0;
+  }
+
   &__fab {
     position: absolute;
     right: 50px;

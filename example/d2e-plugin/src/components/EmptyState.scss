@@ -5,48 +5,52 @@ $primary: #000080;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 64px 48px;
+  gap: 20px;
+  width: 100%;
+  max-width: 640px;
+  padding: 80px 64px;
   border: 2px dashed #c8d4e8;
-  border-radius: 12px;
+  border-radius: 16px;
   background: white;
-  min-width: 480px;
   text-align: center;
 
   &__icon {
     color: $primary;
-    opacity: 0.4;
+    opacity: 0.35;
   }
 
   &__title {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: $primary;
     margin: 0;
   }
 
   &__subtitle {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     color: #6b7280;
     margin: 0;
-    max-width: 360px;
-    line-height: 1.5;
+    max-width: 400px;
+    line-height: 1.6;
   }
 
   &__actions {
     display: flex;
     gap: 12px;
-    margin-top: 8px;
+    margin-top: 12px;
   }
 
   &__btn {
-    padding: 10px 28px;
+    padding: 11px 32px;
     border-radius: 50px;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
     transition: opacity 0.15s;
+    // Reset browser defaults
+    -webkit-appearance: none;
+    appearance: none;
 
     &--primary {
       background-color: $primary;

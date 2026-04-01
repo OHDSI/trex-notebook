@@ -335,7 +335,7 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       />
 
       {!activeNotebook ? (
-        <div className="flex flex-1 items-center justify-center p-8">
+        <div className="notebook-manager__empty">
           <EmptyState
             hasNotebooks={notebooks.length > 0}
             onCreate={handleCreate}
