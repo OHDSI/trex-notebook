@@ -21,16 +21,17 @@
       "uiplugins": {
         "researcher": [
           {
-            "enabled": true,
+            "visible": true,
+            "defaultEnabled": false,
             "type": "app",
-            "featureFlag": "notebook",
-            "name": "Notebooks",
-            "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
+            "featureFlag": "Webr-notebook",
+            "name": "WebR-Notebooks",
+            "nameI18nKey": "UI_PLUGIN_WEBR_NOTEBOOKS",
             "pluginPath": "/resources/notebook/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "route": "notebook",
+            "route": "webrnotebook",
             "data": {
               "uiFilesUrl": "https://$$FQDN$$/"
             }
