@@ -4,9 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "dev": "concurrently --kill-others \"bun build:watch\" \"bun preview\"",
+    "preview": "vite preview --mode=development",
+    "build:dev": "vite build --mode=development",
+    "build:watch": "vite build --mode=development --watch"
   },
   "trex": {
     "ui": {
@@ -19,16 +21,17 @@
       "uiplugins": {
         "researcher": [
           {
-            "enabled": true,
+            "visible": true,
+            "defaultEnabled": false,
             "type": "app",
-            "featureFlag": "notebook",
-            "name": "Notebooks",
-            "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
+            "featureFlag": "Webr-notebook",
+            "name": "WebR-Notebooks",
+            "nameI18nKey": "UI_PLUGIN_WEBR_NOTEBOOKS",
             "pluginPath": "/resources/notebook/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "route": "notebook",
+            "route": "webrnotebook",
             "data": {
               "uiFilesUrl": "https://$$FQDN$$/"
             }
@@ -41,6 +44,7 @@
     "@nlux/react": "^2.17.1",
     "@nlux/themes": "^2.17.1",
     "axios": "^1.7.0",
+    "concurrently": "^9.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "single-spa-react": "^6.0.2"
@@ -50,10 +54,12 @@
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "sass": "^1.98.0",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4",
+    "vite": "^7.3.1",
     "vite-plugin-css-injected-by-js": "^3.5.2"
   }
 }

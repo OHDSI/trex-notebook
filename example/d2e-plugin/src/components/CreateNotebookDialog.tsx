@@ -2,20 +2,18 @@ import { useEffect, useRef, useState, type FC } from 'react'
 import './Dialog.scss'
 import './CreateNotebookDialog.scss'
 
-interface RenameDialogProps {
-  currentName: string
-  existingNames: string[]
-  onConfirm: (newName: string) => void
+interface CreateNotebookDialogProps {
+  onConfirm: (name: string) => void
   onCancel: () => void
+  existingNames: string[]
 }
 
-export const RenameDialog: FC<RenameDialogProps> = ({
-  currentName,
-  existingNames,
+export const CreateNotebookDialog: FC<CreateNotebookDialogProps> = ({
   onConfirm,
   onCancel,
+  existingNames,
 }) => {
-  const [name, setName] = useState(currentName)
+  const [name, setName] = useState('Untitled')
   const [error, setError] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -28,10 +26,7 @@ export const RenameDialog: FC<RenameDialogProps> = ({
   const handleConfirm = () => {
     const trimmed = name.trim()
     if (!trimmed) return
-    if (
-      trimmed.toUpperCase() !== currentName.toUpperCase() &&
-      existingNames.some((n) => n.toUpperCase() === trimmed.toUpperCase())
-    ) {
+    if (existingNames.some((n) => n.toUpperCase() === trimmed.toUpperCase())) {
       setError(true)
       return
     }
@@ -48,7 +43,7 @@ export const RenameDialog: FC<RenameDialogProps> = ({
   return (
     <dialog ref={dialogRef} className="portal-dialog" onClose={onCancel}>
       <div className="portal-dialog__title">
-        <span>Edit Notebook Title</span>
+        <span>Create Notebook</span>
         <button className="portal-dialog__close" onClick={onCancel} aria-label="Close">
           ×
         </button>
@@ -56,7 +51,7 @@ export const RenameDialog: FC<RenameDialogProps> = ({
       <hr className="portal-dialog__divider" />
       <div className="portal-dialog__content portal-dialog__content--form">
         <div className="create-notebook-dialog__input-wrapper">
-          <label className="create-notebook-dialog__label">Notebook Title</label>
+          <label className="create-notebook-dialog__label">Notebook Name</label>
           <input
             ref={inputRef}
             type="text"
@@ -67,7 +62,7 @@ export const RenameDialog: FC<RenameDialogProps> = ({
             }}
             onKeyDown={handleKeyDown}
             className="create-notebook-dialog__input"
-            placeholder="Enter a title"
+            placeholder="Enter a name"
           />
           {error && (
             <div className="create-notebook-dialog__error">
@@ -86,7 +81,7 @@ export const RenameDialog: FC<RenameDialogProps> = ({
           onClick={handleConfirm}
           disabled={!name.trim()}
         >
-          Save
+          Create
         </button>
       </div>
     </dialog>

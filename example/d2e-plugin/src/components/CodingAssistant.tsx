@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo, type FC } from 'react'
-import { AiChat, useAsStreamAdapter, type ChatItem } from '@nlux/react'
-import type { StreamSend } from '@nlux/react'
+import { useState, useMemo, type FC } from 'react'
+import { AiChat, type ChatItem } from '@nlux/react'
+import { useAsStreamAdapter, type StreamSend } from '@nlux/react'
 import '@nlux/themes/nova.css'
+import './CodingAssistant.scss'
 
 interface CodingAssistantProps {
   open: boolean
@@ -65,7 +66,6 @@ function createSend(
 
 export const CodingAssistant: FC<CodingAssistantProps> = ({
   open,
-  onClose,
   datasetId,
   getNotebookContent,
   getToken,
@@ -79,59 +79,17 @@ export const CodingAssistant: FC<CodingAssistantProps> = ({
   )
   const adapter = useAsStreamAdapter(send, [send])
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation()
-        onClose()
-      }
-    },
-    [onClose]
-  )
-
   if (!open) return null
 
   return (
-    <div
-      className="flex flex-col border-l border-border h-full overflow-hidden"
-      style={{ flex: '4 1 0%', minWidth: 0 }}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="flex items-center justify-between border-b border-border bg-white px-3 py-2">
-        <span className="text-sm font-medium text-[#000080]">Coding Assistant</span>
-        <button
-          className="bg-transparent border-0 outline-none cursor-pointer text-sm font-medium hover:opacity-70"
-          style={{ color: '#000080' }}
-          onClick={onClose}
-        >
-          Close
-        </button>
-      </div>
-      <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-        <AiChat
-          adapter={adapter}
-          displayOptions={{ colorScheme: 'light' }}
-          composerOptions={{ placeholder: 'Type your query' }}
-          messageOptions={{ waitTimeBeforeStreamCompletion: 3000 }}
-          initialConversation={conversationHistory}
-        />
-      </div>
-      <style>{`
-        .nlux_msg_sent,
-        .nlux-comp-sendIcon-container {
-          background-color: #000080 !important;
-        }
-        .nlux-comp-chatItem--received {
-          padding-right: 30px !important;
-        }
-        .nlux-AiChat-root {
-          height: 100% !important;
-        }
-        .nlux-chatSegments-container {
-          flex: 1 1 0%;
-          overflow: auto;
-        }
-      `}</style>
+    <div className="chat-container">
+      <AiChat
+        adapter={adapter}
+        displayOptions={{ colorScheme: 'light' }}
+        composerOptions={{ placeholder: 'Type your query' }}
+        messageOptions={{ waitTimeBeforeStreamCompletion: 3000 }}
+        initialConversation={conversationHistory}
+      />
     </div>
   )
 }

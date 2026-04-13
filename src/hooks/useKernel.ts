@@ -29,14 +29,15 @@ export interface UseKernelReturn {
   kernelStatuses: Map<string, KernelStatus>
 }
 
-/** Compute a single status from multiple kernel statuses */
+/** Compute a single status from multiple kernel statuses.
+ *  A single kernel error does not block the whole notebook — only report
+ *  'error' if every kernel has failed. */
 function computeAggregateStatus(statuses: KernelStatus[]): KernelStatus {
   if (statuses.length === 0) return 'disconnected'
-  if (statuses.some((s) => s === 'error')) return 'error'
   if (statuses.some((s) => s === 'busy')) return 'busy'
-  if (statuses.some((s) => s === 'connecting')) return 'connecting'
-  if (statuses.every((s) => s === 'idle')) return 'idle'
   if (statuses.some((s) => s === 'idle')) return 'idle'
+  if (statuses.some((s) => s === 'connecting')) return 'connecting'
+  if (statuses.every((s) => s === 'error')) return 'error'
   return 'disconnected'
 }
 
@@ -86,7 +87,7 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
   const getKernelForLanguage = useCallback(
     (language: 'python' | 'r'): KernelPlugin | null => {
       const k = kernels.find(
-        (k) => k.languages.includes(language) && k.status !== 'disconnected'
+        (k) => k.languages.includes(language) && (k.status === 'idle' || k.status === 'busy')
       )
       return k ?? null
     },

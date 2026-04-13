@@ -1,0 +1,35 @@
+$primary: #000080;
+
+.create-notebook-dialog {
+  &__input-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    font-weight: 400;
+  }
+
+  &__input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid $primary;
+    outline: none;
+    font-size: 1rem;
+    padding: 6px 0;
+    color: #1a1a2e;
+    background: transparent;
+    font-family: inherit;
+  }
+
+  &__error {
+    color: #ef4444;
+    font-size: 0.8rem;
+    text-align: left;
+  }
+}
