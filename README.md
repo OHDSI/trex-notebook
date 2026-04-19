@@ -204,6 +204,3 @@ notebookRef.current?.redo()
 - Tailwind CSS + shadcn/ui
 - Vitest + Playwright for testing
 
-## License
-
-MIT
