@@ -1,206 +1,54 @@
-# React Notebook
+# trex-notebook
 
-A lightweight, reusable React notebook component supporting Python, R, and Markdown cells with pluggable kernel backends.
+A monorepo of **trex UI plugins**. Each plugin under `plugins/` is a standalone
+package (its own `package.json`, build and tests) loaded by the trex backend via
+its `trex.ui.routes` registration.
 
-## Features
+## Plugins
 
-- **Multi-language support**: Python (via Pyodide), R (via WebR), and Markdown cells
-- **Pluggable kernels**: In-browser execution with Pyodide/WebR or remote Jupyter servers
-- **Real-time output streaming**: See results as they're generated
-- **Drag-and-drop cell reordering**: Intuitive cell management with @dnd-kit
-- **Jupyter notebook compatibility**: Import/export .ipynb files
-- **Undo/redo support**: Full history tracking for notebook operations
-- **Keyboard shortcuts**: Jupyter-style shortcuts for efficient editing
-- **Syntax highlighting**: CodeMirror 6 with Python and R support
-- **Performance optimized**: Content-visibility virtualization for large notebooks
+| Plugin | Package | Route | What it is |
+|--------|---------|-------|------------|
+| [`plugins/notebook`](plugins/notebook) | `@trex/notebook` | `/plugins/trex/notebook` | React notebook component (Python via Pyodide, R via WebR, Markdown). |
+| [`plugins/sibyl`](plugins/sibyl) | `trex-sibyl` | `/plugins/sibyl` | ATLAS-plugin host shell for Strategus; authenticates against trex. See `plugins/sibyl/README.md`. |
 
-## Installation
+Each plugin is built independently:
 
-```bash
-npm install
-```
+    cd plugins/<name>
+    npm install
+    npm run build
 
-## Quick Start
+## Run sibyl on trex (published image)
 
-```tsx
-import { Notebook, PyodideKernel, createEmptyNotebook } from 'react-notebook'
+The root `docker-compose.yml` runs the trex backend from its published image
+(`ghcr.io/ohdsi/trexsql:latest`) and serves the built **sibyl** plugin at
+`/plugins/sibyl`. (Per the current setup it mounts only sibyl; the notebook
+plugin is registered but not mounted by this compose yet — serving it on trex
+needs a base-path build, a follow-up.)
 
-const kernel = new PyodideKernel()
+    cd plugins/sibyl && npm install && npm run build:trex   # base = /plugins/sibyl/
+    cd ../.. && docker compose up -d                        # trex + postgres
 
-function App() {
-  return (
-    <Notebook
-      initialData={createEmptyNotebook()}
-      kernels={[kernel]}
-      defaultKernelConfig={{ type: 'pyodide' }}
-      onChange={(data) => console.log('Notebook changed:', data)}
-    />
-  )
-}
-```
+Open **`http://localhost:8011/plugins/sibyl`** (8011 = HTTP, 8010 = TLS; ports
+are offset from trex's own compose so both can run in parallel).
 
-## Development
+### First admin
 
-```bash
-# Start development server
-npm run dev
+trex seeds no user; the sign-up matching `ADMIN_EMAIL` (set to
+`admin@ohdsi.local` in the compose) — or the first user — is promoted to admin.
+A bootstrap admin has been created for local dev:
 
-# Run unit tests
-npm test
+- **Username:** `admin@ohdsi.local`
+- **Password:** `password` (change after first login)
 
-# Run tests with coverage
-npm run test:coverage
+To (re)create it, see `plugins/sibyl/README.md` → "First admin".
 
-# Run E2E tests
-npm run test:e2e
-
-# Type check
-npm run typecheck
-
-# Lint
-npm run lint
-
-# Production build
-npm run build
-```
-
-## Project Structure
+## Layout
 
 ```
-src/
-├── components/notebook/   # React components (Notebook, Cell, CodeCell, etc.)
-├── hooks/                 # React hooks (useNotebook, useKernel, useCellExecution)
-├── kernels/               # Kernel implementations (Pyodide, WebR, Jupyter)
-├── types/                 # TypeScript type definitions
-└── utils/                 # Serialization utilities
-
-example/                   # Demo application
-tests/
-├── unit/                  # Vitest unit tests
-├── integration/           # Kernel integration tests
-└── e2e/                   # Playwright E2E tests
+trex-notebook/
+  plugins/
+    notebook/   # @trex/notebook — React notebook (standalone)
+    sibyl/      # trex-sibyl — ATLAS-plugin host shell (standalone)
+  docker-compose.yml   # runs trex (published image) + serves sibyl
+  secrets/             # trex-init-generated keys (gitignored)
 ```
-
-## Kernel Configuration
-
-### Pyodide (In-Browser Python)
-
-```tsx
-import { PyodideKernel } from 'react-notebook'
-
-const kernel = new PyodideKernel()
-
-// Connect with optional preloaded packages
-await kernel.connect({
-  type: 'pyodide',
-  preloadPackages: ['numpy', 'pandas'],
-})
-```
-
-### WebR (In-Browser R)
-
-```tsx
-import { WebRKernel } from 'react-notebook'
-
-const kernel = new WebRKernel()
-
-await kernel.connect({
-  type: 'webr',
-  preloadPackages: ['ggplot2'],
-})
-```
-
-**Note**: WebR requires COOP/COEP headers for SharedArrayBuffer support:
-
-```
-Cross-Origin-Opener-Policy: same-origin
-Cross-Origin-Embedder-Policy: require-corp
-```
-
-### Jupyter (Remote Server)
-
-```tsx
-import { JupyterKernel } from 'react-notebook'
-
-const kernel = new JupyterKernel()
-
-await kernel.connect({
-  type: 'jupyter',
-  serverUrl: 'http://localhost:8888',
-  kernelId: 'your-kernel-id',
-  token: 'your-token',
-})
-```
-
-## Import/Export
-
-```tsx
-import { toIpynb, fromIpynb, serializeIpynb, parseIpynb } from 'react-notebook'
-
-// Export to .ipynb format
-const ipynb = toIpynb(notebookData)
-const json = serializeIpynb(notebookData)
-
-// Import from .ipynb
-const data = fromIpynb(ipynbObject)
-const data = parseIpynb(jsonString)
-```
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `Shift+Enter` | Run cell |
-| `Ctrl/Cmd+Z` | Undo |
-| `Ctrl/Cmd+Shift+Z` | Redo |
-| `Arrow Up/Down` | Navigate cells |
-| `A` | Add cell above |
-| `B` | Add cell below |
-| `M` | Convert to markdown |
-| `Y` | Convert to code |
-| `Delete/Backspace` | Delete cell |
-| `Escape` | Deselect cell |
-
-## API Reference
-
-### NotebookProps
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `initialData` | `NotebookData` | Initial notebook data |
-| `data` | `NotebookData` | Controlled notebook data |
-| `onChange` | `(data: NotebookData) => void` | Called when notebook changes |
-| `kernels` | `KernelPlugin[]` | Available kernel instances |
-| `defaultKernelConfig` | `KernelConfig` | Auto-connect kernel config |
-| `showToolbar` | `boolean` | Show/hide toolbar (default: true) |
-| `showLineNumbers` | `boolean` | Show line numbers (default: true) |
-| `readOnly` | `boolean` | Disable editing (default: false) |
-| `virtualizationThreshold` | `number` | Cell count for virtualization (default: 50) |
-
-### NotebookHandle (ref)
-
-```tsx
-const notebookRef = useRef<NotebookHandle>(null)
-
-// Available methods
-notebookRef.current?.getNotebookData()
-notebookRef.current?.setNotebookData(data)
-notebookRef.current?.addCell('code', position, 'python')
-notebookRef.current?.deleteCell(cellId)
-notebookRef.current?.moveCell(cellId, newPosition)
-notebookRef.current?.runCell(cellId)
-notebookRef.current?.runAllCells()
-notebookRef.current?.interruptExecution()
-notebookRef.current?.undo()
-notebookRef.current?.redo()
-```
-
-## Tech Stack
-
-- React 18 + TypeScript
-- Vite
-- CodeMirror 6 (via @uiw/react-codemirror)
-- @dnd-kit for drag-and-drop
-- Tailwind CSS + shadcn/ui
-- Vitest + Playwright for testing
-

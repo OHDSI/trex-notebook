@@ -1,6 +1,6 @@
 # Speckit files
 CLAUDE.md
-specs/
+/specs/
 .specify/
 .claude/
 

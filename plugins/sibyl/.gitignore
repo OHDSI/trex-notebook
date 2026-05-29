@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.local
+.DS_Store
+# test-only built fixture bundle (rebuilt on demand)
+public/plugins/

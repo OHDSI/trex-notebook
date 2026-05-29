@@ -3,6 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "trex": {
+    "ui": {
+      "routes": [
+        { "path": "/notebook", "dir": "dist", "spa": true }
+      ]
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
