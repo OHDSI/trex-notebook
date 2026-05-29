@@ -1,0 +1,1094 @@
+{
+  "summary": {
+    "fixture": "anti-vegf-kidney.json",
+    "numModules": 7,
+    "preservedCount": 1377,
+    "modifiedCount": 348,
+    "droppedCount": 41,
+    "addedCount": 367,
+    "preservationRate": 0.7797281993204983,
+    "topGaps": [
+      "moduleSpecifications[1].version",
+      "moduleSpecifications[1].remoteRepo",
+      "moduleSpecifications[1].remoteUsername",
+      "moduleSpecifications[2].version",
+      "moduleSpecifications[2].remoteRepo",
+      "moduleSpecifications[2].remoteUsername",
+      "moduleSpecifications[2].settings.timeToEventSettings",
+      "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
+      "moduleSpecifications[2].settings.aggregateCovariateSettings",
+      "moduleSpecifications[3].version",
+      "moduleSpecifications[3].remoteRepo",
+      "moduleSpecifications[3].remoteUsername",
+      "moduleSpecifications[4].version",
+      "moduleSpecifications[4].remoteRepo",
+      "moduleSpecifications[4].remoteUsername",
+      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
+      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
+      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
+      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
+      "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label"
+    ]
+  },
+  "droppedDetail": [
+    {
+      "path": "moduleSpecifications[1].version",
+      "orig": "0.0.7"
+    },
+    {
+      "path": "moduleSpecifications[1].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[1].remoteUsername",
+      "orig": "ohdsi"
+    },
+    {
+      "path": "moduleSpecifications[2].version",
+      "orig": "0.3.2"
+    },
+    {
+      "path": "moduleSpecifications[2].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[2].remoteUsername",
+      "orig": "ohdsi"
+    },
+    {
+      "path": "moduleSpecifications[2].settings.timeToEventSettings",
+      "orig": [
+        {
+          "targetIds": [
+            1782483,
+            1782481,
+            1782480,
+            1782482,
+            1782483001,
+            1782481001,
+            1782482001,
+            1782480101
+          ],
+          "outcomeIds": 1782164,
+          "attr_class": "timeToEventSettings"
+        }
+      ]
+    },
+    {
+      "path": "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
+      "orig": [
+        {
+          "targetCohortDefinitionIds": [
+            1782483,
+            1782481,
+            1782480,
+            1782482,
+            1782483001,
+            1782481001,
+            1782482001,
+            1782480101
+          ],
+          "outcomeCohortDefinitionIds": 1782164,
+          "dechallengeStopInterval": 30,
+          "dechallengeEvaluationWindow": 30,
+          "attr_class": "dechallengeRechallengeSettings"
+        }
+      ]
+    },
+    {
+      "path": "moduleSpecifications[2].settings.aggregateCovariateSettings",
+      "orig": [
+        {
+          "targetIds": [
+            1782483,
+            1782481,
+            1782480,
+            1782482,
+            1782483001,
+            1782481001,
+            1782482001,
+            1782480101
+          ],
+          "outcomeIds": 1782164,
+          "minPriorObservation": 365,
+          "riskWindowStart": 1,
+          "startAnchor": "cohort start",
+          "riskWindowEnd": 0,
+          "endAnchor": "cohort end",
+          "covariateSettings": {
+            "temporal": false,
+            "temporalSequence": false,
+            "DemographicsGender": true,
+            "DemographicsAgeGroup": true,
+            "DemographicsRace": true,
+            "DemographicsEthnicity": true,
+            "DemographicsIndexYear": true,
+            "DemographicsIndexMonth": true,
+            "ConditionGroupEraLongTerm": true,
+            "ConditionGroupEraShortTerm": true,
+            "DrugGroupEraLongTerm": true,
+            "DrugGroupEraShortTerm": true,
+            "DrugGroupEraOverlapping": true,
+            "ProcedureOccurrenceLongTerm": true,
+            "ProcedureOccurrenceShortTerm": true,
+            "DeviceExposureLongTerm": true,
+            "DeviceExposureShortTerm": true,
+            "MeasurementLongTerm": true,
+            "MeasurementShortTerm": true,
+            "MeasurementRangeGroupLongTerm": true,
+            "ObservationLongTerm": true,
+            "ObservationShortTerm": true,
+            "CharlsonIndex": true,
+            "Dcsi": true,
+            "Chads2": true,
+            "Chads2Vasc": true,
+            "includedCovariateConceptIds": [],
+            "includedCovariateIds": [],
+            "addDescendantsToInclude": false,
+            "excludedCovariateConceptIds": [],
+            "addDescendantsToExclude": false,
+            "shortTermStartDays": -30,
+            "mediumTermStartDays": -180,
+            "endDays": 0,
+            "longTermStartDays": -365,
+            "attr_class": "covariateSettings",
+            "attr_fun": "getDbDefaultCovariateData"
+          },
+          "attr_class": "aggregateCovariateSettings"
+        }
+      ]
+    },
+    {
+      "path": "moduleSpecifications[3].version",
+      "orig": "0.0.6"
+    },
+    {
+      "path": "moduleSpecifications[3].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[3].remoteUsername",
+      "orig": "ohdsi"
+    },
+    {
+      "path": "moduleSpecifications[4].version",
+      "orig": "0.1.0"
+    },
+    {
+      "path": "moduleSpecifications[4].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[4].remoteUsername",
+      "orig": "ohdsi"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
+      "orig": 1
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
+      "orig": "cohort start"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
+      "orig": 0
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
+      "orig": "cohort end"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label",
+      "orig": [
+        "Age group",
+        "Gender: female",
+        "Race",
+        "Ethnicity",
+        "Medical history: General",
+        "Medical history: Cardiovascular disease",
+        "Medical history: Neoplasms",
+        "Medication use",
+        "Charlson comorbidity index",
+        "CHADS2Vasc",
+        "DCSI"
+      ]
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.analysisId",
+      "orig": [
+        3,
+        1,
+        4,
+        5,
+        210,
+        210,
+        210,
+        410,
+        901,
+        904,
+        902
+      ]
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.covariateIds",
+      "orig": [
+        null,
+        "8532001",
+        null,
+        null,
+        "4006969210,438409210,4212540210,255573210,201606210,4182210210,440383210,201820210,318800210,192671210,439727210,432867210,316866210,4104000210,433736210,80180210,255848210,140168210,4030518210,80809210,435783210,4279309210,81893210,81902210,197494210,4134440210",
+        "313217210,381591210,317576210,321588210,316139210,4185932210,321052210,440417210,444247210",
+        "4044013210,432571210,40481902210,443392210,4112853210,4180790210,443388210,197508210,200962210",
+        "21601782410,21602796410,21604686410,21604389410,21603932410,21601387410,21602028410,21600960410,21601664410,21601744410,21601461410,21600046410,21603248410,21600712410,21603890410,21601853410,21604254410,21604489410,21604752410",
+        "1901",
+        "1904",
+        "1902"
+      ]
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_row.names",
+      "orig": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_spec",
+      "orig": {
+        "cols": {
+          "label": [],
+          "analysisId": [],
+          "covariateIds": []
+        },
+        "default": [],
+        "delim": ","
+      }
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_problems",
+      "orig": {}
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmDiagnosticThresholds.attritionFractionThreshold",
+      "orig": 1
+    },
+    {
+      "path": "moduleSpecifications[5].version",
+      "orig": "0.1.3"
+    },
+    {
+      "path": "moduleSpecifications[5].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[5].remoteUsername",
+      "orig": "ohdsi"
+    },
+    {
+      "path": "moduleSpecifications[5].settings.sccsAnalysisList[0].createStudyPopulationArgs.minAge",
+      "orig": 18
+    },
+    {
+      "path": "moduleSpecifications[5].settings.sccsAnalysisList[1].createStudyPopulationArgs.minAge",
+      "orig": 18
+    },
+    {
+      "path": "moduleSpecifications[5].settings.sccsAnalysisList[2].createStudyPopulationArgs.minAge",
+      "orig": 18
+    },
+    {
+      "path": "moduleSpecifications[5].settings.analysesToExclude.exposureId",
+      "orig": [
+        1782481,
+        1782482,
+        1782483,
+        1782482,
+        1782483,
+        1782481
+      ]
+    },
+    {
+      "path": "moduleSpecifications[5].settings.analysesToExclude.analysisId",
+      "orig": [
+        1,
+        1,
+        2,
+        2,
+        3,
+        3
+      ]
+    },
+    {
+      "path": "moduleSpecifications[5].settings.analysesToExclude.attr_out.attrs",
+      "orig": {
+        "dim": [
+          3,
+          3
+        ],
+        "dimnames": {
+          "exposureId": [
+            "exposureId=1782483",
+            "exposureId=1782481",
+            "exposureId=1782482"
+          ],
+          "analysisId": [
+            "analysisId=1",
+            "analysisId=2",
+            "analysisId=3"
+          ]
+        }
+      }
+    },
+    {
+      "path": "moduleSpecifications[5].settings.analysesToExclude.attr_row.names",
+      "orig": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "path": "moduleSpecifications[5].settings.sccsDiagnosticThresholds.timeTrendPThreshold",
+      "orig": 0.05
+    },
+    {
+      "path": "moduleSpecifications[5].settings.sccsDiagnosticThresholds.preExposurePThreshold",
+      "orig": 0.05
+    },
+    {
+      "path": "moduleSpecifications[6].version",
+      "orig": "0.1.0"
+    },
+    {
+      "path": "moduleSpecifications[6].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[6].remoteUsername",
+      "orig": "ohdsi"
+    }
+  ],
+  "modifiedDetail": [
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].id",
+      "orig": 1782483001,
+      "rs": 1782164
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].name",
+      "orig": "[SOS Phenotype Devt] aflibercept exposures after new use with 3 exposures in 21-70d windows -  in cohorts: (1782480) starts within D: -99999 - D: 0 of cohort start and ends D: -99999 - D: 99999 of cohort start, first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females aged 18+",
+      "rs": "[SOS] End-stage renal disease"
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].id",
+      "orig": 1782481001,
+      "rs": 1782483001
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].name",
+      "orig": "[SOS Phenotype Devt] ranibizumab exposures after new use with 3 exposures in 21-70d windows -  in cohorts: (1782480) starts within D: -99999 - D: 0 of cohort start and ends D: -99999 - D: 99999 of cohort start, first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females aged 18+",
+      "rs": "[SOS Phenotype Devt] aflibercept exposures after new use with 3 exposures in 21-70d windows"
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2].id",
+      "orig": 1782482001,
+      "rs": 1782481001
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2].name",
+      "orig": "[SOS Phenotype Devt] bevacizumab exposures after new use with 3 exposures in 21-70d windows -  in cohorts: (1782480) starts within D: -99999 - D: 0 of cohort start and ends D: -99999 - D: 99999 of cohort start, first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females aged 18+",
+      "rs": "[SOS Phenotype Devt] ranibizumab exposures after new use with 3 exposures in 21-70d windows"
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[3].id",
+      "orig": 1782480101,
+      "rs": 1782480
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[3].name",
+      "orig": "[SOS Phenotype Devt] persons with blinding diseases -  first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females aged 18+",
+      "rs": "[SOS Phenotype Devt] persons with blinding diseases"
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.analysisList[0].outcomes",
+      "orig": 1,
+      "rs": [
+        1
+      ]
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.analysisList[0].tars",
+      "orig": 1,
+      "rs": [
+        1
+      ]
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].description",
+      "orig": "Cohort method, On treatment",
+      "rs": "Cohort method"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.removeDuplicateSubjects",
+      "orig": false,
+      "rs": "keep all"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.restrictToCommonPeriod",
+      "orig": false,
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.removeDuplicateSubjects",
+      "orig": "keep first",
+      "rs": "keep all"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.censorAtNewRiskWindow",
+      "orig": true,
+      "rs": false
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createPsArgs.control.cvRepetitions",
+      "orig": 10,
+      "rs": 1
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.stratified",
+      "orig": false,
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.cvRepetitions",
+      "orig": 10,
+      "rs": 1
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[1].outcomeId",
+      "orig": 1001,
+      "rs": "1001"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[2].outcomeId",
+      "orig": 1002,
+      "rs": "1002"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[3].outcomeId",
+      "orig": 1003,
+      "rs": "1003"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[4].outcomeId",
+      "orig": 1004,
+      "rs": "1004"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[5].outcomeId",
+      "orig": 1005,
+      "rs": "1005"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[6].outcomeId",
+      "orig": 1006,
+      "rs": "1006"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[7].outcomeId",
+      "orig": 1007,
+      "rs": "1007"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[8].outcomeId",
+      "orig": 1008,
+      "rs": "1008"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[9].outcomeId",
+      "orig": 1009,
+      "rs": "1009"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[10].outcomeId",
+      "orig": 1010,
+      "rs": "1010"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[11].outcomeId",
+      "orig": 1011,
+      "rs": "1011"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[12].outcomeId",
+      "orig": 1012,
+      "rs": "1012"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[13].outcomeId",
+      "orig": 1013,
+      "rs": "1013"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[14].outcomeId",
+      "orig": 1014,
+      "rs": "1014"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[15].outcomeId",
+      "orig": 1015,
+      "rs": "1015"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[16].outcomeId",
+      "orig": 1016,
+      "rs": "1016"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[17].outcomeId",
+      "orig": 1017,
+      "rs": "1017"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[18].outcomeId",
+      "orig": 1018,
+      "rs": "1018"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[19].outcomeId",
+      "orig": 1019,
+      "rs": "1019"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[20].outcomeId",
+      "orig": 1020,
+      "rs": "1020"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[21].outcomeId",
+      "orig": 1021,
+      "rs": "1021"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[22].outcomeId",
+      "orig": 1022,
+      "rs": "1022"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[23].outcomeId",
+      "orig": 1023,
+      "rs": "1023"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[24].outcomeId",
+      "orig": 1024,
+      "rs": "1024"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[25].outcomeId",
+      "orig": 1025,
+      "rs": "1025"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[26].outcomeId",
+      "orig": 1026,
+      "rs": "1026"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[27].outcomeId",
+      "orig": 1027,
+      "rs": "1027"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[28].outcomeId",
+      "orig": 1028,
+      "rs": "1028"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[29].outcomeId",
+      "orig": 1029,
+      "rs": "1029"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[30].outcomeId",
+      "orig": 1030,
+      "rs": "1030"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[31].outcomeId",
+      "orig": 1031,
+      "rs": "1031"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[32].outcomeId",
+      "orig": 1032,
+      "rs": "1032"
+    }
+  ],
+  "addedDetail": [
+    {
+      "path": "moduleSpecifications[1].settings.irWashoutPeriod",
+      "rs": 0
+    },
+    {
+      "path": "moduleSpecifications[2].settings.analysis",
+      "rs": {
+        "aggregateCovariateSettings": [
+          {
+            "targetIds": [
+              1782164,
+              1782483,
+              1782481,
+              1782480,
+              1782482,
+              1782483001,
+              1782481001,
+              1782482001
+            ],
+            "outcomeIds": [],
+            "riskWindowStart": 1,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": 0,
+            "endAnchor": "cohort end",
+            "covariateSettings": {
+              "useDemographicsGender": true,
+              "useDemographicsAge": true,
+              "useDemographicsAgeGroup": true,
+              "useDemographicsRace": true,
+              "useDemographicsEthnicity": true,
+              "useDemographicsIndexYear": true,
+              "useDemographicsIndexMonth": true,
+              "useDemographicsIndexYearMonth": true,
+              "useDemographicsPriorObservationTime": true,
+              "useDemographicsPostObservationTime": true,
+              "useDemographicsTimeInCohort": true,
+              "useConditionOccurrenceLongTerm": true,
+              "useConditionOccurrenceShortTerm": true,
+              "useDrugExposureLongTerm": true,
+              "useDrugExposureShortTerm": true,
+              "useProcedureOccurrenceLongTerm": true,
+              "useProcedureOccurrenceShortTerm": true,
+              "attr_class": "covariateSettings"
+            },
+            "minPriorObservation": 365,
+            "outcomeWashoutDays": 365,
+            "casePreTargetDuration": 365,
+            "casePostOutcomeDuration": 365,
+            "extractNonCaseCovariates": true,
+            "caseCovariateSettings": {
+              "temporal": false,
+              "temporalSequence": false,
+              "ConditionGroupEraDuring": true,
+              "DrugGroupEraDuring": true,
+              "ProcedureOccurrenceDuring": true,
+              "DeviceExposureDuring": true,
+              "MeasurementDuring": true,
+              "ObservationDuring": true,
+              "VisitConceptCountDuring": true,
+              "includedCovariateConceptIds": [],
+              "addDescendantsToInclude": false,
+              "excludedCovariateConceptIds": [],
+              "addDescendantsToExclude": false,
+              "includedCovariateIds": [],
+              "attr_class": "covariateSettings",
+              "attr_fun": "Characterization::getDbDuringCovariateData"
+            },
+            "attr_class": [
+              "AggregateCovariateSettings",
+              "AnalysisSettings"
+            ]
+          },
+          {
+            "targetIds": [
+              1782164,
+              1782483,
+              1782481,
+              1782480,
+              1782482,
+              1782483001,
+              1782481001,
+              1782482001
+            ],
+            "outcomeIds": [
+              1782164
+            ],
+            "riskWindowStart": -365,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": -1,
+            "endAnchor": "cohort start",
+            "covariateSettings": {
+              "useDemographicsGender": true,
+              "useDemographicsAge": true,
+              "useDemographicsAgeGroup": true,
+              "useDemographicsRace": true,
+              "useDemographicsEthnicity": true,
+              "useDemographicsIndexYear": true,
+              "useDemographicsIndexMonth": true,
+              "useDemographicsIndexYearMonth": true,
+              "useDemographicsPriorObservationTime": true,
+              "useDemographicsPostObservationTime": true,
+              "useDemographicsTimeInCohort": true,
+              "useConditionOccurrenceLongTerm": true,
+              "useConditionOccurrenceShortTerm": true,
+              "useDrugExposureLongTerm": true,
+              "useDrugExposureShortTerm": true,
+              "useProcedureOccurrenceLongTerm": true,
+              "useProcedureOccurrenceShortTerm": true,
+              "attr_class": "covariateSettings"
+            },
+            "minPriorObservation": 365,
+            "outcomeWashoutDays": 365,
+            "casePreTargetDuration": 365,
+            "casePostOutcomeDuration": 365,
+            "extractNonCaseCovariates": true,
+            "caseCovariateSettings": {
+              "temporal": false,
+              "temporalSequence": false,
+              "ConditionGroupEraDuring": true,
+              "DrugGroupEraDuring": true,
+              "ProcedureOccurrenceDuring": true,
+              "DeviceExposureDuring": true,
+              "MeasurementDuring": true,
+              "ObservationDuring": true,
+              "VisitConceptCountDuring": true,
+              "includedCovariateConceptIds": [],
+              "addDescendantsToInclude": false,
+              "excludedCovariateConceptIds": [],
+              "addDescendantsToExclude": false,
+              "includedCovariateIds": [],
+              "attr_class": "covariateSettings",
+              "attr_fun": "Characterization::getDbDuringCovariateData"
+            },
+            "attr_class": [
+              "AggregateCovariateSettings",
+              "AnalysisSettings"
+            ]
+          },
+          {
+            "targetIds": [
+              1782164,
+              1782483,
+              1782481,
+              1782480,
+              1782482,
+              1782483001,
+              1782481001,
+              1782482001
+            ],
+            "outcomeIds": [
+              1782164
+            ],
+            "riskWindowStart": 0,
+            "startAnchor": "cohort start",
+            "riskWindowEnd": 0,
+            "endAnchor": "cohort end",
+            "covariateSettings": {
+              "useDemographicsGender": true,
+              "useDemographicsAge": true,
+              "useDemographicsAgeGroup": true,
+              "useDemographicsRace": true,
+              "useDemographicsEthnicity": true,
+              "useDemographicsIndexYear": true,
+              "useDemographicsIndexMonth": true,
+              "useDemographicsIndexYearMonth": true,
+              "useDemographicsPriorObservationTime": true,
+              "useDemographicsPostObservationTime": true,
+              "useDemographicsTimeInCohort": true,
+              "useConditionOccurrenceLongTerm": true,
+              "useConditionOccurrenceShortTerm": true,
+              "useDrugExposureLongTerm": true,
+              "useDrugExposureShortTerm": true,
+              "useProcedureOccurrenceLongTerm": true,
+              "useProcedureOccurrenceShortTerm": true,
+              "attr_class": "covariateSettings"
+            },
+            "minPriorObservation": 365,
+            "outcomeWashoutDays": 365,
+            "casePreTargetDuration": 365,
+            "casePostOutcomeDuration": 365,
+            "extractNonCaseCovariates": true,
+            "caseCovariateSettings": {
+              "temporal": false,
+              "temporalSequence": false,
+              "ConditionGroupEraDuring": true,
+              "DrugGroupEraDuring": true,
+              "ProcedureOccurrenceDuring": true,
+              "DeviceExposureDuring": true,
+              "MeasurementDuring": true,
+              "ObservationDuring": true,
+              "VisitConceptCountDuring": true,
+              "includedCovariateConceptIds": [],
+              "addDescendantsToInclude": false,
+              "excludedCovariateConceptIds": [],
+              "addDescendantsToExclude": false,
+              "includedCovariateIds": [],
+              "attr_class": "covariateSettings",
+              "attr_fun": "Characterization::getDbDuringCovariateData"
+            },
+            "attr_class": [
+              "AggregateCovariateSettings",
+              "AnalysisSettings"
+            ]
+          }
+        ],
+        "timeToEventSettings": [
+          {
+            "targetIds": [
+              1782164,
+              1782483,
+              1782481,
+              1782480,
+              1782482,
+              1782483001,
+              1782481001,
+              1782482001
+            ],
+            "outcomeIds": [
+              1782164
+            ],
+            "attr_class": [
+              "TimeToEventSettings",
+              "AnalysisSettings"
+            ]
+          }
+        ],
+        "dechallengeRechallengeSettings": [
+          {
+            "targetCohortDefinitionIds": [
+              1782164,
+              1782483,
+              1782481,
+              1782480,
+              1782482,
+              1782483001,
+              1782481001,
+              1782482001
+            ],
+            "outcomeCohortDefinitionIds": [
+              1782164
+            ],
+            "dechallengeStopInterval": 30,
+            "dechallengeEvaluationWindow": 30,
+            "attr_class": [
+              "DechallengeRechallengeSettings",
+              "AnalysisSettings"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "path": "moduleSpecifications[2].settings.minCharacterizationMean",
+      "rs": 0.01
+    },
+    {
+      "path": "moduleSpecifications[2].settings.mode",
+      "rs": "CohortIncidence"
+    },
+    {
+      "path": "moduleSpecifications[2].settings.minSMD",
+      "rs": 0.01
+    },
+    {
+      "path": "moduleSpecifications[2].settings.minCovariateCount",
+      "rs": 5
+    },
+    {
+      "path": "moduleSpecifications[2].settings.outputTable",
+      "rs": "characterization_cohorts"
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[4]",
+      "rs": {
+        "id": 1782482001,
+        "name": "[SOS Phenotype Devt] bevacizumab exposures after new use with 3 exposures in 21-70d windows",
+        "cohortId": 1782482001
+      }
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].cohortId",
+      "rs": 1782164
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].cohortId",
+      "rs": 1782483001
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2].cohortId",
+      "rs": 1782481001
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[3].cohortId",
+      "rs": 1782480
+    },
+    {
+      "path": "moduleSpecifications[3].settings.irDesign.timeAtRiskDefs[0].label",
+      "rs": "TAR 1"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.DemographicsAge",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.DemographicsPriorObservationTime",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.DemographicsPostObservationTime",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.DemographicsTimeInCohort",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.DemographicsIndexYearMonth",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.VisitCountLongTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.VisitCountShortTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.VisitConceptCountLongTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.VisitConceptCountShortTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopulationArgs",
+      "rs": {
+        "riskWindowStart": 1,
+        "startAnchor": "cohort start",
+        "riskWindowEnd": 0,
+        "endAnchor": "cohort end"
+      }
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.attr_fun",
+      "rs": "createStudyPopulation"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createPsArgs.control.doItAll",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createPsArgs.control.syncCV",
+      "rs": false
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].stratifyByPsArgs",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].truncateIptwArgs",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].trimByPsArgs",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.doItAll",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.syncCV",
+      "rs": false
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[1].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[2].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[3].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[4].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[5].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[6].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[7].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[8].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[9].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[10].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[11].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[12].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[13].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[14].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[15].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[16].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[17].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[18].priorOutcomeLookback",
+      "rs": null
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[19].priorOutcomeLookback",
+      "rs": null
+    }
+  ]
+}

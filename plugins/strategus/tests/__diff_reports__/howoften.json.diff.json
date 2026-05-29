@@ -1,0 +1,150 @@
+{
+  "summary": {
+    "fixture": "howoften.json",
+    "numModules": 2,
+    "preservedCount": 70,
+    "modifiedCount": 12,
+    "droppedCount": 3,
+    "addedCount": 11,
+    "preservationRate": 0.8235294117647058,
+    "topGaps": [
+      "moduleSpecifications[1].version",
+      "moduleSpecifications[1].remoteRepo",
+      "moduleSpecifications[1].remoteUsername"
+    ]
+  },
+  "droppedDetail": [
+    {
+      "path": "moduleSpecifications[1].version",
+      "orig": "0.2.0"
+    },
+    {
+      "path": "moduleSpecifications[1].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[1].remoteUsername",
+      "orig": "ohdsi"
+    }
+  ],
+  "modifiedDetail": [
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[0].id",
+      "orig": 863001,
+      "rs": 862
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[0].name",
+      "orig": "Cognitive impairment, incident",
+      "rs": "Earliest event of Alzheimer's disease derived from Imfeld, 2"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[1].id",
+      "orig": 1071,
+      "rs": 863
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[1].name",
+      "orig": "persons at risk at start of year 2012-2022 with 365d prior observation",
+      "rs": "Cognitive impairment, incident"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.outcomeDefs[0].id",
+      "orig": 2,
+      "rs": 1
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.outcomeDefs[1].id",
+      "orig": 1,
+      "rs": 2
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.analysisList[0].targets",
+      "orig": 863001,
+      "rs": [
+        863001
+      ]
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.analysisList[0].outcomes",
+      "orig": 1,
+      "rs": [
+        1
+      ]
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.analysisList[1].targets",
+      "orig": 1071,
+      "rs": [
+        1071
+      ]
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.analysisList[1].tars",
+      "orig": 2,
+      "rs": [
+        2
+      ]
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.studyWindow.startDate",
+      "orig": "2012-01-01",
+      "rs": "20120101"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.studyWindow.endDate",
+      "orig": "2022-12-31",
+      "rs": "20221231"
+    }
+  ],
+  "addedDetail": [
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[2]",
+      "rs": {
+        "id": 1071,
+        "name": "persons at risk at start of year 2012-2022 with 365d prior observation",
+        "cohortId": 1071
+      }
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[0].cohortId",
+      "rs": 862
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.targetDefs[1].cohortId",
+      "rs": 863
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[0].label",
+      "rs": "TAR 1"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[1].label",
+      "rs": "TAR 2"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[2].label",
+      "rs": "TAR 3"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[3].label",
+      "rs": "TAR 4"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[4].label",
+      "rs": "TAR 5"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[5].label",
+      "rs": "TAR 6"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[6].label",
+      "rs": "TAR 7"
+    },
+    {
+      "path": "moduleSpecifications[1].settings.irDesign.timeAtRiskDefs[7].label",
+      "rs": "TAR 8"
+    }
+  ]
+}
