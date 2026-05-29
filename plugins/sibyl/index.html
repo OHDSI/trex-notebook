@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategus Shell</title>
+    <script src="%BASE_URL%vendor/system.js"></script>
+    <script src="%BASE_URL%vendor/named-register.js"></script>
+    <script src="%BASE_URL%vendor/vue.global.js"></script>
+    <script src="%BASE_URL%vendor/vue-router.global.js"></script>
+    <script>
+      (function () {
+        'use strict'
+        if (!window.System) { console.error('[SystemJS] window.System unavailable'); return }
+        if (!window.Vue) { console.error('[SystemJS] window.Vue unavailable'); return }
+
+        window.System.register('vue', [], function (_export) {
+          return {
+            setters: [],
+            execute: function () {
+              _export('default', window.Vue)
+              Object.keys(window.Vue).forEach(function (key) { _export(key, window.Vue[key]) })
+            },
+          }
+        })
+
+        window.System.register('vue-router', [], function (_export) {
+          return {
+            setters: [],
+            execute: function () {
+              _export('default', window.VueRouter)
+              _export('createRouter', window.VueRouter.createRouter)
+              _export('createWebHistory', window.VueRouter.createWebHistory)
+              _export('useRouter', window.VueRouter.useRouter)
+              _export('useRoute', window.VueRouter.useRoute)
+            },
+          }
+        })
+
+        // Plugins that externalize vuetify resolve to the host singleton on
+        // window.__atlasVuetify (set in src/main.ts).
+        window.System.register('vuetify', [], function (_export) {
+          return { setters: [], execute: function () { _export('default', window.__atlasVuetify) } }
+        })
+        window.System.register('vuetify/components', [], function (_export) {
+          return { setters: [], execute: function () { _export(window.__atlasVuetify ? window.__atlasVuetify.components || {} : {}) } }
+        })
+        window.System.register('vuetify/directives', [], function (_export) {
+          return { setters: [], execute: function () { _export(window.__atlasVuetify ? window.__atlasVuetify.directives || {} : {}) } }
+        })
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
