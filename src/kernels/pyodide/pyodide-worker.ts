@@ -1,13 +1,6 @@
 import type { PyodideInterface } from 'pyodide'
 import strategusSpecBuilderSource from './strategus_spec_builder.py?raw'
 
-// Import all pyqe package files as raw strings for virtual filesystem installation
-const pyqeModules: Record<string, string> = import.meta.glob('./pyqe/**/*.{py,yaml,yml,json,txt}', {
-  query: '?raw',
-  eager: true,
-  import: 'default',
-}) as Record<string, string>
-
 export interface WorkerRequest {
   type: 'init' | 'execute' | 'interrupt'
   id: string
@@ -91,46 +84,7 @@ def _capture_open_figures():
       console.warn('Failed to load Strategus spec builder:', e)
     }
 
-    // Autoload pyqe package into Pyodide virtual filesystem
-    try {
-      for (const [importPath, source] of Object.entries(pyqeModules)) {
-        // Convert import path (e.g. "./pyqe/api/base.py") to FS path
-        const fsPath = '/home/pyodide/' + importPath.replace('./', '')
-        const dir = fsPath.substring(0, fsPath.lastIndexOf('/'))
-        pyodide.runPython(`
-import os
-os.makedirs("${dir}", exist_ok=True)
-`)
-        pyodide.FS.writeFile(fsPath, source)
-      }
-      // Add to Python path so "import pyqe" works
-      pyodide.runPython(`
-import sys
-if "/home/pyodide" not in sys.path:
-    sys.path.insert(0, "/home/pyodide")
-`)
-    } catch (e) {
-      console.warn('Failed to load pyqe package:', e)
-    }
-
-    // Pre-install pyqe's core dependencies (needed for `from pyqe import *`)
-    try {
-      await pyodide.loadPackage('micropip')
-      await pyodide.runPythonAsync(`
-import micropip
-_pyqe_deps = ['requests', 'pyyaml', 'six', 'PyJWT', 'python-dotenv']
-for _dep in _pyqe_deps:
-    try:
-        await micropip.install(_dep)
-    except Exception:
-        pass
-del _pyqe_deps, _dep
-`)
-    } catch (e) {
-      console.warn('Failed to pre-install pyqe dependencies:', e)
-    }
-
-    // Set Python environment variables (e.g. PYQE_URL, TOKEN)
+    // Set Python environment variables
     if (envVars && Object.keys(envVars).length > 0) {
       try {
         const envEntries = Object.entries(envVars)
