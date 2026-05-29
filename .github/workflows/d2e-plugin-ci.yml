@@ -1,0 +1,127 @@
+name: d2e-plugin build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Enter tag for release version
+        required: false
+        type: string
+      artifacttype:
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+          - "OSS-release"
+          - "Project"
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+    paths:
+      - "example/d2e-plugin/**"
+      - "src/**"
+      - ".github/workflows/d2e-plugin-ci.yml"
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "example/d2e-plugin/**"
+      - "src/**"
+      - ".github/workflows/d2e-plugin-ci.yml"
+
+env:
+  NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: example/d2e-plugin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@data2evidence"
+
+      - name: Install root dependencies
+        run: npm ci
+        working-directory: .
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install plugin dependencies
+        run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Update version
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' && -n "${{ github.event.inputs.tag }}" ]]; then
+            RELEASE_VERSION=${{ github.event.inputs.tag }}
+            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
+          else
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          fi
+
+      - name: Build
+        run: npx vite build
+
+      - name: Verify build output
+        run: |
+          test -f resources/notebook/lifecycles.js || { echo "ERROR: resources/notebook/lifecycles.js not found"; exit 1; }
+          head -c 200 resources/notebook/lifecycles.js | grep -q "System.register" || { echo "ERROR: output is not SystemJS format"; exit 1; }
+          echo "Build output OK: resources/notebook/lifecycles.js ($(wc -c < resources/notebook/lifecycles.js) bytes)"
+
+      - name: Patch private flag for publish
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
+
+      - name: Use Node.js - OSS Develop
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
+        with:
+          node-version: "22"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+          scope: "@data2evidence"
+
+      - name: Use Node.js - OSS Release
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-release'
+        with:
+          node-version: "22"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/"
+          scope: "@data2evidence"
+
+      - name: Use Node.js - Project
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'Project'
+        with:
+          node-version: "22"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/ms/npm/registry/"
+          scope: "@data2evidence"
+
+      - name: Publish
+        env:
+          SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
+        run: |
+          if [[ $SHOULD_PUBLISH == true ]]; then
+            npm publish
+          else
+            npm pack
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: d2e-plugin-lifecycles
+          path: example/d2e-plugin/resources/notebook/
+          retention-days: 14
