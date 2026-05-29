@@ -1,4 +1,24 @@
 {
   "version": "1.0",
-  "plugins": []
+  "plugins": [
+    {
+      "id": "strategus-plugin",
+      "name": "Strategus",
+      "version": "0.1.0",
+      "entryPoint": "strategus-plugin/index.system.js",
+      "menuItems": [
+        {
+          "id": "strategus.main",
+          "name": "Strategus",
+          "route": "/plugins/strategus-plugin/",
+          "icon": "mdi-flask-outline",
+          "order": 50
+        }
+      ],
+      "metadata": {
+        "author": "OHDSI",
+        "description": "Strategus Analysis Specification Builder"
+      }
+    }
+  ]
 }

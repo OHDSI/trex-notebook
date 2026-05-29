@@ -1,0 +1,43 @@
+{
+  "summary": {
+    "fixture": "breast-cancer-screen.json",
+    "numModules": 2,
+    "preservedCount": 7,
+    "modifiedCount": 1,
+    "droppedCount": 3,
+    "addedCount": 1,
+    "preservationRate": 0.6363636363636364,
+    "topGaps": [
+      "moduleSpecifications[1].version",
+      "moduleSpecifications[1].remoteRepo",
+      "moduleSpecifications[1].remoteUsername"
+    ]
+  },
+  "droppedDetail": [
+    {
+      "path": "moduleSpecifications[1].version",
+      "orig": "0.1.0"
+    },
+    {
+      "path": "moduleSpecifications[1].remoteRepo",
+      "orig": "github.com"
+    },
+    {
+      "path": "moduleSpecifications[1].remoteUsername",
+      "orig": "ohdsi"
+    }
+  ],
+  "modifiedDetail": [
+    {
+      "path": "moduleSpecifications[1].settings",
+      "orig": "[array]",
+      "rs": "object"
+    }
+  ],
+  "addedDetail": [
+    {
+      "path": "moduleSpecifications[1].settings.modelDesignList",
+      "rs": []
+    }
+  ]
+}

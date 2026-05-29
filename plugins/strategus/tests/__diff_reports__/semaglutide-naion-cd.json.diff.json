@@ -1,0 +1,15 @@
+{
+  "summary": {
+    "fixture": "semaglutide-naion-cd.json",
+    "numModules": 2,
+    "preservedCount": 128,
+    "modifiedCount": 0,
+    "droppedCount": 0,
+    "addedCount": 0,
+    "preservationRate": 1,
+    "topGaps": []
+  },
+  "droppedDetail": [],
+  "modifiedDetail": [],
+  "addedDetail": []
+}

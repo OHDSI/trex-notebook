@@ -1,0 +1,24 @@
+{
+  "summary": {
+    "fixture": "dr-screening.json",
+    "numModules": 2,
+    "preservedCount": 32,
+    "modifiedCount": 0,
+    "droppedCount": 0,
+    "addedCount": 2,
+    "preservationRate": 1,
+    "topGaps": []
+  },
+  "droppedDetail": [],
+  "modifiedDetail": [],
+  "addedDetail": [
+    {
+      "path": "moduleSpecifications[1].settings.stratify",
+      "rs": false
+    },
+    {
+      "path": "moduleSpecifications[1].settings.concatTargets",
+      "rs": false
+    }
+  ]
+}

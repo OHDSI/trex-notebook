@@ -1,0 +1,27 @@
+{
+  "name": "strategus-plugin",
+  "version": "0.1.0",
+  "description": "Strategus Analysis Specification Builder for Atlas3",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "pinia": "^2.1.0",
+    "vue": "^3.4.0",
+    "vuetify": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "single-spa-vue": "^3.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^5.4.21",
+    "vite-plugin-vuetify": "^2.0.0",
+    "vitest": "^3.2.1",
+    "vue-tsc": "^2.1.0"
+  }
+}

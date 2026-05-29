@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "fixture": "strategus-template-es.json",
+    "numModules": 1,
+    "preservedCount": 0,
+    "modifiedCount": 0,
+    "droppedCount": 0,
+    "addedCount": 2,
+    "preservationRate": 1,
+    "topGaps": []
+  },
+  "droppedDetail": [],
+  "modifiedDetail": [],
+  "addedDetail": [
+    {
+      "path": "sharedResources[0]",
+      "rs": {
+        "cohortDefinitions": [],
+        "attr_class": [
+          "CohortDefinitionSharedResources",
+          "SharedResources"
+        ]
+      }
+    },
+    {
+      "path": "moduleSpecifications[1]",
+      "rs": {
+        "module": "EvidenceSynthesisModule",
+        "settings": {
+          "evidenceSynthesisAnalysisList": [
+            {
+              "evidenceSynthesisAnalysisId": 1,
+              "evidenceSynthesisDescription": "Bayesian random-effects alpha 0.05 - adaptive grid",
+              "evidenceSynthesisSource": {
+                "sourceMethod": "CohortMethod",
+                "likelihoodApproximation": "adaptive grid"
+              },
+              "controlType": "outcome",
+              "alpha": 0.05,
+              "attr_class": [
+                "BayesianMetaAnalysis",
+                "EvidenceSynthesisAnalysis"
+              ],
+              "chainLength": 1100000,
+              "burnIn": 100000,
+              "subSampleFrequency": 100,
+              "priorSd": [
+                2,
+                0.5
+              ],
+              "robust": false,
+              "df": 4,
+              "seed": 1
+            },
+            {
+              "evidenceSynthesisAnalysisId": 2,
+              "evidenceSynthesisDescription": "Bayesian random-effects alpha 0.05 - grid with gradients",
+              "evidenceSynthesisSource": {
+                "sourceMethod": "SelfControlledCaseSeries",
+                "likelihoodApproximation": "grid with gradients"
+              },
+              "controlType": "outcome",
+              "alpha": 0.05,
+              "attr_class": [
+                "BayesianMetaAnalysis",
+                "EvidenceSynthesisAnalysis"
+              ],
+              "chainLength": 1100000,
+              "burnIn": 100000,
+              "subSampleFrequency": 100,
+              "priorSd": [
+                2,
+                0.5
+              ],
+              "robust": false,
+              "df": 4,
+              "seed": 1
+            }
+          ],
+          "esDiagnosticThresholds": {
+            "mdrrThreshold": 10,
+            "easeThreshold": 0.25,
+            "i2Threshold": 0.4,
+            "tauThreshold": 0.6931,
+            "alpha": 0.05
+          }
+        },
+        "attr_class": [
+          "EvidenceSynthesisModuleSpecifications",
+          "ModuleSpecifications"
+        ]
+      }
+    }
+  ]
+}
