@@ -7,10 +7,6 @@ import type {
 } from '../types'
 import { KernelConnectionError } from '../types'
 import strategusSpecBuilderSource from './StrategusSpecBuilder.R?raw'
-// rD2E source is injected at build time via Vite define (__RD2E_SOURCE__)
-// because ?raw uses template literals which corrupt R escape sequences.
-declare const __RD2E_SOURCE__: string
-const rD2ESource: string = typeof __RD2E_SOURCE__ !== 'undefined' ? __RD2E_SOURCE__ : ''
 
 export class WebRKernel implements KernelPlugin {
   readonly id = 'webr'
@@ -83,12 +79,12 @@ export class WebRKernel implements KernelPlugin {
 
       // Autoload Strategus spec builder library
       try {
-        // Install dependencies (checkmate for StrategusSpecBuilder.R, jsonlite for rD2E.R)
+        // Install dependencies (checkmate for StrategusSpecBuilder.R)
         await (
           this.webR as {
             evalRVoid: (code: string) => Promise<void>
           }
-        ).evalRVoid(`webr::install(c("checkmate", "jsonlite"))`)
+        ).evalRVoid(`webr::install("checkmate")`)
         // Source the spec builder functions into the global environment
         await (
           this.webR as {
@@ -103,7 +99,7 @@ export class WebRKernel implements KernelPlugin {
           }
         ).evalRVoid(`
 local({
-  shimmed <- c("Strategus", "rD2E", "CohortMethod", "FeatureExtraction", "Cyclops", "CohortSurvival", "SelfControlledCaseSeries", "PatientLevelPrediction", "EvidenceSynthesis", "CohortIncidence", "Characterization")
+  shimmed <- c("Strategus", "CohortMethod", "FeatureExtraction", "Cyclops", "CohortSurvival", "SelfControlledCaseSeries", "PatientLevelPrediction", "EvidenceSynthesis", "CohortIncidence", "Characterization")
   base_env <- as.environment("package:base")
 
   # Shim library()
@@ -139,7 +135,7 @@ local({
   assign("require", require_shim, envir = base_env)
   lockBinding("require", base_env)
 
-  # Shim :: so rD2E::fn and Strategus::fn resolve from .GlobalEnv
+  # Shim :: so Strategus::fn resolves from .GlobalEnv
   # (avoids loadNamespace which requires a real installed package)
   dcolon_shim <- function(pkg, name) {
     pkg_str <- as.character(substitute(pkg))
@@ -182,39 +178,6 @@ local({
 `)
       } catch (e) {
         console.warn('Failed to load Strategus spec builder:', e)
-      }
-
-      // Autoload rD2E library (WebR-compatible port — no external deps needed)
-      // Source the rD2E functions, then attach to the search path so they're
-      // accessible from Shelter.captureR() which may use a different env.
-      try {
-        await (
-          this.webR as {
-            evalRVoid: (code: string) => Promise<void>
-          }
-        ).evalRVoid(rD2ESource)
-        // Attach rD2E functions to the search path
-        await (
-          this.webR as {
-            evalRVoid: (code: string) => Promise<void>
-          }
-        ).evalRVoid(`local({
-  rD2E_fns <- c("get_cohort_definition_set", "create_cohort_definition",
-                "run_strategus_flow", "create_options",
-                ".rD2E_to_json", ".rD2E_from_json",
-                ".rD2E_GET", ".rD2E_POST",
-                ".rD2E_js_escape",
-                ".rD2E_getCohortDefinition", ".rD2E_getDeployment")
-  env <- new.env(parent = emptyenv())
-  for (fn in rD2E_fns) {
-    if (exists(fn, envir = .GlobalEnv)) {
-      assign(fn, get(fn, envir = .GlobalEnv), envir = env)
-    }
-  }
-  attach(env, name = "rD2E")
-})`)
-      } catch (e) {
-        console.error('Failed to load rD2E library:', e)
       }
 
       this.setStatus('idle')
