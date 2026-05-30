@@ -1,0 +1,7 @@
+# Keep the build context small. Note: dist is NOT excluded — the Dockerfile
+# copies the pre-built sibyl dist into the image.
+**/node_modules
+.git
+secrets
+docs
+**/*.tsbuildinfo
