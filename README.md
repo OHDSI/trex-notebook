@@ -10,6 +10,7 @@ its `trex.ui.routes` registration.
 |--------|---------|-------|------------|
 | [`plugins/notebook`](plugins/notebook) | `@trex/notebook` | `/plugins/trex/notebook` | React notebook component (Python via Pyodide, R via WebR, Markdown). |
 | [`plugins/sibyl`](plugins/sibyl) | `trex-sibyl` | `/plugins/sibyl` | ATLAS-plugin host shell for Strategus; authenticates against trex. See `plugins/sibyl/README.md`. |
+| [`plugins/results-viewer`](plugins/results-viewer) | `results-viewer` | sibyl-hosted `/plugins/results-viewer/` | OHDSI HADES analysis-results viewer — Shiny via WebR + DuckDB-WASM, in-browser. Built into sibyl's `public/plugins/` like a sibyl plugin. See `plugins/results-viewer/README.md`. |
 
 Each plugin is built independently:
 
@@ -17,7 +18,7 @@ Each plugin is built independently:
     npm install
     npm run build
 
-## Run sibyl on trex (published image)
+## Run on trex (published image)
 
 The root `docker-compose.yml` runs the trex backend from its published image
 (`ghcr.io/ohdsi/trexsql:latest`) and serves the built **sibyl** plugin at
