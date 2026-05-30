@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Network site plugin (dev)</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import * as plugin from '/src/main.ts';
+      const props = { name: 'network', uiFilesUrl: '', authContext: null, messageBus: null,
+        domElement: document.getElementById('app') };
+      await plugin.bootstrap(props);
+      await plugin.mount(props);
+    </script>
+  </body>
+</html>
