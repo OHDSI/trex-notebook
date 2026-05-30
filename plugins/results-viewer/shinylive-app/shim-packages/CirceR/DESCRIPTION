@@ -1,0 +1,6 @@
+Package: CirceR
+Title: CirceR (WebR Shim)
+Version: 99.0.0
+Description: Pure-R replacement for CirceR cohort expression functions.
+License: Apache License 2.0
+Imports: jsonlite

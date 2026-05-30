@@ -1,0 +1,6 @@
+shinylive-app/shim-packages/
+shinylive-export/
+src/shims/
+r-packages/
+test-data/
+node_modules/
