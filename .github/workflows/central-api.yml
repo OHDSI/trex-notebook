@@ -1,0 +1,76 @@
+name: central-api
+
+on:
+  pull_request:
+    paths:
+      - 'central/**'
+      - '.github/workflows/central-api.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'central/**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install shared
+        working-directory: central/shared
+        run: npm install
+
+      - name: Test shared
+        working-directory: central/shared
+        run: npx vitest run
+
+      - name: Install api
+        working-directory: central/api
+        run: npm install
+
+      - name: Typecheck api
+        working-directory: central/api
+        run: npm run typecheck
+
+      - name: Test api
+        working-directory: central/api
+        run: npx vitest run
+
+      - name: Build api bundle
+        working-directory: central/api
+        run: npm run build
+
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Validate SAM template
+        working-directory: central
+        run: sam validate --lint
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install shared
+        working-directory: central/shared
+        run: npm install
+      - name: Install web
+        working-directory: central/web
+        run: npm install
+      - name: Typecheck web
+        working-directory: central/web
+        run: npm run typecheck
+      - name: Unit test web
+        working-directory: central/web
+        run: npx vitest run
+      - name: Build web
+        working-directory: central/web
+        run: npm run build

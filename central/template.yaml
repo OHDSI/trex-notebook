@@ -1,0 +1,282 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Federated network studies — central serverless API
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Timeout: 30
+    MemorySize: 512
+
+Resources:
+  SitesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: siteId, AttributeType: S }
+        - { AttributeName: cognitoClientId, AttributeType: S }
+      KeySchema:
+        - { AttributeName: siteId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byClientId
+          KeySchema:
+            - { AttributeName: cognitoClientId, KeyType: HASH }
+          Projection: { ProjectionType: ALL }
+
+  StudiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: studyId, AttributeType: S }
+        - { AttributeName: status, AttributeType: S }
+        - { AttributeName: publishedAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: studyId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byStatus
+          KeySchema:
+            - { AttributeName: status, KeyType: HASH }
+            - { AttributeName: publishedAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+
+  SubmissionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: PK, AttributeType: S }
+        - { AttributeName: SK, AttributeType: S }
+        - { AttributeName: GSI1PK, AttributeType: S }
+        - { AttributeName: GSI1SK, AttributeType: S }
+      KeySchema:
+        - { AttributeName: PK, KeyType: HASH }
+        - { AttributeName: SK, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: bySite
+          KeySchema:
+            - { AttributeName: GSI1PK, KeyType: HASH }
+            - { AttributeName: GSI1SK, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET, PUT]
+            AllowedOrigins: ['*']
+            AllowedHeaders: ['*']
+            ExposedHeaders: [ETag]
+
+  WebBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  WebOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${AWS::StackName}-web-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: webS3
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebOriginAccessControl.Id
+            S3OriginConfig: { OriginAccessIdentity: '' }
+        DefaultCacheBehavior:
+          TargetOriginId: webS3
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+        CustomErrorResponses:
+          - { ErrorCode: 403, ResponseCode: 200, ResponsePagePath: /index.html }
+          - { ErrorCode: 404, ResponseCode: 200, ResponsePagePath: /index.html }
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub '${WebBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}'
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: network-studies
+      AutoVerifiedAttributes: [email]
+      Schema:
+        - Name: siteId
+          AttributeDataType: String
+          Mutable: true
+      LambdaConfig:
+        PreTokenGeneration: !GetAtt PreTokenGenFunction.Arn
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'network-studies-${AWS::AccountId}'
+      UserPoolId: !Ref UserPool
+
+  CoordinatorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: coordinator
+      UserPoolId: !Ref UserPool
+
+  SiteOperatorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: site-operator
+      UserPoolId: !Ref UserPool
+
+  ResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref UserPool
+      Identifier: network-api
+      Name: network-api
+      Scopes:
+        - { ScopeName: site, ScopeDescription: site machine access }
+
+  CoordinationCenterClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: coordination-center
+      GenerateSecret: false
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      AllowedOAuthFlowsUserPoolClient: true
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: ['http://localhost:5175/callback']
+
+  SitePluginClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: site-plugin
+      GenerateSecret: false
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      AllowedOAuthFlowsUserPoolClient: true
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: ['http://localhost:8011/plugins/network/callback']
+
+  PreTokenGenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.preTokenGen
+      CodeUri: api/
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints: [src/preTokenGen.ts]
+        Target: node22
+        Format: esm
+        OutExtension: ['.js=.mjs']
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      CodeUri: api/
+      Environment:
+        Variables:
+          SITES_TABLE: !Ref SitesTable
+          STUDIES_TABLE: !Ref StudiesTable
+          SUBMISSIONS_TABLE: !Ref SubmissionsTable
+          ARTIFACT_BUCKET: !Ref ArtifactBucket
+          USER_POOL_ID: !Ref UserPool
+          MACHINE_SCOPE: network-api/site
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref SitesTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref StudiesTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref SubmissionsTable }
+        - S3CrudPolicy: { BucketName: !Ref ArtifactBucket }
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:CreateUserPoolClient
+                - cognito-idp:DeleteUserPoolClient
+                - cognito-idp:UpdateUserPoolClient
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminAddUserToGroup
+              Resource: !GetAtt UserPool.Arn
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints: [src/index.ts]
+        Target: node22
+        Format: esm
+        OutExtension: ['.js=.mjs']
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ['*']
+        AllowMethods: [GET, POST, PATCH, OPTIONS]
+        AllowHeaders: [authorization, content-type]
+      Auth:
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+              audience:
+                - !Ref CoordinationCenterClient
+                - !Ref SitePluginClient
+        DefaultAuthorizer: CognitoJwt
+
+Outputs:
+  ApiUrl:
+    Value: !GetAtt HttpApi.ApiEndpoint
+  UserPoolId:
+    Value: !Ref UserPool
+  CognitoDomain:
+    Value: !Sub 'https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+  CoordinationCenterClientId:
+    Value: !Ref CoordinationCenterClient
+  SitePluginClientId:
+    Value: !Ref SitePluginClient
+  ArtifactBucketName:
+    Value: !Ref ArtifactBucket
+  WebUrl:
+    Value: !Sub 'https://${WebDistribution.DomainName}'
+  WebBucketName:
+    Value: !Ref WebBucket

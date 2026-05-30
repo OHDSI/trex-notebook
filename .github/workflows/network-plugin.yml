@@ -1,0 +1,34 @@
+name: network-plugin
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/network/**'
+      - '.github/workflows/network-plugin.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'plugins/network/**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: plugins/network
+        run: npm install
+      - name: Typecheck
+        working-directory: plugins/network
+        run: npm run typecheck
+      - name: Unit test
+        working-directory: plugins/network
+        run: npx vitest run
+      - name: Build
+        working-directory: plugins/network
+        run: npm run build
+      - name: Verify bundle
+        run: test -f plugins/sibyl/public/plugins/network-plugin/index.system.js
