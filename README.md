@@ -12,13 +12,14 @@ its `trex.ui.routes` registration.
 | [`plugins/sibyl`](plugins/sibyl) | `trex-sibyl` | `/plugins/sibyl` | ATLAS-plugin host shell; authenticates against trex. See `plugins/sibyl/README.md`. |
 | [`plugins/strategus`](plugins/strategus) | `strategus-plugin` | sibyl sub-plugin | Strategus Analysis Spec Builder. SystemJS module hosted *inside* sibyl. |
 | [`plugins/network`](plugins/network) | `network-plugin` | sibyl sub-plugin | Federated network studies — site plugin. SystemJS module hosted *inside* sibyl; auths to a central API via Cognito. |
+| [`plugins/results-viewer`](plugins/results-viewer) | `results-viewer` | sibyl sub-plugin | OHDSI HADES analysis-results viewer — Shiny via WebR + DuckDB-WASM, in-browser. See `plugins/results-viewer/README.md`. |
 
 Two kinds of plugin live here:
 
 - **trex UI plugins** (notebook, sibyl) — standalone SPAs the trex backend serves
   directly via their `trex.ui.routes` registration.
-- **sibyl sub-plugins** (strategus, network) — SystemJS modules built into
-  `plugins/sibyl/public/plugins/<id>/` and registered in
+- **sibyl sub-plugins** (strategus, network, results-viewer) — SystemJS modules
+  built into `plugins/sibyl/public/plugins/<id>/` and registered in
   `plugins/sibyl/public/config/plugins.json`; the sibyl shell loads them at
   runtime. They ship as part of sibyl's `dist`, not as separate trex routes.
 

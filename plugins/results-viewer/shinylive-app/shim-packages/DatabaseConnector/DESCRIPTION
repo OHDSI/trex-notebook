@@ -1,0 +1,6 @@
+Package: DatabaseConnector
+Title: Database Connector (WebR Shim)
+Version: 99.0.0
+Description: Pure-R replacement routing through DBI + DuckDB.
+License: Apache License 2.0
+Imports: DBI, duckdb

@@ -1,0 +1,6 @@
+Package: SqlRender
+Title: SQL Render (WebR Shim)
+Version: 99.0.0
+Description: Pure-R replacement for SqlRender that handles @param substitution and conditional SQL without Java/rJava.
+License: Apache License 2.0
+Imports: checkmate
