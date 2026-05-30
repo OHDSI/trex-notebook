@@ -19,6 +19,25 @@
         "author": "OHDSI",
         "description": "Strategus Analysis Specification Builder"
       }
+    },
+    {
+      "id": "network-plugin",
+      "name": "Network",
+      "version": "0.1.0",
+      "entryPoint": "network-plugin/index.system.js",
+      "menuItems": [
+        {
+          "id": "network.main",
+          "name": "Network",
+          "route": "/plugins/network-plugin/",
+          "icon": "mdi-lan",
+          "order": 60
+        }
+      ],
+      "metadata": {
+        "author": "OHDSI",
+        "description": "Federated network studies — site plugin. Requires window.__networkPluginConfig (apiUrl, cognitoDomain, clientId, redirectUri) injected by the host; auth is inactive until configured."
+      }
     }
   ]
 }
