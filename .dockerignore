@@ -1,7 +1,20 @@
-# Keep the build context small. Note: dist is NOT excluded — the Dockerfile
-# copies the pre-built sibyl dist into the image.
-**/node_modules
+# The multi-stage Dockerfile builds every plugin from source, so the full
+# plugins/ tree is the build context. Exclude only what the build regenerates
+# or never needs — keeps the context small and the build hermetic.
 .git
 secrets
 docs
+
+# Regenerated inside the build (do NOT ship host copies into the context)
+**/node_modules
+**/dist
+plugins/sibyl/public/plugins
+plugins/results-viewer/shinylive-export
+plugins/results-viewer/r-packages
+plugins/results-viewer/test-data
+
+# Misc build/test cruft
 **/*.tsbuildinfo
+**/coverage
+**/test-results
+**/playwright-report

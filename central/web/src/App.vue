@@ -17,10 +17,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { isAuthenticated, logout as doLogout } from './auth/session';
 
-const authed = computed(() => isAuthenticated());
+const route = useRoute();
+const router = useRouter();
+
+// isAuthenticated() reads localStorage (non-reactive), so re-evaluate whenever the
+// route changes — covers the post-login callback redirect and logout.
+const authed = computed(() => {
+  void route.fullPath;
+  return isAuthenticated();
+});
+
 function logout() {
   doLogout();
+  void router.push('/login');
 }
 </script>

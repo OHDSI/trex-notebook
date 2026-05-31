@@ -1,0 +1,26 @@
+{
+  "name": "network-api",
+  "version": "0.1.0",
+  "description": "Site machine-auth proxy: holds the per-site Cognito confidential client (machine client_id/secret) and reverse-proxies the network plugin's calls to the Central Serverless API with a client-credentials token. Function-only trex plugin — no UI, the secret never reaches the browser.",
+  "private": true,
+  "type": "module",
+  "trex": {
+    "functions": {
+      "env": {
+        "_shared": {
+          "NETWORK_MACHINE_CLIENT_ID": "${NETWORK_MACHINE_CLIENT_ID}",
+          "NETWORK_CLIENT_SECRET": "${NETWORK_CLIENT_SECRET}",
+          "NETWORK_COGNITO_DOMAIN": "${NETWORK_COGNITO_DOMAIN}",
+          "NETWORK_TOKEN_SCOPE": "${NETWORK_TOKEN_SCOPE:-}",
+          "NETWORK_CENTRAL_API_URL": "${NETWORK_API_URL}"
+        }
+      },
+      "api": [
+        {
+          "source": "/network-api",
+          "function": "/functions"
+        }
+      ]
+    }
+  }
+}

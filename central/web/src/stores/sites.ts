@@ -43,5 +43,14 @@ export const useSitesStore = (apiClient: ApiClient = defaultApi) =>
       await apiClient.post(`/sites/${siteId}/operators`, body);
     }
 
-    return { sites, loading, fetchAll, register, update, rotateSecret, addOperator };
+    async function setStatus(siteId: string, status: Site['status']) {
+      await update(siteId, { status });
+    }
+
+    async function remove(siteId: string) {
+      await apiClient.del(`/sites/${siteId}`);
+      await fetchAll();
+    }
+
+    return { sites, loading, fetchAll, register, update, rotateSecret, addOperator, setStatus, remove };
   })();

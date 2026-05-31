@@ -5,9 +5,9 @@ import {
   AdminCreateUserCommand,
   AdminAddUserToGroupCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { PutCommand, ScanCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import {
-  createSite, listSites, getSite, updateSite, rotateSecret, createOperator,
+  createSite, listSites, getSite, updateSite, rotateSecret, createOperator, deleteSite,
 } from '../../src/handlers/sites';
 import { makeCtx, makeMocks, ROLES } from '../helpers';
 import { ApiError } from '../../src/lib/errors';
@@ -133,5 +133,30 @@ describe('createOperator', () => {
     ddb.on(GetCommand).resolves({ Item: undefined });
     const ctx = makeCtx({ role: ROLES.coordinator, pathParams: { siteId: 'x' }, body: { email: 'op@x.org' } });
     await expect(createOperator(ctx, deps)).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
+describe('deleteSite', () => {
+  it('forbids non-coordinators', async () => {
+    const { deps } = makeMocks();
+    const ctx = makeCtx({ role: ROLES.operator('s1'), pathParams: { siteId: 's1' } });
+    await expect(deleteSite(ctx, deps)).rejects.toMatchObject({ statusCode: 403 });
+  });
+  it('returns 404 when the site does not exist', async () => {
+    const { ddb, deps } = makeMocks();
+    ddb.on(GetCommand).resolves({ Item: undefined });
+    const ctx = makeCtx({ role: ROLES.coordinator, pathParams: { siteId: 'x' } });
+    await expect(deleteSite(ctx, deps)).rejects.toMatchObject({ statusCode: 404 });
+  });
+  it('deletes the cognito client and the record, returns 204', async () => {
+    const { ddb, cognito, deps } = makeMocks();
+    ddb.on(GetCommand).resolves({ Item: { siteId: 's1', cognitoClientId: 'cid-1' } });
+    cognito.on(DeleteUserPoolClientCommand).resolves({});
+    ddb.on(DeleteCommand).resolves({});
+    const ctx = makeCtx({ role: ROLES.coordinator, pathParams: { siteId: 's1' } });
+    const r = await deleteSite(ctx, deps);
+    expect(r.statusCode).toBe(204);
+    expect(cognito.commandCalls(DeleteUserPoolClientCommand)[0].args[0].input.ClientId).toBe('cid-1');
+    expect(ddb.commandCalls(DeleteCommand)[0].args[0].input.Key).toEqual({ siteId: 's1' });
   });
 });

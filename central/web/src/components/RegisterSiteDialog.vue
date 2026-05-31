@@ -14,8 +14,20 @@
           <v-alert type="warning" variant="tonal" class="mb-3">
             Copy the client secret now — it will not be shown again.
           </v-alert>
-          <v-text-field :model-value="clientId" label="Client ID" readonly />
-          <v-text-field :model-value="secret" label="Client secret" readonly />
+          <v-text-field
+            :model-value="clientId"
+            label="Client ID"
+            readonly
+            :append-inner-icon="copied === 'id' ? 'mdi-check' : 'mdi-content-copy'"
+            @click:append-inner="copy('id', clientId)"
+          />
+          <v-text-field
+            :model-value="secret"
+            label="Client secret"
+            readonly
+            :append-inner-icon="copied === 'secret' ? 'mdi-check' : 'mdi-content-copy'"
+            @click:append-inner="copy('secret', secret)"
+          />
         </template>
       </v-card-text>
       <v-card-actions>
@@ -39,6 +51,19 @@ const name = ref('');
 const contact = ref('');
 const clientId = ref('');
 const secret = ref('');
+const copied = ref<'id' | 'secret' | null>(null);
+
+async function copy(which: 'id' | 'secret', value: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    copied.value = which;
+    setTimeout(() => {
+      if (copied.value === which) copied.value = null;
+    }, 1500);
+  } catch {
+    // clipboard unavailable (e.g. non-secure context) — ignore
+  }
+}
 
 async function submit() {
   busy.value = true;
@@ -54,5 +79,6 @@ async function submit() {
 function close() {
   open.value = false;
   name.value = contact.value = clientId.value = secret.value = '';
+  copied.value = null;
 }
 </script>
