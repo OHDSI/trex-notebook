@@ -11,10 +11,10 @@
 #                  and then sibyl, whose `build:trex` copies public/ into dist/.
 #   final        — trexsql base + the finished sibyl dist baked in.
 #
-# Base tag: sha-c5df9612 = OHDSI/trex's "cleanup (#35)". Newest trexsql build
-# that actually SERVES HTTP under our setup — the later hades build
-# (sha-8eaa659) boots but its worker never binds the port. NOTE: c5df9612 does
-# NOT include the hades extension (added in sha-8eaa659).
+# Base tag: sha-544e400 = OHDSI/trex "fix trex init (#38)" — equals
+# ghcr.io/ohdsi/trexsql:latest (digest sha256:f613923…, 2026-05-31) and bakes the
+# hades DuckDB extension. Keep in sync with the trex-init pin in
+# docker-compose.yml. Bump (and re-test serving) deliberately.
 
 # ---------------------------------------------------------------------------
 # Stage 1: results-viewer R runtime (shinylive export + Java-free shim pkgs).
@@ -131,7 +131,7 @@ RUN cd plugins/sibyl && npm ci && npm run build:trex
 # ---------------------------------------------------------------------------
 # Stage 3: bake the finished sibyl dist into the trex backend.
 # ---------------------------------------------------------------------------
-FROM ghcr.io/ohdsi/trexsql:sha-c5df9612216612296bbbdcd449543331ab41c761
+FROM ghcr.io/ohdsi/trexsql:sha-544e4004bfe2f4658daf6a573cfebba3ab776140
 
 # package.json carries the trex.ui.routes entry (path /sibyl, dir dist); trex
 # serves the dist under /plugins/sibyl. The dist also contains
