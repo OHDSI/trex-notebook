@@ -8,6 +8,12 @@ Globals:
     Timeout: 30
     MemorySize: 512
 
+Parameters:
+  WebOrigin:
+    Type: String
+    Default: '*'
+    Description: Allowed browser origin for API + artifact-bucket CORS (set to the UI URL in production)
+
 Resources:
   SitesTable:
     Type: AWS::DynamoDB::Table
@@ -71,7 +77,8 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedMethods: [GET, PUT]
-            AllowedOrigins: ['*']
+            AllowedOrigins:
+              - !Ref WebOrigin
             AllowedHeaders: ['*']
             ExposedHeaders: [ETag]
 
@@ -132,12 +139,22 @@ Resources:
     Properties:
       UserPoolName: network-studies
       AutoVerifiedAttributes: [email]
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
       Schema:
         - Name: siteId
           AttributeDataType: String
           Mutable: true
       LambdaConfig:
         PreTokenGeneration: !GetAtt PreTokenGenFunction.Arn
+
+  PreTokenGenInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PreTokenGenFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
 
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
@@ -231,12 +248,72 @@ Resources:
                 - cognito-idp:AdminAddUserToGroup
               Resource: !GetAtt UserPool.Arn
       Events:
-        Api:
+        # Explicit routes (templated paths) so event.routeKey matches the in-Lambda
+        # router and OPTIONS stays unrouted (API Gateway auto-answers CORS preflight).
+        SitesCreate:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /sites, Method: POST }
+        SitesList:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /sites, Method: GET }
+        SitesGet:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}", Method: GET }
+        SitesUpdate:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}", Method: PATCH }
+        SitesDelete:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}", Method: DELETE }
+        SitesRotate:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}/rotate-secret", Method: POST }
+        SitesOperators:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}/operators", Method: POST }
+        SiteSubs:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}/submissions", Method: GET }
+        StudiesCreate:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /studies, Method: POST }
+        StudiesList:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /studies, Method: GET }
+        StudiesGet:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}", Method: GET }
+        StudiesUpdate:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}", Method: PATCH }
+        StudiesPublish:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}/publish", Method: POST }
+        StudiesArchive:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}/archive", Method: POST }
+        StudiesPackage:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}/package", Method: GET }
+        StudySubmit:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}/submissions", Method: POST }
+        StudySubsList:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/studies/{studyId}/submissions", Method: GET }
+        SubComplete:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/submissions/{subId}/complete", Method: POST }
+        SubGet:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/submissions/{subId}", Method: GET }
+        Health:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
-            Path: /{proxy+}
-            Method: ANY
+            Path: /health
+            Method: GET
+            Auth: { Authorizer: NONE }
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -249,8 +326,9 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       CorsConfiguration:
-        AllowOrigins: ['*']
-        AllowMethods: [GET, POST, PATCH, OPTIONS]
+        AllowOrigins:
+          - !Ref WebOrigin
+        AllowMethods: [GET, POST, PATCH, DELETE, OPTIONS]
         AllowHeaders: [authorization, content-type]
       Auth:
         Authorizers:

@@ -5,6 +5,10 @@
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strategus Shell</title>
+    <!-- Runtime config for sub-plugins (regenerated at container start from
+         NETWORK_* env vars). Loaded first so window.__networkPluginConfig is
+         set before any sub-plugin executes. -->
+    <script src="%BASE_URL%config/network-config.js"></script>
     <script src="%BASE_URL%vendor/system.js"></script>
     <script src="%BASE_URL%vendor/named-register.js"></script>
     <script src="%BASE_URL%vendor/vue.global.js"></script>

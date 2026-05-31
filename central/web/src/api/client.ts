@@ -11,7 +11,10 @@ export class ApiClient {
   constructor(
     private baseUrl: string,
     private getToken: () => string | null,
-    private fetchImpl: Fetch = fetch,
+    // Bind to the global so native fetch keeps its required `this` (calling it as
+    // `this.fetchImpl(...)` otherwise throws "Illegal invocation"). Injected mocks
+    // (tests) are used as-is.
+    private fetchImpl: Fetch = fetch.bind(globalThis),
   ) {}
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -44,5 +47,8 @@ export class ApiClient {
   }
   patch<T>(path: string, body?: unknown) {
     return this.request<T>('PATCH', path, body);
+  }
+  del<T>(path: string) {
+    return this.request<T>('DELETE', path);
   }
 }

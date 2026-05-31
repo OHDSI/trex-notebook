@@ -4,7 +4,7 @@ import {
   AdminCreateUserCommand,
   AdminAddUserToGroupCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { PutCommand, ScanCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import {
   createSiteSchema,
   updateSiteSchema,
@@ -14,7 +14,7 @@ import {
 } from '@central/shared';
 import type { RequestContext } from '../lib/context';
 import type { Deps } from '../lib/deps';
-import { created, ok, type HandlerResult } from '../lib/http';
+import { created, ok, noContent, type HandlerResult } from '../lib/http';
 import { requireCoordinator } from '../lib/auth';
 import { badRequest, notFound } from '../lib/errors';
 
@@ -161,4 +161,18 @@ export async function createOperator(ctx: RequestContext, deps: Deps): Promise<H
     }),
   );
   return created({ email: parsed.data.email, siteId });
+}
+
+export async function deleteSite(ctx: RequestContext, deps: Deps): Promise<HandlerResult> {
+  requireCoordinator(ctx.role);
+  const siteId = ctx.pathParams.siteId;
+  const res = await deps.ddb.send(new GetCommand({ TableName: deps.env.sitesTable, Key: { siteId } }));
+  if (!res.Item) throw notFound('SITE_NOT_FOUND', `no site ${siteId}`);
+  const clientId = (res.Item as Site).cognitoClientId;
+  // remove the machine app client (best-effort), then the record
+  await Promise.resolve(
+    deps.cognito.send(new DeleteUserPoolClientCommand({ UserPoolId: deps.env.userPoolId, ClientId: clientId })),
+  ).catch(() => {});
+  await deps.ddb.send(new DeleteCommand({ TableName: deps.env.sitesTable, Key: { siteId } }));
+  return noContent();
 }
