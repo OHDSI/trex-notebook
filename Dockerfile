@@ -11,16 +11,19 @@
 #                  and then sibyl, whose `build:trex` copies public/ into dist/.
 #   final        — trexsql base + the finished sibyl dist baked in.
 #
-# Base tag: sha-544e400 = OHDSI/trex "fix trex init (#38)" — equals
-# ghcr.io/ohdsi/trexsql:latest (digest sha256:f613923…, 2026-05-31) and bakes the
-# hades DuckDB extension. Keep in sync with the trex-init pin in
-# docker-compose.yml. Bump (and re-test serving) deliberately.
+# Base: ghcr.io/ohdsi/trexsql:latest, pinned by its multi-arch INDEX digest so
+# the pin is immutable but each host pulls its native variant. As of 2026-06-01
+# latest is multi-arch (linux/amd64 + linux/arm64) and bakes the hades DuckDB
+# extension, so arm64 hosts (Apple Silicon) now run NATIVE — no QEMU emulation.
+# Keep in sync with the trex-init / metadata-migrate pins in docker-compose.yml.
+# Bump (and re-test the 2-node stack) deliberately.
 
 # ---------------------------------------------------------------------------
 # Stage 1: results-viewer R runtime (shinylive export + Java-free shim pkgs).
-# rocker/r-ver pins the same R as renv.lock (4.5.2). amd64 to match trexsql.
+# rocker/r-ver pins the same R as renv.lock (4.5.2). Build native (rocker +
+# node:22 are multi-arch) so the image matches the host arch trexsql now ships.
 # ---------------------------------------------------------------------------
-FROM --platform=linux/amd64 rocker/r-ver:4.5.2 AS r-builder
+FROM rocker/r-ver:4.5.2 AS r-builder
 
 # System libraries the OHDSI/shiny package stack links against. default-jdk +
 # javareconf are required because OhdsiShinyModules imports the real
@@ -109,7 +112,7 @@ RUN mkdir -p r-packages && \
 # ---------------------------------------------------------------------------
 # Stage 2: build the JS sub-plugins and the sibyl shell.
 # ---------------------------------------------------------------------------
-FROM --platform=linux/amd64 node:22 AS web-builder
+FROM node:22 AS web-builder
 WORKDIR /src
 # Bring the whole plugins tree (sub-plugins write into ../sibyl/public/plugins).
 COPY plugins ./plugins
@@ -132,7 +135,7 @@ RUN cd plugins/sibyl && npm ci && npm run build:trex
 # ---------------------------------------------------------------------------
 # Stage 3: bake the finished sibyl dist into the trex backend.
 # ---------------------------------------------------------------------------
-FROM ghcr.io/ohdsi/trexsql:sha-544e4004bfe2f4658daf6a573cfebba3ab776140
+FROM ghcr.io/ohdsi/trexsql:latest@sha256:a57e5d3eadcb73b6f0b70cef28c0e42d2a0a7e0256310bb1eabc2a8ccd4375ae
 
 # package.json carries the trex.ui.routes entry (path /sibyl, dir dist); trex
 # serves the dist under /plugins/sibyl. The dist also contains

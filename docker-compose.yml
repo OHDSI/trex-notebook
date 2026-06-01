@@ -62,8 +62,9 @@ services:
   # use one trex version.
   trex-init:
     container_name: sibyl-trex-init
-    image: ghcr.io/ohdsi/trexsql:sha-544e4004bfe2f4658daf6a573cfebba3ab776140
-    platform: linux/amd64
+    # Pinned to the same multi-arch index digest as the Dockerfile FROM (=
+    # trexsql:latest); each host pulls its native variant (amd64 or arm64).
+    image: ghcr.io/ohdsi/trexsql:latest@sha256:a57e5d3eadcb73b6f0b70cef28c0e42d2a0a7e0256310bb1eabc2a8ccd4375ae
     entrypoint: /usr/local/bin/trex-init
     environment:
       TREX_SECRETS_DIR: /shared
@@ -80,7 +81,6 @@ services:
   metadata-migrate:
     container_name: sibyl-metadata-migrate
     image: postgres:16
-    platform: linux/amd64
     depends_on:
       trex-data:
         condition: service_healthy
@@ -100,7 +100,6 @@ services:
   storage-init:
     container_name: sibyl-storage-init
     image: postgres:16
-    platform: linux/amd64
     user: root
     volumes:
       - storage-data:/data/storage
@@ -145,12 +144,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # trex publishes amd64-only images; build (and run) as amd64 so this works
-      # on arm64 hosts too (via emulation).
-      platforms:
-        - linux/amd64
+      # trexsql:latest is now multi-arch, so build natively for the host arch
+      # (arm64 on Apple Silicon, amd64 elsewhere) — no forced platform / QEMU.
     image: sibyl-trex:local
-    platform: linux/amd64
     depends_on:
       trex-init:
         condition: service_completed_successfully
@@ -191,7 +187,6 @@ services:
   trex-server:
     container_name: sibyl-trex
     image: sibyl-trex:local
-    platform: linux/amd64
     # Distinct host ports from trex's own docker-compose (8001/8000/5433) so
     # both stacks can run in parallel. Container ports are unchanged.
     ports:
@@ -304,6 +299,8 @@ services:
   broadsea-atlasdb:
     container_name: sibyl-atlasdb
     image: ohdsi/broadsea-atlasdb:2.3.0
+    # amd64-only image (no arm64 variant) — keep the platform pin so it runs
+    # under emulation on arm64 hosts. The rest of the stack is now native.
     platform: linux/amd64
     profiles: ["cdm"]
     mem_limit: "2G"
