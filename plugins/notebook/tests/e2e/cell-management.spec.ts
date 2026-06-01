@@ -8,7 +8,7 @@ test.describe('Cell Management', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     // Wait for the app to load
-    await expect(page.locator('h1:has-text("React Notebook")')).toBeVisible()
+    await expect(page.locator('h1:has-text("Notebook")')).toBeVisible()
   })
 
   test('creates a Python code cell', async ({ page }) => {

@@ -8,7 +8,7 @@ import fs from 'fs'
 test.describe('Notebook Workflow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1:has-text("React Notebook")')).toBeVisible()
+    await expect(page.locator('h1:has-text("Notebook")')).toBeVisible()
   })
 
   test('creates and saves a notebook', async ({ page }) => {

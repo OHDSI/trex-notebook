@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { ref, type Ref } from 'vue'
 import type { KernelPlugin, KernelOutput } from '@/kernels/types'
 import { KernelInterruptError } from '@/kernels/types'
 import type { CellId, CodeCellData, CellOutput } from '@/types/notebook'
@@ -19,7 +19,9 @@ export class ExecutionTimeoutError extends Error {
 
 export interface UseCellExecutionOptions {
   kernel: KernelPlugin | null
-  /** Resolve the appropriate kernel for a given language (used for multi-kernel setups) */
+  /** Live getter for the active kernel (preferred over the static `kernel` snapshot,
+   *  which may be stale because the composable is created once). */
+  getKernel?: () => KernelPlugin | null
   getKernelForLanguage?: (language: 'python' | 'r') => KernelPlugin | null
   executionTimeout?: number
   onCellExecutionStart?: (cellId: CellId) => void
@@ -32,14 +34,10 @@ export interface UseCellExecutionOptions {
 }
 
 export interface UseCellExecutionReturn {
-  isExecuting: boolean
-  executingCellId: CellId | null
-  executionQueue: CellId[]
-  executeCell: (
-    cellId: CellId,
-    code: string,
-    language: 'python' | 'r'
-  ) => Promise<void>
+  isExecuting: Ref<boolean>
+  executingCellId: Ref<CellId | null>
+  executionQueue: Ref<CellId[]>
+  executeCell: (cellId: CellId, code: string, language: 'python' | 'r') => Promise<void>
   executeCells: (
     cells: Array<{ id: CellId; code: string; language: 'python' | 'r' }>
   ) => Promise<void>
@@ -49,11 +47,10 @@ export interface UseCellExecutionReturn {
 let globalExecutionCount = 0
 const DEFAULT_EXECUTION_TIMEOUT = 60_000
 
-export function useCellExecution(
-  options: UseCellExecutionOptions
-): UseCellExecutionReturn {
+export function useCellExecution(options: UseCellExecutionOptions): UseCellExecutionReturn {
   const {
     kernel,
+    getKernel,
     getKernelForLanguage,
     executionTimeout = DEFAULT_EXECUTION_TIMEOUT,
     onCellExecutionStart,
@@ -65,19 +62,15 @@ export function useCellExecution(
     onNoKernel,
   } = options
 
-  const [isExecuting, setIsExecuting] = useState(false)
-  const [executingCellId, setExecutingCellId] = useState<CellId | null>(null)
-  const [executionQueue, setExecutionQueue] = useState<CellId[]>([])
-  const interruptedRef = useRef(false)
+  const isExecuting = ref(false)
+  const executingCellId = ref<CellId | null>(null)
+  const executionQueue = ref<CellId[]>([])
+  let interrupted = false
 
-  const convertOutput = useCallback((output: KernelOutput, execCount: number): CellOutput | null => {
+  function convertOutput(output: KernelOutput, execCount: number): CellOutput | null {
     switch (output.type) {
       case 'stream':
-        return {
-          type: 'stream',
-          name: output.name,
-          text: output.text,
-        }
+        return { type: 'stream', name: output.name, text: output.text }
       case 'execute_result':
         return {
           type: 'execute_result',
@@ -86,11 +79,7 @@ export function useCellExecution(
           metadata: output.metadata,
         }
       case 'display_data':
-        return {
-          type: 'display_data',
-          data: output.data,
-          metadata: output.metadata,
-        }
+        return { type: 'display_data', data: output.data, metadata: output.metadata }
       case 'error':
         return {
           type: 'error',
@@ -101,158 +90,113 @@ export function useCellExecution(
       case 'status':
         return null
     }
-  }, [])
+  }
 
-  const executeCell = useCallback(
-    async (cellId: CellId, code: string, language: 'python' | 'r') => {
-      // Resolve the appropriate kernel for this language
-      const targetKernel = getKernelForLanguage?.(language) ?? kernel
-      if (!targetKernel) {
-        onNoKernel?.(cellId)
-        throw new NoKernelError()
-      }
+  async function executeCell(cellId: CellId, code: string, language: 'python' | 'r') {
+    const targetKernel = getKernelForLanguage?.(language) ?? getKernel?.() ?? kernel
+    if (!targetKernel) {
+      onNoKernel?.(cellId)
+      throw new NoKernelError()
+    }
+    if (targetKernel.status !== 'idle' && targetKernel.status !== 'busy') {
+      throw new Error(`Kernel is not ready (status: ${targetKernel.status})`)
+    }
 
-      if (targetKernel.status !== 'idle' && targetKernel.status !== 'busy') {
-        throw new Error(`Kernel is not ready (status: ${targetKernel.status})`)
-      }
+    const executionCount = ++globalExecutionCount
+    isExecuting.value = true
+    executingCellId.value = cellId
+    interrupted = false
 
-      const executionCount = ++globalExecutionCount
+    onCellOutputsClear?.(cellId)
+    onCellExecutionStateChange?.(cellId, 'running')
+    onCellExecutionStart?.(cellId)
 
-      setIsExecuting(true)
-      setExecutingCellId(cellId)
-      interruptedRef.current = false
+    let success = true
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-      onCellOutputsClear?.(cellId)
-      onCellExecutionStateChange?.(cellId, 'running')
-      onCellExecutionStart?.(cellId)
-
-      let success = true
-      let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-      try {
-        const timeoutPromise = executionTimeout > 0
+    try {
+      const timeoutPromise =
+        executionTimeout > 0
           ? new Promise<never>((_, reject) => {
               timeoutId = setTimeout(() => {
-                interruptedRef.current = true
-                targetKernel.interrupt().catch(() => {}) // Best effort interrupt
+                interrupted = true
+                targetKernel.interrupt().catch(() => {})
                 reject(new ExecutionTimeoutError(executionTimeout))
               }, executionTimeout)
             })
           : null
 
-        const executePromise = (async () => {
-          for await (const output of targetKernel.execute(code, language)) {
-            if (interruptedRef.current) {
-              break
-            }
-
-            const cellOutput = convertOutput(output, executionCount)
-            if (cellOutput) {
-              onCellOutputAppend?.(cellId, cellOutput)
-
-              if (cellOutput.type === 'error') {
-                success = false
-              }
-            }
+      const executePromise = (async () => {
+        for await (const output of targetKernel.execute(code, language)) {
+          if (interrupted) break
+          const cellOutput = convertOutput(output, executionCount)
+          if (cellOutput) {
+            onCellOutputAppend?.(cellId, cellOutput)
+            if (cellOutput.type === 'error') success = false
           }
-        })()
-
-        if (timeoutPromise) {
-          await Promise.race([executePromise, timeoutPromise])
-        } else {
-          await executePromise
         }
+      })()
 
-        onCellExecutionCountSet?.(cellId, executionCount)
-        onCellExecutionStateChange?.(cellId, success ? 'success' : 'error')
-      } catch (error) {
-        success = false
-
-        if (error instanceof KernelInterruptError) {
-          onCellExecutionStateChange?.(cellId, 'idle')
-        } else if (error instanceof ExecutionTimeoutError) {
-          const errorOutput: CellOutput = {
-            type: 'error',
-            ename: 'ExecutionTimeoutError',
-            evalue: error.message,
-            traceback: ['Execution was automatically cancelled due to timeout.'],
-          }
-          onCellOutputAppend?.(cellId, errorOutput)
-          onCellExecutionStateChange?.(cellId, 'error')
-        } else {
-          const errorOutput: CellOutput = {
-            type: 'error',
-            ename: error instanceof Error ? error.constructor.name : 'Error',
-            evalue: error instanceof Error ? error.message : String(error),
-            traceback: error instanceof Error && error.stack ? error.stack.split('\n') : [],
-          }
-          onCellOutputAppend?.(cellId, errorOutput)
-          onCellExecutionStateChange?.(cellId, 'error')
-        }
-      } finally {
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
-        setIsExecuting(false)
-        setExecutingCellId(null)
-        onCellExecutionEnd?.(cellId, success)
-      }
-    },
-    [
-      kernel,
-      getKernelForLanguage,
-      executionTimeout,
-      convertOutput,
-      onCellExecutionStart,
-      onCellExecutionEnd,
-      onCellOutputAppend,
-      onCellExecutionStateChange,
-      onCellExecutionCountSet,
-      onCellOutputsClear,
-      onNoKernel,
-    ]
-  )
-
-  const executeCells = useCallback(
-    async (cells: Array<{ id: CellId; code: string; language: 'python' | 'r' }>) => {
-      setExecutionQueue(cells.map((c) => c.id))
-
-      for (const cell of cells) {
-        if (interruptedRef.current) {
-          break
-        }
-
-        setExecutionQueue((queue) => queue.filter((id) => id !== cell.id))
-        await executeCell(cell.id, cell.code, cell.language)
+      if (timeoutPromise) {
+        await Promise.race([executePromise, timeoutPromise])
+      } else {
+        await executePromise
       }
 
-      setExecutionQueue([])
-    },
-    [executeCell]
-  )
-
-  const interruptExecution = useCallback(async () => {
-    interruptedRef.current = true
-    setExecutionQueue([])
-
-    if (kernel) {
-      await kernel.interrupt()
+      onCellExecutionCountSet?.(cellId, executionCount)
+      onCellExecutionStateChange?.(cellId, success ? 'success' : 'error')
+    } catch (error) {
+      success = false
+      if (error instanceof KernelInterruptError) {
+        onCellExecutionStateChange?.(cellId, 'idle')
+      } else if (error instanceof ExecutionTimeoutError) {
+        onCellOutputAppend?.(cellId, {
+          type: 'error',
+          ename: 'ExecutionTimeoutError',
+          evalue: error.message,
+          traceback: ['Execution was automatically cancelled due to timeout.'],
+        })
+        onCellExecutionStateChange?.(cellId, 'error')
+      } else {
+        onCellOutputAppend?.(cellId, {
+          type: 'error',
+          ename: error instanceof Error ? error.constructor.name : 'Error',
+          evalue: error instanceof Error ? error.message : String(error),
+          traceback: error instanceof Error && error.stack ? error.stack.split('\n') : [],
+        })
+        onCellExecutionStateChange?.(cellId, 'error')
+      }
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
+      isExecuting.value = false
+      executingCellId.value = null
+      onCellExecutionEnd?.(cellId, success)
     }
-
-    if (executingCellId) {
-      onCellExecutionStateChange?.(executingCellId, 'idle')
-    }
-
-    setIsExecuting(false)
-    setExecutingCellId(null)
-  }, [kernel, executingCellId, onCellExecutionStateChange])
-
-  return {
-    isExecuting,
-    executingCellId,
-    executionQueue,
-    executeCell,
-    executeCells,
-    interruptExecution,
   }
+
+  async function executeCells(
+    cells: Array<{ id: CellId; code: string; language: 'python' | 'r' }>
+  ) {
+    executionQueue.value = cells.map((c) => c.id)
+    for (const cell of cells) {
+      if (interrupted) break
+      executionQueue.value = executionQueue.value.filter((id) => id !== cell.id)
+      await executeCell(cell.id, cell.code, cell.language)
+    }
+    executionQueue.value = []
+  }
+
+  async function interruptExecution() {
+    interrupted = true
+    executionQueue.value = []
+    const activeKernel = getKernel?.() ?? kernel
+    if (activeKernel) await activeKernel.interrupt()
+    if (executingCellId.value) {
+      onCellExecutionStateChange?.(executingCellId.value, 'idle')
+    }
+    isExecuting.value = false
+    executingCellId.value = null
+  }
+
+  return { isExecuting, executingCellId, executionQueue, executeCell, executeCells, interruptExecution }
 }

@@ -1,36 +1,39 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { ref, shallowRef, computed, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import type { KernelPlugin, KernelConfig, KernelStatus, KernelOutput } from '@/kernels/types'
-import type { KernelInfo } from '@/components/notebook/NotebookToolbar'
+
+/** Kernel descriptor surfaced to the toolbar/UI. Defined here (was previously in
+ *  NotebookToolbar) so consumers import it from the composable. */
+export interface KernelInfo {
+  id: string
+  name: string
+  languages: ReadonlyArray<'python' | 'r'>
+}
 
 export interface UseKernelOptions {
   kernels?: KernelPlugin[]
   defaultConfig?: KernelConfig
-  /** Configs for all kernels — each kernel is auto-connected with its matching config */
+  /** Configs for all kernels — each is auto-connected with its matching config */
   kernelConfigs?: KernelConfig[]
   onStatusChange?: (status: KernelStatus) => void
 }
 
 export interface UseKernelReturn {
-  kernel: KernelPlugin | null
-  status: KernelStatus
-  isConnecting: boolean
-  availableKernels: KernelInfo[]
-  activeKernelId: string | undefined
+  kernel: Ref<KernelPlugin | null>
+  status: Ref<KernelStatus>
+  isConnecting: Ref<boolean>
+  availableKernels: ComputedRef<KernelInfo[]>
+  activeKernelId: ComputedRef<string | undefined>
   connect: (config: KernelConfig) => Promise<void>
   disconnect: () => Promise<void>
   execute: (code: string, language: 'python' | 'r') => AsyncIterable<KernelOutput>
   interrupt: () => Promise<void>
   switchKernel: (kernelId: string) => Promise<void>
-  /** Get the appropriate kernel for a given language */
   getKernelForLanguage: (language: 'python' | 'r') => KernelPlugin | null
-  /** Aggregate status across all connected kernels */
-  aggregateStatus: KernelStatus
-  /** Per-kernel status map (kernel id → status) */
-  kernelStatuses: Map<string, KernelStatus>
+  aggregateStatus: ComputedRef<KernelStatus>
+  kernelStatuses: Ref<Map<string, KernelStatus>>
 }
 
-/** Compute a single status from multiple kernel statuses.
- *  A single kernel error does not block the whole notebook — only report
+/** A single kernel error does not block the whole notebook — only report
  *  'error' if every kernel has failed. */
 function computeAggregateStatus(statuses: KernelStatus[]): KernelStatus {
   if (statuses.length === 0) return 'disconnected'
@@ -44,197 +47,135 @@ function computeAggregateStatus(statuses: KernelStatus[]): KernelStatus {
 export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
   const { kernels = [], defaultConfig, kernelConfigs, onStatusChange } = options
 
-  const [kernel, setKernel] = useState<KernelPlugin | null>(null)
-  const [status, setStatus] = useState<KernelStatus>('disconnected')
-  const [kernelStatuses, setKernelStatuses] = useState<Map<string, KernelStatus>>(new Map())
-  const [isConnecting, setIsConnecting] = useState(false)
-  const unsubscribeRef = useRef<(() => void) | null>(null)
-  const unsubscribesRef = useRef<Map<string, () => void>>(new Map())
-  const lastConfigRef = useRef<KernelConfig | null>(null)
-  const multiKernelInitRef = useRef(false)
-  const connectingRef = useRef(false)
+  const kernel = shallowRef<KernelPlugin | null>(null)
+  const status = ref<KernelStatus>('disconnected')
+  const kernelStatuses = ref<Map<string, KernelStatus>>(new Map())
+  const isConnecting = ref(false)
 
-  // Stabilize references to avoid re-triggering effects on every render
-  const defaultConfigRef = useRef(defaultConfig)
-  defaultConfigRef.current = defaultConfig
-  const kernelsRef = useRef(kernels)
-  kernelsRef.current = kernels
+  let unsubscribe: (() => void) | null = null
+  const unsubscribes = new Map<string, () => void>()
+  let multiKernelInit = false
+  let connecting = false
 
-  const availableKernels = useMemo<KernelInfo[]>(
-    () =>
-      kernels.map((k) => ({
-        id: k.id,
-        name: k.name,
-        languages: k.languages,
-      })),
-    [kernels]
+  const availableKernels = computed<KernelInfo[]>(() =>
+    kernels.map((k) => ({ id: k.id, name: k.name, languages: k.languages }))
   )
 
-  const activeKernelId = kernel?.id
+  const activeKernelId = computed(() => kernel.value?.id)
 
-  const aggregateStatus = useMemo(() => {
-    if (kernelStatuses.size === 0) return status
-    return computeAggregateStatus(Array.from(kernelStatuses.values()))
-  }, [kernelStatuses, status])
+  const aggregateStatus = computed<KernelStatus>(() => {
+    if (kernelStatuses.value.size === 0) return status.value
+    return computeAggregateStatus(Array.from(kernelStatuses.value.values()))
+  })
 
-  const findKernel = useCallback(
-    (config: KernelConfig): KernelPlugin | undefined => {
-      return kernels.find((k) => k.id === config.type)
-    },
-    [kernels]
-  )
+  function findKernel(config: KernelConfig): KernelPlugin | undefined {
+    return kernels.find((k) => k.id === config.type)
+  }
 
-  const getKernelForLanguage = useCallback(
-    (language: 'python' | 'r'): KernelPlugin | null => {
-      const k = kernels.find(
-        (k) => k.languages.includes(language) && (k.status === 'idle' || k.status === 'busy')
-      )
-      return k ?? null
-    },
-    [kernels]
-  )
+  function getKernelForLanguage(language: 'python' | 'r'): KernelPlugin | null {
+    const k = kernels.find(
+      (k) => k.languages.includes(language) && (k.status === 'idle' || k.status === 'busy')
+    )
+    return k ?? null
+  }
 
-  const connect = useCallback(
-    async (config: KernelConfig) => {
-      if (connectingRef.current) return
-      connectingRef.current = true
-
-      try {
-        if (kernel && kernel.status !== 'disconnected') {
-          await kernel.disconnect()
-        }
-
-        // Clean up previous subscription before setting a new one
-        unsubscribeRef.current?.()
-
-        const newKernel = findKernel(config)
-        if (!newKernel) {
-          throw new Error(`No kernel found for type: ${config.type}`)
-        }
-
-        setKernel(newKernel)
-        setIsConnecting(true)
-        lastConfigRef.current = config
-
-        unsubscribeRef.current = newKernel.onStatusChange((newStatus) => {
-          setStatus(newStatus)
-          onStatusChange?.(newStatus)
-        })
-
-        await newKernel.connect(config)
-        setStatus(newKernel.status)
-      } catch (error) {
-        setStatus('error')
-        throw error
-      } finally {
-        setIsConnecting(false)
-        connectingRef.current = false
+  async function connect(config: KernelConfig) {
+    if (connecting) return
+    connecting = true
+    try {
+      if (kernel.value && kernel.value.status !== 'disconnected') {
+        await kernel.value.disconnect()
       }
-    },
-    [kernel, findKernel, onStatusChange]
-  )
-
-  const disconnect = useCallback(async () => {
-    if (kernel) {
-      await kernel.disconnect()
-      unsubscribeRef.current?.()
-      setStatus('disconnected')
+      unsubscribe?.()
+      const newKernel = findKernel(config)
+      if (!newKernel) {
+        throw new Error(`No kernel found for type: ${config.type}`)
+      }
+      kernel.value = newKernel
+      isConnecting.value = true
+      unsubscribe = newKernel.onStatusChange((newStatus) => {
+        status.value = newStatus
+        onStatusChange?.(newStatus)
+      })
+      await newKernel.connect(config)
+      status.value = newKernel.status
+    } catch (error) {
+      status.value = 'error'
+      throw error
+    } finally {
+      isConnecting.value = false
+      connecting = false
     }
-  }, [kernel])
+  }
 
-  const execute = useCallback(
-    (code: string, language: 'python' | 'r'): AsyncIterable<KernelOutput> => {
-      if (!kernel) {
-        throw new Error('No kernel connected')
-      }
-      return kernel.execute(code, language)
-    },
-    [kernel]
-  )
-
-  const interrupt = useCallback(async () => {
-    if (kernel) {
-      await kernel.interrupt()
+  async function disconnect() {
+    if (kernel.value) {
+      await kernel.value.disconnect()
+      unsubscribe?.()
+      status.value = 'disconnected'
     }
-  }, [kernel])
+  }
 
-  const switchKernel = useCallback(
-    async (kernelId: string) => {
-      const targetKernel = kernels.find((k) => k.id === kernelId)
-      if (!targetKernel) {
-        throw new Error(`No kernel found with ID: ${kernelId}`)
-      }
+  function execute(code: string, language: 'python' | 'r'): AsyncIterable<KernelOutput> {
+    if (!kernel.value) throw new Error('No kernel connected')
+    return kernel.value.execute(code, language)
+  }
 
-      const config: KernelConfig = { type: kernelId } as KernelConfig
+  async function interrupt() {
+    if (kernel.value) await kernel.value.interrupt()
+  }
 
-      await connect(config)
-    },
-    [kernels, connect]
-  )
+  async function switchKernel(kernelId: string) {
+    const targetKernel = kernels.find((k) => k.id === kernelId)
+    if (!targetKernel) throw new Error(`No kernel found with ID: ${kernelId}`)
+    await connect({ type: kernelId } as KernelConfig)
+  }
 
-  // Multi-kernel auto-connect: connect all kernels from kernelConfigs
-  useEffect(() => {
+  async function connectAllConfigured() {
     if (!kernelConfigs || kernelConfigs.length === 0 || kernels.length === 0) return
-    if (multiKernelInitRef.current) return
-    multiKernelInitRef.current = true
-
-    const connectAll = async () => {
-      const promises = kernelConfigs.map(async (config) => {
-        const k = kernels.find((k) => k.id === config.type)
+    if (multiKernelInit) return
+    multiKernelInit = true
+    await Promise.all(
+      kernelConfigs.map(async (config) => {
+        const k = kernels.find((kk) => kk.id === config.type)
         if (!k || k.status !== 'disconnected') return
-
         const unsub = k.onStatusChange((newStatus) => {
-          setKernelStatuses((prev) => {
-            const next = new Map(prev)
-            next.set(k.id, newStatus)
-            return next
-          })
+          const next = new Map(kernelStatuses.value)
+          next.set(k.id, newStatus)
+          kernelStatuses.value = next
         })
-        unsubscribesRef.current.set(k.id, unsub)
-
+        unsubscribes.set(k.id, unsub)
         try {
           await k.connect(config)
-          setKernelStatuses((prev) => {
-            const next = new Map(prev)
-            next.set(k.id, k.status)
-            return next
-          })
+          const next = new Map(kernelStatuses.value)
+          next.set(k.id, k.status)
+          kernelStatuses.value = next
         } catch (e) {
           console.warn(`Failed to connect kernel ${k.id}:`, e)
-          setKernelStatuses((prev) => {
-            const next = new Map(prev)
-            next.set(k.id, 'error')
-            return next
-          })
+          const next = new Map(kernelStatuses.value)
+          next.set(k.id, 'error')
+          kernelStatuses.value = next
         }
       })
-      await Promise.all(promises)
-    }
+    )
+  }
 
-    connectAll()
-  }, [kernelConfigs, kernels])
-
-  // Single-kernel auto-connect (backward compat): connect only the default kernel
-  // Uses refs for defaultConfig/kernels to avoid re-firing on every render
-  useEffect(() => {
-    if (kernelConfigs && kernelConfigs.length > 0) return // multi-kernel mode
-    const config = defaultConfigRef.current
-    const availKernels = kernelsRef.current
-    if (config && availKernels.length > 0 && !kernel && !connectingRef.current) {
-      connect(config).catch(console.error)
+  onMounted(() => {
+    if (kernelConfigs && kernelConfigs.length > 0) {
+      void connectAllConfigured()
+      return
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kernel, connect, kernelConfigs])
-
-  useEffect(() => {
-    return () => {
-      unsubscribeRef.current?.()
-      for (const unsub of unsubscribesRef.current.values()) {
-        unsub()
-      }
-      kernel?.disconnect()
+    // Single-kernel auto-connect (backward compat)
+    if (defaultConfig && kernels.length > 0 && !kernel.value && !connecting) {
+      connect(defaultConfig).catch(console.error)
     }
-  }, [kernel])
+  })
+
+  onUnmounted(() => {
+    unsubscribe?.()
+    for (const unsub of unsubscribes.values()) unsub()
+    kernel.value?.disconnect()
+  })
 
   return {
     kernel,

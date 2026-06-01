@@ -47,36 +47,32 @@ export type {
 export { KernelInterruptError, KernelConnectionError } from './kernels/types'
 export { kernelRegistry } from './kernels/registry'
 
-// Hooks
+// Composables
 export { useNotebook } from './hooks/useNotebook'
-export type { UseNotebookOptions, UseNotebookReturn } from './hooks/useNotebook'
+export type { UseNotebookOptions, UseNotebookReturn, NotebookActions } from './hooks/useNotebook'
 export { useKernel } from './hooks/useKernel'
-export type { UseKernelOptions, UseKernelReturn } from './hooks/useKernel'
-export { useCellExecution, NoKernelError, ExecutionTimeoutError } from './hooks/useCellExecution'
+export type { UseKernelOptions, UseKernelReturn, KernelInfo } from './hooks/useKernel'
+export {
+  useCellExecution,
+  NoKernelError,
+  ExecutionTimeoutError,
+} from './hooks/useCellExecution'
 export type { UseCellExecutionOptions, UseCellExecutionReturn } from './hooks/useCellExecution'
 
 // Components
-export { Notebook } from './components/notebook/Notebook'
-export type { NotebookProps, NotebookHandle, NotebookTheme } from './components/notebook/Notebook'
-export { Cell } from './components/notebook/Cell'
-export type { CellProps } from './components/notebook/Cell'
-export { CodeCell } from './components/notebook/CodeCell'
-export type { CodeCellProps } from './components/notebook/CodeCell'
-export { NotebookToolbar } from './components/notebook/NotebookToolbar'
-export type { NotebookToolbarProps, KernelInfo } from './components/notebook/NotebookToolbar'
-
-export { CellOutput } from './components/notebook/CellOutput'
-export type { CellOutputProps } from './components/notebook/CellOutput'
-export { KernelStatusIndicator } from './components/notebook/KernelStatusIndicator'
-export type { KernelStatusIndicatorProps } from './components/notebook/KernelStatusIndicator'
+export { default as Notebook } from './components/notebook/Notebook.vue'
+export type { NotebookTheme } from './components/notebook/Notebook.vue'
+export { default as Cell } from './components/notebook/Cell.vue'
+export { default as CodeCell } from './components/notebook/CodeCell.vue'
+export { default as MarkdownCell } from './components/notebook/MarkdownCell.vue'
+export { default as CellOutput } from './components/notebook/CellOutput.vue'
+export { default as NotebookToolbar } from './components/notebook/NotebookToolbar.vue'
+export { default as KernelStatusIndicator } from './components/notebook/KernelStatusIndicator.vue'
 
 // Kernels
 export { PyodideKernel } from './kernels/pyodide/PyodideKernel'
 export { WebRKernel } from './kernels/webr/WebRKernel'
 export { JupyterKernel } from './kernels/jupyter/JupyterKernel'
-
-export { MarkdownCell } from './components/notebook/MarkdownCell'
-export type { MarkdownCellProps } from './components/notebook/MarkdownCell'
 
 // Serialization utilities
 export { toIpynb, fromIpynb, parseIpynb, serializeIpynb } from './utils/serialization'

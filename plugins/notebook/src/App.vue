@@ -1,4 +1,5 @@
-import { Notebook } from './components/notebook/Notebook'
+<script setup lang="ts">
+import Notebook from './components/notebook/Notebook.vue'
 import { PyodideKernel } from './kernels/pyodide/PyodideKernel'
 import { WebRKernel } from './kernels/webr/WebRKernel'
 import type { NotebookData } from './types/notebook'
@@ -7,9 +8,7 @@ const pyodideKernel = new PyodideKernel()
 const webRKernel = new WebRKernel()
 
 const initialNotebook: NotebookData = {
-  metadata: {
-    title: 'Demo Notebook',
-  },
+  metadata: { title: 'Demo Notebook' },
   cells: [
     {
       id: 'cell-1',
@@ -32,19 +31,20 @@ const initialNotebook: NotebookData = {
   ],
 }
 
-function App() {
-  return (
-    <div className="mx-auto max-w-4xl p-8">
-      <h1 className="mb-6 text-2xl font-bold">React Notebook Demo</h1>
-      <Notebook
-        initialData={initialNotebook}
-        onChange={(data) => console.log('Notebook changed:', data)}
-        kernels={[pyodideKernel, webRKernel]}
-        defaultKernelConfig={{ type: 'pyodide' }}
-        showLineNumbers={true}
-      />
-    </div>
-  )
+function onChange(data: NotebookData) {
+  console.log('Notebook changed:', data)
 }
+</script>
 
-export default App
+<template>
+  <div class="mx-auto max-w-4xl p-8">
+    <h1 class="mb-6 text-2xl font-bold">Notebook Demo</h1>
+    <Notebook
+      :initial-data="initialNotebook"
+      :on-change="onChange"
+      :kernels="[pyodideKernel, webRKernel]"
+      :default-kernel-config="{ type: 'pyodide' }"
+      :show-line-numbers="true"
+    />
+  </div>
+</template>

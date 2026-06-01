@@ -1,10 +1,7 @@
-/* eslint-disable react-refresh/only-export-components */
-import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
+<script lang="ts">
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
 
-const buttonVariants = cva(
+export const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
@@ -30,24 +27,35 @@ const buttonVariants = cva(
   }
 )
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+export type ButtonVariants = VariantProps<typeof buttonVariants>
+</script>
+
+<script setup lang="ts">
+import { Primitive } from 'reka-ui'
+import { cn } from '@/lib/utils'
+
+interface Props {
+  variant?: ButtonVariants['variant']
+  size?: ButtonVariants['size']
   asChild?: boolean
+  as?: string
+  class?: string
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button'
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Button.displayName = 'Button'
+const props = withDefaults(defineProps<Props>(), {
+  variant: 'default',
+  size: 'default',
+  asChild: false,
+  as: 'button',
+})
+</script>
 
-export { Button, buttonVariants }
+<template>
+  <Primitive
+    :as="as"
+    :as-child="asChild"
+    :class="cn(buttonVariants({ variant, size }), props.class)"
+  >
+    <slot />
+  </Primitive>
+</template>

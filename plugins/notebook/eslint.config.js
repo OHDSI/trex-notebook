@@ -1,23 +1,27 @@
 import js from '@eslint/js'
 import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import pluginVue from 'eslint-plugin-vue'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'coverage', 'example/dist']),
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  ...pluginVue.configs['flat/recommended'],
   {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
+    files: ['**/*.vue'],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      parserOptions: { parser: tseslint.parser },
+      globals: { ...globals.browser },
+    },
+  },
+  {
+    files: ['**/*.{ts,vue}'],
+    languageOptions: { globals: { ...globals.browser } },
+    rules: {
+      // Single-word component names are intentional for this UI kit (Button, Cell, Notebook, ...)
+      'vue/multi-word-component-names': 'off',
     },
   },
 ])

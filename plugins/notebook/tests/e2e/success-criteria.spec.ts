@@ -15,7 +15,7 @@ import fs from 'fs'
 test.describe('Success Criteria', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1:has-text("React Notebook")')).toBeVisible()
+    await expect(page.locator('h1:has-text("Notebook")')).toBeVisible()
   })
 
   test('SC-001: creates first code cell within 10 seconds', async ({ page }) => {
