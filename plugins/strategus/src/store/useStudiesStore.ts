@@ -1,5 +1,26 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { GraphqlClient, defaultGraphqlEndpoint } from '../api/graphqlClient';
+import { deserializeSpec } from '../services/SpecDeserializer';
+import { useStrategusStore } from './useStrategusStore';
+import type { AnalysisSpecification } from '../models/AnalysisSpec';
+
+// Fetch a single server-stored definition by our uuid PK. PostGraphile exposes
+// the uuid `id` column as `rowId` (the `id` field is the opaque Node global id),
+// so we select it via the list query's `condition: { rowId }` form rather than the
+// single-fetch `notebookAnalysisDefinition(id:)` which wants the Node id.
+const GET_DEFINITION = `query($id: UUID!) {
+  allNotebookAnalysisDefinitions(condition: { rowId: $id }) {
+    nodes { rowId name description spec }
+  }
+}`;
+
+interface ServerDefinition {
+  rowId: string;
+  name: string;
+  description: string;
+  spec: AnalysisSpecification;
+}
 
 export interface StudyRecord {
   id: string;
@@ -119,6 +140,32 @@ export const useStudiesStore = defineStore('strategus-studies', () => {
     mode.value = 'list';
   }
 
+  /**
+   * Fetch a server-stored analysis definition by its rowId (uuid) over GraphQL
+   * and hydrate the strategus editor with it. Reuses the same store-hydration
+   * path as the local "Import JSON" / open-study flow: the server `spec` is an
+   * AnalysisSpecification, exactly the shape `deserializeSpec` accepts. After
+   * hydration we switch into editor mode so the deep-link lands on the editor.
+   * Returns the fetched definition, or null if not found.
+   */
+  async function loadServerDefinition(id: string): Promise<ServerDefinition | null> {
+    const gql = new GraphqlClient(defaultGraphqlEndpoint());
+    const data = await gql.request<{
+      allNotebookAnalysisDefinitions: { nodes: ServerDefinition[] };
+    }>(GET_DEFINITION, { id });
+    const def = data.allNotebookAnalysisDefinitions.nodes[0];
+    if (!def) return null;
+
+    const strategus = useStrategusStore();
+    deserializeSpec(def.spec, strategus);
+    if (typeof def.name === 'string' && def.name) strategus.studyName = def.name;
+    if (typeof def.description === 'string') strategus.description = def.description;
+
+    currentStudyId.value = null;
+    mode.value = 'editor';
+    return def;
+  }
+
   return {
     studies,
     mode,
@@ -132,5 +179,6 @@ export const useStudiesStore = defineStore('strategus-studies', () => {
     openStudy,
     openNew,
     closeEditor,
+    loadServerDefinition,
   };
 });

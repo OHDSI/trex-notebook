@@ -1,14 +1,16 @@
 {
-  "name": "strategus-plugin",
+  "name": "jobs-plugin",
   "version": "0.1.0",
-  "description": "Strategus Analysis Specification Builder for Atlas3",
+  "private": true,
+  "description": "HADES/Strategus jobs overview and R environment management for Atlas3",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "pinia": "^2.1.0",
@@ -17,7 +19,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
-    "jsdom": "^26.0.0",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^15.11.2",
     "single-spa-vue": "^3.0.0",
     "typescript": "^5.9.0",
     "vite": "^5.4.21",

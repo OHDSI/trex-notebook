@@ -124,6 +124,7 @@ COPY --from=r-builder /rv/r-packages       ./plugins/results-viewer/r-packages
 RUN cd plugins/strategus     && npm ci && npm run build
 RUN cd plugins/network       && npm ci && npm run build
 RUN cd plugins/results-viewer && npm ci && npm run build
+RUN cd plugins/jobs && npm ci && npm run build
 # sibyl last — build:trex sets the /plugins/sibyl/ base and copies public/
 # (now containing all three sub-plugins + config/plugins.json) into dist/.
 RUN cd plugins/sibyl && npm ci && npm run build:trex
@@ -146,6 +147,18 @@ COPY --from=web-builder /src/plugins/sibyl/dist /usr/src/plugins/sibyl/dist
 # mounts its trex.functions.api route on boot.
 COPY plugins/network-api/package.json /usr/src/plugins/network-api/package.json
 COPY plugins/network-api/functions    /usr/src/plugins/network-api/functions
+
+# hades-api: function-only plugin (no build — Deno runs the .ts directly).
+# REST over the hades_* Strategus execution SQL; trex mounts its
+# trex.functions.api route on boot.
+COPY plugins/hades-api/package.json /usr/src/plugins/hades-api/package.json
+COPY plugins/hades-api/functions    /usr/src/plugins/hades-api/functions
+
+# metadata-api: function plugin + migrations (notebook schema). Functions handle
+# the encrypted CDM password and result publishing; GraphQL serves the rest.
+COPY plugins/metadata-api/package.json /usr/src/plugins/metadata-api/package.json
+COPY plugins/metadata-api/functions    /usr/src/plugins/metadata-api/functions
+COPY plugins/metadata-api/migrations    /usr/src/plugins/metadata-api/migrations
 
 # Regenerates dist/config/network-config.js from NETWORK_* env vars at startup
 # (invoked from the trex service entrypoint in docker-compose.yml) so the

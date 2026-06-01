@@ -1,0 +1,16 @@
+export class GraphqlClient {
+  constructor(private endpoint: string) {}
+  async request<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+    const resp = await fetch(this.endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!resp.ok) throw new Error(`graphql ${resp.status}`);
+    const body = await resp.json();
+    if (body.errors?.length) throw new Error(body.errors.map((e: { message: string }) => e.message).join("; "));
+    return body.data as T;
+  }
+}
+export const defaultGraphqlEndpoint = () => `${location.origin}/trex/graphql`;

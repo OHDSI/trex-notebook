@@ -1,0 +1,21 @@
+{
+  "name": "metadata-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Notebook metadata: Postgres-backed analysis definitions, results, and CDM connections (GraphQL-exposed) + server-side credential encryption and result publishing.",
+  "trex": {
+    "migrations": { "schema": "notebook", "database": "_config" },
+    "functions": {
+      "api": [
+        { "source": "/metadata-api", "function": "/functions" }
+      ],
+      "env": {
+        "_shared": {
+          "METADATA_ENC_KEY": "${METADATA_ENC_KEY}",
+          "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR}",
+          "TREX_BASE_URL": "${TREX_BASE_URL}"
+        }
+      }
+    }
+  }
+}

@@ -48,3 +48,4 @@ docs/
 central/.deploy/
 central/template.deploy.yaml
 samconfig.toml
+plugins/*/deno.lock

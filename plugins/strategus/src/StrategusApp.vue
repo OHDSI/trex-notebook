@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide } from 'vue';
+import { computed, provide, onMounted } from 'vue';
 import StrategusLayout from './components/StrategusLayout.vue';
 import OverviewPanel from './views/OverviewPanel.vue';
 import StudyPanel from './views/StudyPanel.vue';
@@ -67,6 +67,19 @@ const panelMap: Record<string, unknown> = {
 };
 
 const activeComponent = computed(() => panelMap[store.activePanel] ?? OverviewPanel);
+
+// Deep-link: the jobs "Open in Strategus" affordance navigates here with
+// ?definition=<rowId>. On mount, fetch that server-stored definition and open it
+// in the editor (same hydration path as opening a local study).
+onMounted(() => {
+  if (typeof window === 'undefined') return;
+  const id = new URLSearchParams(window.location.search).get('definition');
+  if (!id) return;
+  studiesStore.loadServerDefinition(id).catch((e) => {
+    // Non-fatal: fall back to the studies list if the definition can't be loaded.
+    console.error('Failed to load server definition', id, e);
+  });
+});
 </script>
 <style>
 .strategus-app-list {

@@ -33,8 +33,26 @@
         >
           Export JSON
         </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          size="small"
+          prepend-icon="mdi-play"
+          data-test="run-analysis"
+          :disabled="!validation.canExport.value"
+          @click="showRun = true"
+        >
+          Run analysis
+        </v-btn>
       </div>
     </div>
+
+    <RunAnalysisDialog
+      :open="showRun"
+      :spec="spec"
+      @close="showRun = false"
+      @submitted="onSubmitted"
+    />
 
     <!-- Validation card -->
     <v-card
@@ -133,14 +151,23 @@ import { computed, ref } from 'vue';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import { serializeSpec } from '../services/SpecSerializer';
+import RunAnalysisDialog from '../components/RunAnalysisDialog.vue';
 
 const store = useStrategusStore();
 const validation = useValidation();
 
 const fullscreen = ref(false);
 const snackbar = ref(false);
+const showRun = ref(false);
 
-const jsonPreview = computed(() => JSON.stringify(serializeSpec(store), null, 2));
+const spec = computed(() => serializeSpec(store));
+const jsonPreview = computed(() => JSON.stringify(spec.value, null, 2));
+
+function onSubmitted(jobId: string) {
+  showRun.value = false;
+  // Deep-link to the jobs plugin focused on this run.
+  window.location.assign(`/plugins/jobs-plugin/?job=${encodeURIComponent(jobId)}`);
+}
 
 const validationChecks = computed(() => [
   { key: 'setup', label: 'Study name', result: validation.statusFor('setup') },

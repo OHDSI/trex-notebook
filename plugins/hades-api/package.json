@@ -1,0 +1,20 @@
+{
+  "name": "hades-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Trex function plugin: REST over the hades_* Strategus execution SQL.",
+  "trex": {
+    "functions": {
+      "api": [
+        { "source": "/hades-api", "function": "/functions" }
+      ],
+      "env": {
+        "_shared": {
+          "HADES_ENVS_BASE_DIR": "${HADES_ENVS_BASE_DIR}",
+          "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR}",
+          "HADES_WORK_SCHEMA": "${HADES_WORK_SCHEMA}"
+        }
+      }
+    }
+  }
+}

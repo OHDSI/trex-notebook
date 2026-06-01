@@ -28,6 +28,14 @@
       />
       <div class="flex-grow-1" />
       <v-btn
+        variant="tonal"
+        prepend-icon="mdi-cloud-download-outline"
+        :loading="serverLoading"
+        @click="openServerDialog"
+      >
+        Load from server
+      </v-btn>
+      <v-btn
         color="primary"
         variant="flat"
         prepend-icon="mdi-plus"
@@ -136,6 +144,14 @@
                 @click.stop="onOpen(study.id)"
               />
               <v-btn
+                icon="mdi-cloud-upload-outline"
+                size="small"
+                variant="text"
+                density="comfortable"
+                title="Save to server"
+                @click.stop="openSaveDialog(study.id)"
+              />
+              <v-btn
                 icon="mdi-content-copy"
                 size="small"
                 variant="text"
@@ -188,6 +204,146 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Save to server dialog -->
+    <v-dialog
+      v-model="saveDialogOpen"
+      max-width="480"
+    >
+      <v-card>
+        <v-card-title class="text-h6">
+          Save to server
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            Publishes this analysis specification to the shared metadata store so
+            it can be opened from other tools.
+          </p>
+          <v-text-field
+            v-model="saveName"
+            label="Name"
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="mb-3"
+          />
+          <v-text-field
+            v-model="saveDescription"
+            label="Description"
+            variant="outlined"
+            density="compact"
+            hide-details
+          />
+        </v-card-text>
+        <v-card-actions>
+          <div class="flex-grow-1" />
+          <v-btn
+            variant="text"
+            @click="saveDialogOpen = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="saving"
+            :disabled="!saveName.trim()"
+            @click="doSaveToServer"
+          >
+            Save
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Load from server dialog -->
+    <v-dialog
+      v-model="serverDialogOpen"
+      max-width="560"
+    >
+      <v-card>
+        <v-card-title class="text-h6">
+          Load from server
+        </v-card-title>
+        <v-card-text>
+          <p
+            v-if="serverError"
+            class="text-body-2 text-error mb-2"
+          >
+            {{ serverError }}
+          </p>
+          <div
+            v-if="serverLoading"
+            class="text-body-2 text-medium-emphasis"
+          >
+            Loading…
+          </div>
+          <div
+            v-else-if="serverDefinitions.length === 0"
+            class="text-body-2 text-medium-emphasis"
+          >
+            No saved definitions on the server.
+          </div>
+          <table
+            v-else
+            class="studies-table"
+          >
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th class="studies-table__col-actions" />
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="def in serverDefinitions"
+                :key="def.rowId"
+                class="studies-table__row"
+              >
+                <td>
+                  <div class="studies-table__name">
+                    {{ def.name }}
+                  </div>
+                </td>
+                <td class="text-medium-emphasis text-caption">
+                  {{ def.description }}
+                </td>
+                <td>
+                  <v-btn
+                    size="small"
+                    variant="tonal"
+                    :loading="openingId === def.rowId"
+                    @click="openServerDefinition(def.rowId)"
+                  >
+                    Open
+                  </v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </v-card-text>
+        <v-card-actions>
+          <div class="flex-grow-1" />
+          <v-btn
+            variant="text"
+            @click="serverDialogOpen = false"
+          >
+            Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Result snackbar -->
+    <v-snackbar
+      v-model="snackbarOpen"
+      :timeout="3500"
+      :color="snackbarColor"
+      location="bottom right"
+    >
+      {{ snackbarMessage }}
+    </v-snackbar>
   </div>
 </template>
 
@@ -195,9 +351,38 @@
 import { ref, computed } from 'vue';
 import { useStudiesStore, type StudyRecord } from '../store/useStudiesStore';
 import { useStrategusStore } from '../store/useStrategusStore';
+import { GraphqlClient, defaultGraphqlEndpoint } from '../api/graphqlClient';
+import { serializeSpec } from '../services/SpecSerializer';
 
 const store = useStudiesStore();
 const strategus = useStrategusStore();
+
+// GraphQL mutation to create a server-stored definition. PostGraphile uses
+// schema-prefixed names: createNotebookAnalysisDefinition(input:{ notebookAnalysisDefinition })
+// and maps the jsonb `spec` column to a `JSON` scalar (pass the object directly).
+const CREATE_DEFINITION = `mutation($name: String!, $description: String!, $spec: JSON!) {
+  createNotebookAnalysisDefinition(
+    input: { notebookAnalysisDefinition: { name: $name, description: $description, spec: $spec } }
+  ) {
+    notebookAnalysisDefinition { rowId }
+  }
+}`;
+
+// List server-stored definitions. The connection-filter only exposes rowId/updatedAt
+// (not deletedAt), so we fetch deletedAt as a node field and drop soft-deleted rows
+// client-side.
+const LIST_DEFINITIONS = `query {
+  allNotebookAnalysisDefinitions(orderBy: UPDATED_AT_DESC) {
+    nodes { rowId name description deletedAt }
+  }
+}`;
+
+interface ServerDefinitionRow {
+  rowId: string;
+  name: string;
+  description: string;
+  deletedAt: string | null;
+}
 
 const deleteDialogOpen = ref(false);
 const pendingDeleteId = ref<string | null>(null);
@@ -266,6 +451,106 @@ function doDelete(): void {
   }
   deleteDialogOpen.value = false;
   pendingDeleteId.value = null;
+}
+
+// ── Server save / load ──────────────────────────────────────────────────────
+
+const gql = new GraphqlClient(defaultGraphqlEndpoint());
+
+const snackbarOpen = ref(false);
+const snackbarMessage = ref('');
+const snackbarColor = ref<'success' | 'error'>('success');
+function notify(message: string, color: 'success' | 'error' = 'success'): void {
+  snackbarMessage.value = message;
+  snackbarColor.value = color;
+  snackbarOpen.value = true;
+}
+
+// Save to server
+const saveDialogOpen = ref(false);
+const saving = ref(false);
+const saveName = ref('');
+const saveDescription = ref('');
+const pendingSaveId = ref<string | null>(null);
+
+function openSaveDialog(id: string): void {
+  const study = store.studies.find((s) => s.id === id);
+  if (!study) return;
+  pendingSaveId.value = id;
+  saveName.value = study.name;
+  saveDescription.value = study.description;
+  saveDialogOpen.value = true;
+}
+
+async function doSaveToServer(): Promise<void> {
+  if (!pendingSaveId.value) return;
+  const study = store.studies.find((s) => s.id === pendingSaveId.value);
+  if (!study) return;
+  saving.value = true;
+  try {
+    // Hydrate the strategus store from this study's snapshot, then serialize it
+    // the same way the editor's Export does. This is the canonical store → spec
+    // path (serializeSpec takes the live store).
+    strategus.restore(study.state);
+    // serializeSpec is duck-typed against a snapshot whose cohortsByRole is
+    // (role: string) => ...; the live store narrows it to (role: CohortRole),
+    // which is structurally compatible. Bridge the parameter-variance gap here
+    // (same call shape ExportPanel uses) without widening serializeSpec's API.
+    const spec = serializeSpec(strategus as unknown as Parameters<typeof serializeSpec>[0]);
+    await gql.request(CREATE_DEFINITION, {
+      name: saveName.value.trim(),
+      description: saveDescription.value,
+      spec,
+    });
+    saveDialogOpen.value = false;
+    notify(`Saved "${saveName.value.trim()}" to the server.`);
+  } catch (e) {
+    notify(`Save failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
+  } finally {
+    saving.value = false;
+  }
+}
+
+// Load from server
+const serverDialogOpen = ref(false);
+const serverLoading = ref(false);
+const serverError = ref<string | null>(null);
+const serverDefinitions = ref<ServerDefinitionRow[]>([]);
+const openingId = ref<string | null>(null);
+
+async function openServerDialog(): Promise<void> {
+  serverDialogOpen.value = true;
+  serverError.value = null;
+  serverLoading.value = true;
+  try {
+    const data = await gql.request<{
+      allNotebookAnalysisDefinitions: { nodes: ServerDefinitionRow[] };
+    }>(LIST_DEFINITIONS);
+    serverDefinitions.value = data.allNotebookAnalysisDefinitions.nodes.filter(
+      (n) => n.deletedAt == null
+    );
+  } catch (e) {
+    serverError.value = e instanceof Error ? e.message : String(e);
+    serverDefinitions.value = [];
+  } finally {
+    serverLoading.value = false;
+  }
+}
+
+async function openServerDefinition(id: string): Promise<void> {
+  openingId.value = id;
+  try {
+    const def = await store.loadServerDefinition(id);
+    if (!def) {
+      notify('Definition not found on the server.', 'error');
+      return;
+    }
+    serverDialogOpen.value = false;
+  } catch (e) {
+    notify(`Failed to open: ${e instanceof Error ? e.message : String(e)}`, 'error');
+  } finally {
+    openingId.value = null;
+  }
 }
 </script>
 
