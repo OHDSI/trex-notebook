@@ -35,4 +35,10 @@ describe('route', () => {
     ).catch((e) => e);
     expect(r.statusCode).toBe(400);
   });
+
+  it('routes POST /sites/{siteId}/approve to approveSite (resolves; 403 without coordinator)', async () => {
+    const { deps } = makeMocks();
+    const ctx = makeCtx({ routeKey: 'POST /sites/{siteId}/approve', role: ROLES.operator('s1'), pathParams: { siteId: 's1' } });
+    await expect(route(ctx, deps)).rejects.toMatchObject({ statusCode: 403 });
+  });
 });

@@ -52,5 +52,10 @@ export const useSitesStore = (apiClient: ApiClient = defaultApi) =>
       await fetchAll();
     }
 
-    return { sites, loading, fetchAll, register, update, rotateSecret, addOperator, setStatus, remove };
+    async function approve(siteId: string) {
+      await apiClient.post(`/sites/${siteId}/approve`);
+      await fetchAll();
+    }
+
+    return { sites, loading, fetchAll, register, update, rotateSecret, addOperator, setStatus, remove, approve };
   })();

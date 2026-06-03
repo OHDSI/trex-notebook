@@ -5,6 +5,22 @@
       <v-spacer />
       <RegisterSiteDialog @created="refresh" />
     </div>
+    <v-card v-if="pendingSites.length" variant="tonal" color="warning" class="mb-4">
+      <v-card-title class="text-subtitle-1">Pending registration requests</v-card-title>
+      <v-table>
+        <thead><tr><th>Name</th><th>Contact</th><th class="text-right">Action</th></tr></thead>
+        <tbody>
+          <tr v-for="s in pendingSites" :key="s.siteId">
+            <td>{{ s.name }}</td>
+            <td>{{ s.contact }}</td>
+            <td class="text-right">
+              <v-btn size="small" color="primary" :loading="approving === s.siteId" @click="approve(s)">Approve</v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
+    </v-card>
+
     <v-table>
       <thead>
         <tr><th>Name</th><th>Contact</th><th>Status</th><th>Client ID</th><th class="text-right">Actions</th></tr>
@@ -56,13 +72,20 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import type { Site } from '@central/shared';
 import { useSitesStore } from '../stores/sites';
 import RegisterSiteDialog from '../components/RegisterSiteDialog.vue';
 
 const store = useSitesStore();
 const busy = ref<string | null>(null);
+const approving = ref<string | null>(null);
+const pendingSites = computed(() => store.sites.filter((s) => s.status === 'pending'));
+
+async function approve(s: Site) {
+  approving.value = s.siteId;
+  try { await store.approve(s.siteId); } finally { approving.value = null; }
+}
 const confirmOpen = ref(false);
 const deleting = ref(false);
 const pending = ref<Site | null>(null);

@@ -7,6 +7,11 @@ export const createSiteSchema = z.object({
   contact: z.string().trim().email().or(nonEmpty),
 });
 
+export const signupSchema = z.object({
+  name: nonEmpty,
+  contact: z.string().trim().email().or(nonEmpty),
+});
+
 export const updateSiteSchema = z
   .object({
     name: nonEmpty.optional(),

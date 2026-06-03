@@ -307,6 +307,15 @@ Resources:
         SubGet:
           Type: HttpApi
           Properties: { ApiId: !Ref HttpApi, Path: "/submissions/{subId}", Method: GET }
+        Signup:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /signup, Method: POST, Auth: { Authorizer: NONE } }
+        SignupClaim:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/signup/{siteId}", Method: GET, Auth: { Authorizer: NONE } }
+        ApproveSite:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/sites/{siteId}/approve", Method: POST }
         Health:
           Type: HttpApi
           Properties:

@@ -3,6 +3,7 @@ import {
   createSiteSchema,
   initiateSubmissionSchema,
   createStudySchema,
+  signupSchema,
 } from '../src/schemas';
 
 describe('createSiteSchema', () => {
@@ -36,5 +37,17 @@ describe('initiateSubmissionSchema', () => {
   it('accepts .db filenames', () => {
     const r = initiateSubmissionSchema.safeParse({ files: [{ filename: 'results.db' }] });
     expect(r.success).toBe(true);
+  });
+});
+
+describe('signupSchema', () => {
+  it('accepts name + contact', () => {
+    expect(signupSchema.safeParse({ name: 'Site A', contact: 'a@x.org' }).success).toBe(true);
+  });
+  it('rejects empty name', () => {
+    expect(signupSchema.safeParse({ name: '', contact: 'a@x.org' }).success).toBe(false);
+  });
+  it('rejects missing contact', () => {
+    expect(signupSchema.safeParse({ name: 'A' }).success).toBe(false);
   });
 });

@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider';
 import { PutCommand, ScanCommand, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import {
-  createSite, listSites, getSite, updateSite, rotateSecret, createOperator, deleteSite,
+  createSite, listSites, getSite, updateSite, rotateSecret, createOperator, deleteSite, approveSite,
 } from '../../src/handlers/sites';
 import { makeCtx, makeMocks, ROLES } from '../helpers';
 import { ApiError } from '../../src/lib/errors';
@@ -158,5 +158,45 @@ describe('deleteSite', () => {
     expect(r.statusCode).toBe(204);
     expect(cognito.commandCalls(DeleteUserPoolClientCommand)[0].args[0].input.ClientId).toBe('cid-1');
     expect(ddb.commandCalls(DeleteCommand)[0].args[0].input.Key).toEqual({ siteId: 's1' });
+  });
+});
+
+describe('approveSite', () => {
+  it('forbids non-coordinators', async () => {
+    const { deps } = makeMocks();
+    const ctx = makeCtx({ role: ROLES.operator('s1'), pathParams: { siteId: 's1' } });
+    await expect(approveSite(ctx, deps)).rejects.toMatchObject({ statusCode: 403 });
+  });
+  it('409 when the site is not pending', async () => {
+    const { ddb, deps } = makeMocks();
+    ddb.on(GetCommand).resolves({ Item: { siteId: 's1', status: 'active' } });
+    const ctx = makeCtx({ role: ROLES.coordinator, pathParams: { siteId: 's1' } });
+    await expect(approveSite(ctx, deps)).rejects.toMatchObject({ statusCode: 409 });
+  });
+  it('provisions a cognito client and stashes the secret for claim', async () => {
+    const { ddb, cognito, deps } = makeMocks();
+    ddb.on(GetCommand).resolves({ Item: { siteId: 's1', name: 'A', contact: 'a@x.org', status: 'pending' } });
+    cognito.on(CreateUserPoolClientCommand).resolves({ UserPoolClient: { ClientId: 'cid-9', ClientSecret: 'sek-9' } });
+    ddb.on(UpdateCommand).resolves({ Attributes: { siteId: 's1', name: 'A', contact: 'a@x.org', status: 'active', cognitoClientId: 'cid-9', pendingSecret: 'sek-9' } });
+    const ctx = makeCtx({ role: ROLES.coordinator, pathParams: { siteId: 's1' } });
+    const r = await approveSite(ctx, deps);
+    expect(r.statusCode).toBe(200);
+    const body = JSON.parse(r.body);
+    expect(body.status).toBe('active');
+    expect(body.cognitoClientId).toBe('cid-9');
+    expect(body.pendingSecret).toBeUndefined(); // never returned to the coordinator
+    const upd = ddb.commandCalls(UpdateCommand)[0].args[0].input as any;
+    expect(upd.ExpressionAttributeValues[':p']).toBe('sek-9');
+  });
+  it('deletes the orphaned cognito client if the update fails', async () => {
+    const { ddb, cognito, deps } = makeMocks();
+    ddb.on(GetCommand).resolves({ Item: { siteId: 's1', name: 'A', contact: 'a@x.org', status: 'pending' } });
+    cognito.on(CreateUserPoolClientCommand).resolves({ UserPoolClient: { ClientId: 'cid-x', ClientSecret: 'sek-x' } });
+    ddb.on(UpdateCommand).rejects(new Error('ddb down'));
+    const ctx = makeCtx({ role: ROLES.coordinator, pathParams: { siteId: 's1' } });
+    await expect(approveSite(ctx, deps)).rejects.toBeTruthy();
+    const deletes = cognito.commandCalls(DeleteUserPoolClientCommand);
+    expect(deletes.length).toBe(1);
+    expect(deletes[0].args[0].input.ClientId).toBe('cid-x');
   });
 });

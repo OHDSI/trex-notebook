@@ -7,11 +7,13 @@
       <v-tab value="studies">Studies</v-tab>
       <v-tab value="submit">Submit</v-tab>
       <v-tab value="mine">My submissions</v-tab>
+      <v-tab value="register">Register site</v-tab>
     </v-tabs>
     <v-window v-model="tab">
       <v-window-item value="studies"><StudiesToExecuteView /></v-window-item>
       <v-window-item value="submit"><SubmitResultsView /></v-window-item>
       <v-window-item value="mine"><MySubmissionsView /></v-window-item>
+      <v-window-item value="register"><RegisterSiteView /></v-window-item>
     </v-window>
   </v-card>
 </template>
@@ -21,6 +23,7 @@ import { ref } from 'vue';
 import StudiesToExecuteView from './views/StudiesToExecuteView.vue';
 import SubmitResultsView from './views/SubmitResultsView.vue';
 import MySubmissionsView from './views/MySubmissionsView.vue';
+import RegisterSiteView from './views/RegisterSiteView.vue';
 
 const tab = ref('studies');
 </script>

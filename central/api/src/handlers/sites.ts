@@ -16,7 +16,12 @@ import type { RequestContext } from '../lib/context';
 import type { Deps } from '../lib/deps';
 import { created, ok, noContent, type HandlerResult } from '../lib/http';
 import { requireCoordinator } from '../lib/auth';
-import { badRequest, notFound } from '../lib/errors';
+import { badRequest, notFound, conflict } from '../lib/errors';
+
+function publicSite<T extends Record<string, unknown>>(item: T): Omit<T, 'pendingSecret' | 'claimTokenHash'> {
+  const { pendingSecret: _p, claimTokenHash: _h, ...rest } = item as Record<string, unknown>;
+  return rest as Omit<T, 'pendingSecret' | 'claimTokenHash'>;
+}
 
 export async function createSite(ctx: RequestContext, deps: Deps): Promise<HandlerResult> {
   requireCoordinator(ctx.role);
@@ -64,7 +69,7 @@ export async function createSite(ctx: RequestContext, deps: Deps): Promise<Handl
 export async function listSites(ctx: RequestContext, deps: Deps): Promise<HandlerResult> {
   requireCoordinator(ctx.role);
   const res = await deps.ddb.send(new ScanCommand({ TableName: deps.env.sitesTable }));
-  return ok(res.Items ?? []);
+  return ok((res.Items ?? []).map((i) => publicSite(i as Record<string, unknown>)));
 }
 
 export async function getSite(ctx: RequestContext, deps: Deps): Promise<HandlerResult> {
@@ -72,7 +77,7 @@ export async function getSite(ctx: RequestContext, deps: Deps): Promise<HandlerR
   const siteId = ctx.pathParams.siteId;
   const res = await deps.ddb.send(new GetCommand({ TableName: deps.env.sitesTable, Key: { siteId } }));
   if (!res.Item) throw notFound('SITE_NOT_FOUND', `no site ${siteId}`);
-  return ok(res.Item);
+  return ok(publicSite(res.Item as Record<string, unknown>));
 }
 
 export async function updateSite(ctx: RequestContext, deps: Deps): Promise<HandlerResult> {
@@ -175,4 +180,50 @@ export async function deleteSite(ctx: RequestContext, deps: Deps): Promise<Handl
   ).catch(() => {});
   await deps.ddb.send(new DeleteCommand({ TableName: deps.env.sitesTable, Key: { siteId } }));
   return noContent();
+}
+
+export async function approveSite(ctx: RequestContext, deps: Deps): Promise<HandlerResult> {
+  requireCoordinator(ctx.role);
+  const siteId = ctx.pathParams.siteId;
+  const res = await deps.ddb.send(new GetCommand({ TableName: deps.env.sitesTable, Key: { siteId } }));
+  const item = res.Item as (Site & { status: string }) | undefined;
+  if (!item) throw notFound('SITE_NOT_FOUND', `no site ${siteId}`);
+  if (item.status !== 'pending') throw conflict('NOT_PENDING', `site ${siteId} is not pending`);
+
+  const clientRes = await deps.cognito.send(
+    new CreateUserPoolClientCommand({
+      UserPoolId: deps.env.userPoolId,
+      ClientName: `site-${siteId}`,
+      GenerateSecret: true,
+      AllowedOAuthFlows: ['client_credentials'],
+      AllowedOAuthScopes: [deps.env.resourceServerScope],
+      AllowedOAuthFlowsUserPoolClient: true,
+      ExplicitAuthFlows: ['ALLOW_REFRESH_TOKEN_AUTH'],
+    }),
+  );
+  const cognitoClientId = clientRes.UserPoolClient?.ClientId ?? '';
+  const clientSecret = clientRes.UserPoolClient?.ClientSecret ?? '';
+
+  let updated;
+  try {
+    updated = await deps.ddb.send(
+      new UpdateCommand({
+        TableName: deps.env.sitesTable,
+        Key: { siteId },
+        UpdateExpression: 'SET #s = :a, cognitoClientId = :c, pendingSecret = :p',
+        ConditionExpression: '#s = :pending',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: { ':a': 'active', ':c': cognitoClientId, ':p': clientSecret, ':pending': 'pending' },
+        ReturnValues: 'ALL_NEW',
+      }),
+    );
+  } catch (err) {
+    await Promise.resolve(
+      deps.cognito.send(
+        new DeleteUserPoolClientCommand({ UserPoolId: deps.env.userPoolId, ClientId: cognitoClientId }),
+      ),
+    ).catch(() => {});
+    throw err;
+  }
+  return ok(publicSite((updated.Attributes ?? {}) as Record<string, unknown>));
 }

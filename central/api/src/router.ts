@@ -19,6 +19,7 @@ const routes: Record<string, Handler> = {
   'DELETE /sites/{siteId}': sites.deleteSite,
   'POST /sites/{siteId}/rotate-secret': sites.rotateSecret,
   'POST /sites/{siteId}/operators': sites.createOperator,
+  'POST /sites/{siteId}/approve': sites.approveSite,
 
   'POST /studies': studies.createStudy,
   'PATCH /studies/{studyId}': studies.updateStudy,

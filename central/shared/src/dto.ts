@@ -1,4 +1,4 @@
-export type SiteStatus = 'active' | 'disabled';
+export type SiteStatus = 'active' | 'disabled' | 'pending';
 
 export interface Site {
   siteId: string;
@@ -12,6 +12,15 @@ export interface Site {
 
 /** Returned only once, at create/rotate — never persisted by us. */
 export interface SiteWithSecret extends Site {
+  clientSecret: string;
+}
+
+export interface SignupRequest { name: string; contact: string; }
+export interface SignupAccepted { siteId: string; claimToken: string; }
+export interface SignupStatusResponse { status: SiteStatus; }
+export interface SignupCredentials {
+  status: 'active';
+  cognitoClientId: string;
   clientSecret: string;
 }
 

@@ -5,22 +5,19 @@
   "private": true,
   "type": "module",
   "trex": {
+    "migrations": { "schema": "network", "database": "_config" },
     "functions": {
       "env": {
         "_shared": {
-          "NETWORK_MACHINE_CLIENT_ID": "${NETWORK_MACHINE_CLIENT_ID}",
-          "NETWORK_CLIENT_SECRET": "${NETWORK_CLIENT_SECRET}",
+          "NETWORK_MACHINE_CLIENT_ID": "${NETWORK_MACHINE_CLIENT_ID:-}",
+          "NETWORK_CLIENT_SECRET": "${NETWORK_CLIENT_SECRET:-}",
           "NETWORK_COGNITO_DOMAIN": "${NETWORK_COGNITO_DOMAIN}",
           "NETWORK_TOKEN_SCOPE": "${NETWORK_TOKEN_SCOPE:-}",
-          "NETWORK_CENTRAL_API_URL": "${NETWORK_API_URL}"
+          "NETWORK_CENTRAL_API_URL": "${NETWORK_API_URL}",
+          "NETWORK_ENC_KEY": "${NETWORK_ENC_KEY}"
         }
       },
-      "api": [
-        {
-          "source": "/network-api",
-          "function": "/functions"
-        }
-      ]
+      "api": [ { "source": "/network-api", "function": "/functions" } ]
     }
   }
 }

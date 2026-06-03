@@ -28,4 +28,14 @@ describe('sites store', () => {
     expect(created.clientSecret).toBe('sec');
     expect(post).toHaveBeenCalledWith('/sites', { name: 'B', contact: 'b@x.org' });
   });
+
+  it('approve() POSTs to the approve route then refreshes', async () => {
+    const calls: string[] = [];
+    const get = vi.fn().mockImplementation(async (p: string) => { calls.push(`GET ${p}`); return []; });
+    const post = vi.fn().mockImplementation(async (p: string) => { calls.push(`POST ${p}`); return {}; });
+    const store = useSitesStore(fakeApi({ get, post }));
+    await store.approve('s1');
+    expect(calls).toContain('POST /sites/s1/approve');
+    expect(calls).toContain('GET /sites');
+  });
 });

@@ -61,6 +61,7 @@ export function makeMocks(env?: Partial<Deps['env']>): Mocks {
       ...env,
     },
     newId: () => `id-${++counter}`,
+    newToken: () => 'tok-test',
     now: () => '2026-05-30T00:00:00.000Z',
   };
   return { ddb, s3, cognito, deps };
