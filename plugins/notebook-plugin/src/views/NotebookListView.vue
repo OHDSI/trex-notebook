@@ -20,12 +20,44 @@
       </template>
       <template #item.updatedAt="{ item }">{{ formatDate(item.updatedAt) }}</template>
       <template #item.actions="{ item }">
-        <v-btn icon="mdi-pencil" variant="text" size="small" title="Rename" @click="rename(item)" />
+        <v-btn icon="mdi-pencil" variant="text" size="small" title="Rename" @click="openRename(item)" />
         <v-btn icon="mdi-content-copy" variant="text" size="small" title="Duplicate" @click="duplicate(item.rowId)" />
-        <v-btn icon="mdi-delete" variant="text" size="small" title="Delete" @click="remove(item)" />
+        <v-btn icon="mdi-delete" variant="text" size="small" title="Delete" @click="openDelete(item)" />
       </template>
       <template #no-data>No notebooks yet. Create one with "New notebook".</template>
     </v-data-table>
+
+    <v-dialog v-model="renameDialog" max-width="420">
+      <v-card title="Rename notebook">
+        <v-card-text>
+          <v-text-field
+            v-model="renameName"
+            label="Name"
+            autofocus
+            hide-details
+            @keyup.enter="confirmRename"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="renameDialog = false">Cancel</v-btn>
+          <v-btn color="primary" :disabled="!renameName.trim()" @click="confirmRename">Rename</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="deleteDialog" max-width="420">
+      <v-card title="Delete notebook">
+        <v-card-text>
+          Delete <strong>{{ deleteTarget?.name }}</strong>? This cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -57,17 +89,39 @@ async function reload(): Promise<void> {
   loading.value = false;
 }
 
-async function rename(item: NotebookSummary): Promise<void> {
-  const name = window.prompt("Rename notebook", item.name);
-  if (name && name !== item.name) await store.update(item.rowId, { name });
+const renameDialog = ref(false);
+const renameTarget = ref<NotebookSummary | null>(null);
+const renameName = ref("");
+
+function openRename(item: NotebookSummary): void {
+  renameTarget.value = item;
+  renameName.value = item.name;
+  renameDialog.value = true;
+}
+
+async function confirmRename(): Promise<void> {
+  const target = renameTarget.value;
+  const name = renameName.value.trim();
+  renameDialog.value = false;
+  if (target && name && name !== target.name) await store.update(target.rowId, { name });
+}
+
+const deleteDialog = ref(false);
+const deleteTarget = ref<NotebookSummary | null>(null);
+
+function openDelete(item: NotebookSummary): void {
+  deleteTarget.value = item;
+  deleteDialog.value = true;
+}
+
+async function confirmDelete(): Promise<void> {
+  const target = deleteTarget.value;
+  deleteDialog.value = false;
+  if (target) await store.remove(target.rowId);
 }
 
 async function duplicate(id: string): Promise<void> {
   await store.duplicate(id);
-}
-
-async function remove(item: NotebookSummary): Promise<void> {
-  if (window.confirm(`Delete "${item.name}"?`)) await store.remove(item.rowId);
 }
 
 onMounted(reload);
