@@ -21,6 +21,25 @@
       }
     },
     {
+      "id": "notebook-plugin",
+      "name": "Notebooks",
+      "version": "0.1.0",
+      "entryPoint": "notebook-plugin/index.system.js",
+      "menuItems": [
+        {
+          "id": "notebook.main",
+          "name": "Notebooks",
+          "route": "/plugins/notebook-plugin/",
+          "icon": "mdi-notebook-outline",
+          "order": 52
+        }
+      ],
+      "metadata": {
+        "author": "OHDSI",
+        "description": "Create, store and run Python/R/Markdown notebooks (Pyodide/WebR)"
+      }
+    },
+    {
       "id": "network-plugin",
       "name": "Network",
       "version": "0.1.0",
