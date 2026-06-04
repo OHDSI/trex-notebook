@@ -128,8 +128,12 @@ RUN cd plugins/strategus     && npm ci && npm run build
 RUN cd plugins/network       && npm ci && npm run build
 RUN cd plugins/results-viewer && npm ci && npm run build
 RUN cd plugins/jobs && npm ci && npm run build
+# notebook-plugin embeds the @trex/notebook lib (file:../notebook) and bundles it
+# from source, so the lib's own deps must be installed first.
+RUN cd plugins/notebook && npm ci
+RUN cd plugins/notebook-plugin && npm ci && npm run build
 # sibyl last — build:trex sets the /plugins/sibyl/ base and copies public/
-# (now containing all three sub-plugins + config/plugins.json) into dist/.
+# (now containing all sub-plugins + config/plugins.json) into dist/.
 RUN cd plugins/sibyl && npm ci && npm run build:trex
 
 # ---------------------------------------------------------------------------
@@ -150,6 +154,8 @@ COPY --from=web-builder /src/plugins/sibyl/dist /usr/src/plugins/sibyl/dist
 # mounts its trex.functions.api route on boot.
 COPY plugins/network-api/package.json /usr/src/plugins/network-api/package.json
 COPY plugins/network-api/functions    /usr/src/plugins/network-api/functions
+# Signup credential store (network schema) — applied by the trex migration runner.
+COPY plugins/network-api/migrations    /usr/src/plugins/network-api/migrations
 
 # hades-api: function-only plugin (no build — Deno runs the .ts directly).
 # REST over the hades_* Strategus execution SQL; trex mounts its

@@ -1,0 +1,31 @@
+name: strategus-plugin
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/strategus/**'
+      - '.github/workflows/strategus-plugin.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'plugins/strategus/**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: plugins/strategus
+        run: npm install
+      - name: Unit test
+        working-directory: plugins/strategus
+        run: npx vitest run
+      - name: Build
+        working-directory: plugins/strategus
+        run: npm run build
+      - name: Verify bundle
+        run: test -f plugins/sibyl/public/plugins/strategus-plugin/index.system.js

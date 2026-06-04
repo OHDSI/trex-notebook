@@ -1,0 +1,33 @@
+name: function-plugins
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/network-api/**'
+      - 'plugins/metadata-api/**'
+      - 'plugins/hades-api/**'
+      - '.github/workflows/function-plugins.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'plugins/network-api/**'
+      - 'plugins/metadata-api/**'
+      - 'plugins/hades-api/**'
+
+# Deno edge-function plugins (no build — trex's EdgeRuntime runs the .ts directly).
+# Run the standalone unit tests for the pure helpers (crypto, hades SQL builders,
+# router) — they don't need the Trex runtime global.
+jobs:
+  deno-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: network-api tests
+        run: deno test --allow-net plugins/network-api/functions/crypto.test.ts
+      - name: metadata-api tests
+        run: deno test --allow-net plugins/metadata-api/functions/crypto.test.ts
+      - name: hades-api tests
+        run: deno test --allow-net plugins/hades-api/functions/hades.test.ts plugins/hades-api/functions/router.test.ts

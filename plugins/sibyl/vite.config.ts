@@ -98,6 +98,10 @@ export default defineConfig({
     },
     proxy: {
       '/trex': { target: trexProxy, changeOrigin: true, secure: false },
+      // Forward function-plugin calls (e.g. network-api signup relay) to the trex
+      // backend so the dev-served plugins reach a real function instead of the SPA
+      // fallback. Static plugin bundles under /plugins/<id>/ are still served locally.
+      '/plugins/network-api': { target: trexProxy, changeOrigin: true, secure: false },
     },
   },
   preview: {

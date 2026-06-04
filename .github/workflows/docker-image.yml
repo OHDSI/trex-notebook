@@ -1,0 +1,37 @@
+name: docker-image
+
+# Full multi-stage trex image build: the R stage (rocker + OHDSI stack →
+# shinylive-export/ + r-packages/), every sub-plugin bundle (strategus, network,
+# results-viewer, jobs, notebook-plugin) + the sibyl shell, and the function
+# plugins, all baked into the trex backend. This is the end-to-end "everything
+# builds together" check.
+#
+# It is heavy (the R stage installs ~130 packages), so it runs only on
+# develop/main pushes and manual dispatch — not on every PR. GHA layer caching
+# keeps subsequent runs fast.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'Dockerfile'
+      - 'plugins/**'
+      - 'docker/**'
+      - '.github/workflows/docker-image.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build trex image (all plugins + R runtime; no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: trex-notebook:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -31,7 +31,19 @@ export class ApiClient {
 
     if (res.status === 204) return undefined as T;
     const text = await res.text();
-    const parsed = text ? JSON.parse(text) : undefined;
+    let parsed: { error?: { code: string; message: string } } | undefined;
+    try {
+      parsed = text ? JSON.parse(text) : undefined;
+    } catch {
+      // A non-JSON body (e.g. an HTML SPA-fallback or proxy error page) means the
+      // endpoint wasn't reachable as an API. Surface a clear error instead of a raw
+      // "Unexpected token '<'" JSON.parse crash.
+      throw new ApiClientError(
+        res.status,
+        'NON_JSON_RESPONSE',
+        `${path} returned a non-JSON response (status ${res.status}); the network-api function may be unreachable.`,
+      );
+    }
     if (!res.ok) {
       const env = parsed?.error ?? { code: 'UNKNOWN', message: res.statusText };
       throw new ApiClientError(res.status, env.code, env.message);

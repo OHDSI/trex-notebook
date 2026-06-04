@@ -324,12 +324,12 @@ Resources:
             Method: GET
             Auth: { Authorizer: NONE }
     Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        EntryPoints: [src/index.ts]
-        Target: node22
-        Format: esm
-        OutExtension: ['.js=.mjs']
+      # Built via api/Makefile (build-ApiFunction): the function imports the
+      # workspace package @central/shared (file:../shared symlink), which SAM's
+      # sandboxed esbuild build cannot resolve after copying CodeUri. The api's
+      # own esbuild (npm run build) resolves it in-place and emits a self-contained
+      # dist/index.mjs, which the Makefile copies into the artifact dir.
+      BuildMethod: makefile
 
   HttpApi:
     Type: AWS::Serverless::HttpApi

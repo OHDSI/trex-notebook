@@ -1,0 +1,60 @@
+name: notebook-plugin
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/notebook/**'
+      - 'plugins/notebook-plugin/**'
+      - '.github/workflows/notebook-plugin.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'plugins/notebook/**'
+      - 'plugins/notebook-plugin/**'
+
+jobs:
+  # The @trex/notebook Vue lib (plugins/notebook) — the source the plugin bundles.
+  lib:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: plugins/notebook
+        run: npm ci
+      - name: Typecheck
+        working-directory: plugins/notebook
+        run: npm run typecheck
+      - name: Unit test
+        working-directory: plugins/notebook
+        run: npx vitest run
+
+  # The sibyl plugin (plugins/notebook-plugin). It depends on @trex/notebook via
+  # file:../notebook and bundles it from source, so the lib's deps must be
+  # installed first.
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install notebook lib (bundled by the plugin)
+        working-directory: plugins/notebook
+        run: npm ci
+      - name: Install notebook-plugin
+        working-directory: plugins/notebook-plugin
+        run: npm ci
+      - name: Typecheck
+        working-directory: plugins/notebook-plugin
+        run: npm run typecheck
+      - name: Unit test
+        working-directory: plugins/notebook-plugin
+        run: npm test
+      - name: Build
+        working-directory: plugins/notebook-plugin
+        run: npm run build
+      - name: Verify bundle
+        run: test -f plugins/sibyl/public/plugins/notebook-plugin/index.system.js
