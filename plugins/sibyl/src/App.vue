@@ -17,3 +17,18 @@ import NavBar from '@/components/NavBar.vue'
 const route = useRoute()
 const isLoginRoute = computed(() => route.name === 'login')
 </script>
+
+<style>
+/* Paint the slightly-blue Atlas page background on every Vuetify root — the host
+   shell and each sub-plugin parcel (which mounts its own .v-application). */
+.v-application {
+  background: rgb(var(--v-theme-background)) !important;
+}
+
+/* Atlas3 modal scrim — navy + blurred, matching @ohdsi/atlas-ui dialogs. */
+.v-overlay__scrim {
+  background-color: rgba(31, 66, 90, 0.45) !important;
+  backdrop-filter: blur(4px);
+  opacity: 1 !important;
+}
+</style>

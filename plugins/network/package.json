@@ -24,6 +24,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@ohdsi/atlas-ui": "^0.1.0-20260605045838-e3c7c92",
     "pinia": "^2.1.0",
     "vue": "^3.4.0",
     "vuetify": "^3.5.0",

@@ -15,12 +15,12 @@ import SidebarNav from './SidebarNav.vue';
 .strategus-layout {
   height: calc(100vh - 60px);
   padding: 24px;
-  background: #f6f7f9;
+  background: rgb(var(--v-theme-background));
   overflow: hidden;
 }
 .strategus-page-shell {
   display: flex;
-  background: #fff;
+  background: rgb(var(--v-theme-surface));
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.04);
   height: 100%;
@@ -62,15 +62,6 @@ import SidebarNav from './SidebarNav.vue';
 .strategus-page-shell .v-card-text { padding: 0 0 16px !important; font-size: 13px; }
 .strategus-page-shell .v-card-actions { padding: 8px 0; }
 .strategus-page-shell .v-card > .v-divider { display: none; }
-
-/* Dialogs keep their card shadow */
-.strategus-detail .v-dialog .v-card {
-  background: #fff !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,.2) !important;
-  border-radius: 12px !important;
-}
-.strategus-detail .v-dialog .v-card-title { padding: 14px 20px !important; font-size: 15px !important; text-transform: none !important; letter-spacing: 0 !important; color: rgba(0,0,0,.87) !important; }
-.strategus-detail .v-dialog .v-card-text { padding: 16px 20px !important; }
 
 /* Form fields — slim them down (keep enough headroom for the floating
    label, which sits at the top of the field box. min-height < 40px
@@ -135,7 +126,7 @@ import SidebarNav from './SidebarNav.vue';
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 8px;
   overflow: hidden;
-  background: #fff;
+  background: rgb(var(--v-theme-surface));
 }
 .strategus-detail .bordered-table .v-table__wrapper { background: transparent !important; }
 

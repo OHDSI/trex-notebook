@@ -1,25 +1,32 @@
 <template>
-  <div
-    v-if="open"
-    class="run-dialog"
+  <AtlasDialog
+    :model-value="open"
+    eyebrow="RUN"
+    title="Run analysis"
+    :max-width="400"
+    @close="$emit('close')"
+    @update:model-value="val => { if (!val) $emit('close') }"
   >
-    <h3>Run analysis</h3>
     <p
       v-if="error"
-      class="error"
+      class="run-error"
       data-test="error"
     >
       {{ error }}
     </p>
-    <label>CDM schema
+    <label class="run-label">
+      CDM schema
       <input
         v-model="cdmSchema"
+        class="run-input"
         data-test="cdm"
       >
     </label>
-    <label>R environment
+    <label class="run-label">
+      R environment
       <select
         v-model="envName"
+        class="run-input"
         data-test="env"
       >
         <option
@@ -31,29 +38,35 @@
         </option>
       </select>
     </label>
-    <label>Run name (optional)
+    <label class="run-label">
+      Run name (optional)
       <input
         v-model="name"
+        class="run-input"
         data-test="name"
       >
     </label>
-    <div class="actions">
-      <button @click="$emit('close')">
+    <template #actions>
+      <AtlasButton
+        variant="ghost"
+        @click="$emit('close')"
+      >
         Cancel
-      </button>
-      <button
+      </AtlasButton>
+      <AtlasButton
         data-test="run"
         :disabled="!cdmSchema || !envName || busy"
         @click="submit"
       >
         Run
-      </button>
-    </div>
-  </div>
+      </AtlasButton>
+    </template>
+  </AtlasDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { HadesClient, defaultBase } from '../api/hadesClient';
 import type { HadesEnv } from '../api/types';
 
@@ -101,40 +114,20 @@ async function submit(): Promise<void> {
 </script>
 
 <style scoped>
-.run-dialog {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  min-width: 360px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.run-dialog label {
+.run-label {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
+  margin-bottom: 12px;
 }
-.run-dialog input,
-.run-dialog select {
+.run-input {
   padding: 6px 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-.error {
+.run-error {
   color: #c62828;
+  margin-bottom: 8px;
 }
 </style>

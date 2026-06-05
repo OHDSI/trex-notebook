@@ -26,6 +26,7 @@ import {
   createDefaultEvidenceSynthesis,
   type TimeAtRiskWindow,
 } from '../services/DefaultsFactory';
+import type { StudyTypeId } from '../services/StudyTypePresets';
 
 // Exported types consumed by UI components
 
@@ -125,6 +126,7 @@ export const useStrategusStore = defineStore('strategus', () => {
   const activePanel = ref<SidebarItem>('overview');
 
   // ── Study metadata ────────────────────────────────────────────────────────
+  const studyType = ref<StudyTypeId | null>(null);
   const studyName = ref<string>('');
   const description = ref<string>('');
   const studyStartDate = ref<string | null>(null);
@@ -187,6 +189,7 @@ export const useStrategusStore = defineStore('strategus', () => {
   function resetToDefaults(): void {
     activePanel.value = 'overview';
 
+    studyType.value = null;
     studyName.value = '';
     description.value = '';
     studyStartDate.value = null;
@@ -232,6 +235,7 @@ export const useStrategusStore = defineStore('strategus', () => {
   return {
     // State
     activePanel,
+    studyType,
     studyName,
     description,
     studyStartDate,
@@ -275,6 +279,7 @@ export const useStrategusStore = defineStore('strategus', () => {
    */
   function snapshot(): Record<string, unknown> {
     return JSON.parse(JSON.stringify({
+      studyType: studyType.value,
       studyName: studyName.value,
       description: description.value,
       studyStartDate: studyStartDate.value,
@@ -315,6 +320,7 @@ export const useStrategusStore = defineStore('strategus', () => {
    */
   function restore(snap: Record<string, unknown>): void {
     resetToDefaults();
+    studyType.value = (snap.studyType as StudyTypeId | null) ?? null;
     if (typeof snap.studyName === 'string') studyName.value = snap.studyName;
     if (typeof snap.description === 'string') description.value = snap.description;
     if (snap.studyStartDate === null || typeof snap.studyStartDate === 'string') studyStartDate.value = snap.studyStartDate as string | null;

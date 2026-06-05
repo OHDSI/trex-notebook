@@ -52,133 +52,127 @@
     </div>
 
     <!-- Add/Edit Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="dialogOpen"
-      max-width="520"
+      eyebrow="COMPARISON"
+      :title="editingIdx !== null ? 'Edit Comparison' : 'Add Comparison'"
+      :max-width="520"
+      @close="dialogOpen = false"
     >
-      <v-card>
-        <v-card-title class="text-h6 pa-4 pb-2">
-          {{ editingIdx !== null ? 'Edit Comparison' : 'Add Comparison' }}
-        </v-card-title>
-        <v-card-text class="pa-4 pt-2">
-          <v-row dense>
-            <v-col
-              cols="12"
-              sm="6"
-            >
-              <v-select
-                v-model="form.targetId"
-                label="Target"
-                :items="targetItems"
-                item-title="cohortName"
-                item-value="cohortId"
-                variant="outlined"
-                density="compact"
-                no-data-text="No Target cohorts assigned"
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="6"
-            >
-              <v-select
-                v-model="form.comparatorId"
-                label="Comparator"
-                :items="comparatorItems"
-                item-title="cohortName"
-                item-value="cohortId"
-                variant="outlined"
-                density="compact"
-                no-data-text="No Comparator cohorts assigned"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-select
-                v-model="form.indicationId"
-                label="Indication Cohort (optional)"
-                :items="indicationItems"
-                item-title="title"
-                item-value="value"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-select
-                v-model="form.genderConceptIds"
-                label="Gender"
-                :items="genderOptions"
-                item-title="label"
-                item-value="value"
-                variant="outlined"
-                density="compact"
-                multiple
-                chips
-                closable-chips
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="6"
-            >
-              <v-text-field
-                v-model.number="form.minAge"
-                label="Min Age (optional)"
-                variant="outlined"
-                density="compact"
-                type="number"
-                clearable
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="6"
-            >
-              <v-text-field
-                v-model.number="form.maxAge"
-                label="Max Age (optional)"
-                variant="outlined"
-                density="compact"
-                type="number"
-                clearable
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model="excludedConceptsStr"
-                label="Excluded covariate concept IDs"
-                hint="Comma-separated concept IDs (e.g., drug ingredients to exclude from PS model)"
-                persistent-hint
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-          </v-row>
-        </v-card-text>
-        <v-card-actions class="pa-4 pt-0">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="dialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :disabled="!form.targetId || !form.comparatorId"
-            @click="saveComparison"
-          >
-            {{ editingIdx !== null ? 'Save' : 'Add' }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <v-row dense>
+        <v-col
+          cols="12"
+          sm="6"
+        >
+          <v-select
+            v-model="form.targetId"
+            label="Target"
+            :items="targetItems"
+            item-title="cohortName"
+            item-value="cohortId"
+            variant="outlined"
+            density="compact"
+            no-data-text="No Target cohorts assigned"
+          />
+        </v-col>
+        <v-col
+          cols="12"
+          sm="6"
+        >
+          <v-select
+            v-model="form.comparatorId"
+            label="Comparator"
+            :items="comparatorItems"
+            item-title="cohortName"
+            item-value="cohortId"
+            variant="outlined"
+            density="compact"
+            no-data-text="No Comparator cohorts assigned"
+          />
+        </v-col>
+        <v-col cols="12">
+          <v-select
+            v-model="form.indicationId"
+            label="Indication Cohort (optional)"
+            :items="indicationItems"
+            item-title="title"
+            item-value="value"
+            variant="outlined"
+            density="compact"
+          />
+        </v-col>
+        <v-col cols="12">
+          <v-select
+            v-model="form.genderConceptIds"
+            label="Gender"
+            :items="genderOptions"
+            item-title="label"
+            item-value="value"
+            variant="outlined"
+            density="compact"
+            multiple
+            chips
+            closable-chips
+          />
+        </v-col>
+        <v-col
+          cols="12"
+          sm="6"
+        >
+          <v-text-field
+            v-model.number="form.minAge"
+            label="Min Age (optional)"
+            variant="outlined"
+            density="compact"
+            type="number"
+            clearable
+          />
+        </v-col>
+        <v-col
+          cols="12"
+          sm="6"
+        >
+          <v-text-field
+            v-model.number="form.maxAge"
+            label="Max Age (optional)"
+            variant="outlined"
+            density="compact"
+            type="number"
+            clearable
+          />
+        </v-col>
+        <v-col cols="12">
+          <v-text-field
+            v-model="excludedConceptsStr"
+            label="Excluded covariate concept IDs"
+            hint="Comma-separated concept IDs (e.g., drug ingredients to exclude from PS model)"
+            persistent-hint
+            variant="outlined"
+            density="compact"
+          />
+        </v-col>
+      </v-row>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="dialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          :disabled="!form.targetId || !form.comparatorId"
+          @click="saveComparison"
+        >
+          {{ editingIdx !== null ? 'Save' : 'Add' }}
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { TciDefinition } from '../store/useStrategusStore';
 import TciCard from '../components/TciCard.vue';

@@ -216,207 +216,200 @@
     </AdvancedSection>
 
     <!-- Add/Edit Subset Definition Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="showSubsetDialog"
-      max-width="600"
+      eyebrow="COHORT"
+      :title="(editingSubset ? 'Edit' : 'Add') + ' Subset Definition'"
+      :max-width="600"
+      @close="showSubsetDialog = false"
     >
-      <v-card>
-        <v-card-title class="text-h6">
-          {{ editingSubset ? 'Edit' : 'Add' }} Subset Definition
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-4">
-          <v-text-field
-            v-model="subsetForm.name"
-            label="Name"
+      <v-text-field
+        v-model="subsetForm.name"
+        label="Name"
+        density="compact"
+        variant="outlined"
+        class="mb-3"
+        hide-details
+      />
+
+      <div class="text-caption text-medium-emphasis mb-2">
+        Operators
+      </div>
+
+      <div
+        v-for="(op, idx) in subsetForm.operators"
+        :key="idx"
+        class="operator-card pa-3 mb-2 rounded"
+      >
+        <div class="d-flex align-center mb-2">
+          <v-select
+            v-model="op.type"
+            :items="operatorTypeItems"
+            label="Type"
             density="compact"
             variant="outlined"
-            class="mb-3"
+            hide-details
+            class="flex-grow-1 mr-2"
+          />
+          <v-btn
+            icon="mdi-delete"
+            size="x-small"
+            variant="text"
+            color="error"
+            @click="removeOperator(idx)"
+          />
+        </div>
+
+        <!-- LimitSubsetOperator fields -->
+        <template v-if="op.type === 'LimitSubsetOperator'">
+          <v-row dense>
+            <v-col cols="6">
+              <v-text-field
+                v-model.number="op.priorTime"
+                label="Prior time (days)"
+                type="number"
+                density="compact"
+                variant="outlined"
+                hide-details
+              />
+            </v-col>
+            <v-col cols="6">
+              <v-text-field
+                v-model.number="op.followUpTime"
+                label="Follow-up time (days)"
+                type="number"
+                density="compact"
+                variant="outlined"
+                hide-details
+              />
+            </v-col>
+          </v-row>
+          <v-select
+            v-model="op.limitTo"
+            :items="limitToItems"
+            label="Limit to"
+            density="compact"
+            variant="outlined"
+            hide-details
+            class="mt-2"
+          />
+          <v-row
+            dense
+            class="mt-2"
+          >
+            <v-col cols="6">
+              <v-text-field
+                v-model="op.calendarStartDate"
+                label="Calendar start date"
+                density="compact"
+                variant="outlined"
+                hide-details
+                placeholder="YYYY-MM-DD"
+              />
+            </v-col>
+            <v-col cols="6">
+              <v-text-field
+                v-model="op.calendarEndDate"
+                label="Calendar end date"
+                density="compact"
+                variant="outlined"
+                hide-details
+                placeholder="YYYY-MM-DD"
+              />
+            </v-col>
+          </v-row>
+        </template>
+
+        <!-- DemographicSubsetOperator fields -->
+        <template v-else-if="op.type === 'DemographicSubsetOperator'">
+          <v-row dense>
+            <v-col cols="6">
+              <v-text-field
+                v-model.number="op.ageMin"
+                label="Min age"
+                type="number"
+                density="compact"
+                variant="outlined"
+                hide-details
+              />
+            </v-col>
+            <v-col cols="6">
+              <v-text-field
+                v-model.number="op.ageMax"
+                label="Max age"
+                type="number"
+                density="compact"
+                variant="outlined"
+                hide-details
+              />
+            </v-col>
+          </v-row>
+          <v-select
+            v-model="op.gender"
+            :items="genderItems"
+            label="Gender"
+            density="compact"
+            variant="outlined"
+            hide-details
+            multiple
+            chips
+            class="mt-2"
+          />
+        </template>
+
+        <!-- CohortSubsetOperator fields -->
+        <template v-else-if="op.type === 'CohortSubsetOperator'">
+          <v-select
+            v-model="op.cohortIds"
+            :items="cohortSelectItems"
+            label="Cohorts"
+            density="compact"
+            variant="outlined"
+            hide-details
+            multiple
+            chips
+            class="mb-2"
+          />
+          <v-checkbox
+            v-model="op.negate"
+            label="Negate (exclude these cohorts)"
+            density="compact"
             hide-details
           />
+        </template>
+      </div>
 
-          <div class="text-caption text-medium-emphasis mb-2">
-            Operators
-          </div>
+      <v-btn
+        size="small"
+        variant="text"
+        color="primary"
+        prepend-icon="mdi-plus"
+        @click="addOperator"
+      >
+        Add Operator
+      </v-btn>
 
-          <div
-            v-for="(op, idx) in subsetForm.operators"
-            :key="idx"
-            class="operator-card pa-3 mb-2 rounded"
-          >
-            <div class="d-flex align-center mb-2">
-              <v-select
-                v-model="op.type"
-                :items="operatorTypeItems"
-                label="Type"
-                density="compact"
-                variant="outlined"
-                hide-details
-                class="flex-grow-1 mr-2"
-              />
-              <v-btn
-                icon="mdi-delete"
-                size="x-small"
-                variant="text"
-                color="error"
-                @click="removeOperator(idx)"
-              />
-            </div>
-
-            <!-- LimitSubsetOperator fields -->
-            <template v-if="op.type === 'LimitSubsetOperator'">
-              <v-row dense>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model.number="op.priorTime"
-                    label="Prior time (days)"
-                    type="number"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                  />
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model.number="op.followUpTime"
-                    label="Follow-up time (days)"
-                    type="number"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                  />
-                </v-col>
-              </v-row>
-              <v-select
-                v-model="op.limitTo"
-                :items="limitToItems"
-                label="Limit to"
-                density="compact"
-                variant="outlined"
-                hide-details
-                class="mt-2"
-              />
-              <v-row
-                dense
-                class="mt-2"
-              >
-                <v-col cols="6">
-                  <v-text-field
-                    v-model="op.calendarStartDate"
-                    label="Calendar start date"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                    placeholder="YYYY-MM-DD"
-                  />
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model="op.calendarEndDate"
-                    label="Calendar end date"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                    placeholder="YYYY-MM-DD"
-                  />
-                </v-col>
-              </v-row>
-            </template>
-
-            <!-- DemographicSubsetOperator fields -->
-            <template v-else-if="op.type === 'DemographicSubsetOperator'">
-              <v-row dense>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model.number="op.ageMin"
-                    label="Min age"
-                    type="number"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                  />
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model.number="op.ageMax"
-                    label="Max age"
-                    type="number"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                  />
-                </v-col>
-              </v-row>
-              <v-select
-                v-model="op.gender"
-                :items="genderItems"
-                label="Gender"
-                density="compact"
-                variant="outlined"
-                hide-details
-                multiple
-                chips
-                class="mt-2"
-              />
-            </template>
-
-            <!-- CohortSubsetOperator fields -->
-            <template v-else-if="op.type === 'CohortSubsetOperator'">
-              <v-select
-                v-model="op.cohortIds"
-                :items="cohortSelectItems"
-                label="Cohorts"
-                density="compact"
-                variant="outlined"
-                hide-details
-                multiple
-                chips
-                class="mb-2"
-              />
-              <v-checkbox
-                v-model="op.negate"
-                label="Negate (exclude these cohorts)"
-                density="compact"
-                hide-details
-              />
-            </template>
-          </div>
-
-          <v-btn
-            size="small"
-            variant="text"
-            color="primary"
-            prepend-icon="mdi-plus"
-            @click="addOperator"
-          >
-            Add Operator
-          </v-btn>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="showSubsetDialog = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :disabled="!subsetForm.name.trim()"
-            @click="saveSubsetDef"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="showSubsetDialog = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          :disabled="!subsetForm.name.trim()"
+          @click="saveSubsetDef"
+        >
+          Save
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, inject } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { CohortEntry, CohortRole, CohortSubsetDefinition, CohortSubsetOperator } from '../store/useStrategusStore';
 import CohortPicker from '../components/CohortPicker.vue';

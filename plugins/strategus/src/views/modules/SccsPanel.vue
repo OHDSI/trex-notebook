@@ -127,222 +127,217 @@
     </div>
 
     <!-- Analysis Edit Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="dialogOpen"
-      max-width="700"
+      eyebrow="SCCS"
+      :title="editingIdx === -1 ? 'New SCCS Analysis' : 'Edit SCCS Analysis'"
+      :max-width="700"
+      @close="dialogOpen = false"
     >
-      <v-card v-if="editingAnalysis">
-        <v-card-title>
-          {{ editingIdx === -1 ? 'New SCCS Analysis' : 'Edit SCCS Analysis' }}
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pt-4">
+      <template v-if="editingAnalysis">
+        <v-text-field
+          v-model="editingAnalysis.description"
+          label="Description"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          class="mb-4"
+        />
+
+        <!-- Era Windows Table -->
+        <div class="text-subtitle-2 text-medium-emphasis mb-2">
+          Era Windows
+        </div>
+        <v-table
+          density="compact"
+          class="mb-2"
+        >
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Start</th>
+              <th>Start Anchor</th>
+              <th>End</th>
+              <th>End Anchor</th>
+              <th>Exposure of interest</th>
+              <th>Profile likelihood</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(win, widx) in editingAnalysis.eraWindows"
+              :key="widx"
+            >
+              <td>
+                <v-text-field
+                  v-model="win.label"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  style="min-width: 110px"
+                />
+              </td>
+              <td>
+                <v-text-field
+                  v-model.number="win.start"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  type="number"
+                  style="width: 70px"
+                />
+              </td>
+              <td>
+                <v-select
+                  v-model="win.startAnchor"
+                  :items="anchorOptions"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  style="min-width: 110px"
+                />
+              </td>
+              <td>
+                <v-text-field
+                  v-model.number="win.end"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  type="number"
+                  style="width: 70px"
+                />
+              </td>
+              <td>
+                <v-select
+                  v-model="win.endAnchor"
+                  :items="anchorOptions"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  style="min-width: 110px"
+                />
+              </td>
+              <td class="text-center">
+                <v-checkbox
+                  v-model="win.exposureOfInterest"
+                  density="compact"
+                  hide-details
+                />
+              </td>
+              <td class="text-center">
+                <v-checkbox
+                  v-model="win.profileLikelihood"
+                  density="compact"
+                  hide-details
+                />
+              </td>
+              <td>
+                <v-btn
+                  icon
+                  size="x-small"
+                  variant="text"
+                  color="error"
+                  @click="removeEraWindow(widx)"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+        <v-btn
+          size="small"
+          variant="tonal"
+          prepend-icon="mdi-plus"
+          class="mb-4"
+          @click="addEraWindow"
+        >
+          Add Era Window
+        </v-btn>
+
+        <!-- Effects -->
+        <div class="text-subtitle-2 text-medium-emphasis mb-2 mt-2">
+          Effects
+        </div>
+        <div class="d-flex ga-4 flex-wrap mb-4">
+          <v-checkbox
+            v-model="editingAnalysis.includeAgeEffect"
+            label="Age effect"
+            density="compact"
+            hide-details
+          />
+          <v-checkbox
+            v-model="editingAnalysis.includeSeasonality"
+            label="Seasonality"
+            density="compact"
+            hide-details
+          />
+          <v-checkbox
+            v-model="editingAnalysis.includeCalendarTime"
+            label="Calendar time"
+            density="compact"
+            hide-details
+          />
+        </div>
+
+        <!-- Knots + naive period -->
+        <div class="d-flex ga-3">
           <v-text-field
-            v-model="editingAnalysis.description"
-            label="Description"
+            v-model.number="editingAnalysis.naivePeriod"
+            label="Naive period (days)"
             variant="outlined"
             density="compact"
             rounded="md"
             hide-details
-            class="mb-4"
+            type="number"
+            style="max-width: 150px"
           />
-
-          <!-- Era Windows Table -->
-          <div class="text-subtitle-2 text-medium-emphasis mb-2">
-            Era Windows
-          </div>
-          <v-table
+          <v-text-field
+            v-model.number="editingAnalysis.calendarTimeKnots"
+            label="Calendar time knots"
+            variant="outlined"
             density="compact"
-            class="mb-2"
-          >
-            <thead>
-              <tr>
-                <th>Label</th>
-                <th>Start</th>
-                <th>Start Anchor</th>
-                <th>End</th>
-                <th>End Anchor</th>
-                <th>Exposure of interest</th>
-                <th>Profile likelihood</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(win, widx) in editingAnalysis.eraWindows"
-                :key="widx"
-              >
-                <td>
-                  <v-text-field
-                    v-model="win.label"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    style="min-width: 110px"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model.number="win.start"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    type="number"
-                    style="width: 70px"
-                  />
-                </td>
-                <td>
-                  <v-select
-                    v-model="win.startAnchor"
-                    :items="anchorOptions"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    style="min-width: 110px"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model.number="win.end"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    type="number"
-                    style="width: 70px"
-                  />
-                </td>
-                <td>
-                  <v-select
-                    v-model="win.endAnchor"
-                    :items="anchorOptions"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    style="min-width: 110px"
-                  />
-                </td>
-                <td class="text-center">
-                  <v-checkbox
-                    v-model="win.exposureOfInterest"
-                    density="compact"
-                    hide-details
-                  />
-                </td>
-                <td class="text-center">
-                  <v-checkbox
-                    v-model="win.profileLikelihood"
-                    density="compact"
-                    hide-details
-                  />
-                </td>
-                <td>
-                  <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    color="error"
-                    @click="removeEraWindow(widx)"
-                  >
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-          <v-btn
-            size="small"
-            variant="tonal"
-            prepend-icon="mdi-plus"
-            class="mb-4"
-            @click="addEraWindow"
-          >
-            Add Era Window
-          </v-btn>
-
-          <!-- Effects -->
-          <div class="text-subtitle-2 text-medium-emphasis mb-2 mt-2">
-            Effects
-          </div>
-          <div class="d-flex ga-4 flex-wrap mb-4">
-            <v-checkbox
-              v-model="editingAnalysis.includeAgeEffect"
-              label="Age effect"
-              density="compact"
-              hide-details
-            />
-            <v-checkbox
-              v-model="editingAnalysis.includeSeasonality"
-              label="Seasonality"
-              density="compact"
-              hide-details
-            />
-            <v-checkbox
-              v-model="editingAnalysis.includeCalendarTime"
-              label="Calendar time"
-              density="compact"
-              hide-details
-            />
-          </div>
-
-          <!-- Knots + naive period -->
-          <div class="d-flex ga-3">
-            <v-text-field
-              v-model.number="editingAnalysis.naivePeriod"
-              label="Naive period (days)"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              style="max-width: 150px"
-            />
-            <v-text-field
-              v-model.number="editingAnalysis.calendarTimeKnots"
-              label="Calendar time knots"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              style="max-width: 130px"
-              :disabled="!editingAnalysis.includeCalendarTime"
-            />
-            <v-text-field
-              v-model.number="editingAnalysis.seasonalityKnots"
-              label="Seasonality knots"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              style="max-width: 130px"
-              :disabled="!editingAnalysis.includeSeasonality"
-            />
-          </div>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="justify-end">
-          <v-btn
-            variant="text"
-            @click="dialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            variant="tonal"
-            color="primary"
-            @click="saveAnalysis"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+            rounded="md"
+            hide-details
+            type="number"
+            style="max-width: 130px"
+            :disabled="!editingAnalysis.includeCalendarTime"
+          />
+          <v-text-field
+            v-model.number="editingAnalysis.seasonalityKnots"
+            label="Seasonality knots"
+            variant="outlined"
+            density="compact"
+            rounded="md"
+            hide-details
+            type="number"
+            style="max-width: 130px"
+            :disabled="!editingAnalysis.includeSeasonality"
+          />
+        </div>
+      </template>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="dialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          @click="saveAnalysis"
+        >
+          Save
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import type { SccsAnalysis, SccsEraWindow } from '../../models/ModuleSettings';

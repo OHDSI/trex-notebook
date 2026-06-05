@@ -147,6 +147,10 @@ services:
       dockerfile: Dockerfile
       # trexsql:latest is now multi-arch, so build natively for the host arch
       # (arm64 on Apple Silicon, amd64 elsewhere) — no forced platform / QEMU.
+      # GitHub Packages auth for @ohdsi/atlas-ui (see Dockerfile web-builder).
+      # Export NODE_AUTH_TOKEN (a GitHub PAT with read:packages) before building.
+      secrets:
+        - ghtoken
     image: sibyl-trex:local
     depends_on:
       trex-init:
@@ -322,3 +326,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+secrets:
+  # GitHub Packages token for @ohdsi/atlas-ui, taken from the NODE_AUTH_TOKEN env
+  # var at build time (a GitHub PAT with read:packages). Export it before
+  # `docker compose build trex-data`. Used by the web-builder stage in Dockerfile.
+  ghtoken:
+    environment: NODE_AUTH_TOKEN

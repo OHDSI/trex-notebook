@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
 import { createVuetifyInstance } from './plugins/vuetify'
+import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import { initializePluginFramework } from './plugins/index'
 import { setupGlobalMessageHandler } from './plugins/messaging/HostMessageBus'
 import { useAuthStore } from './stores/auth'
@@ -15,6 +16,12 @@ async function bootstrap() {
   // Expose the host Vuetify singleton so plugins that externalize `vuetify`
   // resolve to it via SystemJS (see index.html).
   ;(window as unknown as { __atlasVuetify?: unknown }).__atlasVuetify = vuetify
+  // Sub-plugins create their own `createVuetify({ theme: false })` and read
+  // window.__atlasUiConfig?.defaults for component defaults — publish the Atlas
+  // defaults so they inherit the shared button/input/dialog shapes.
+  ;(window as unknown as { __atlasUiConfig?: unknown }).__atlasUiConfig = {
+    defaults: buildVuetifyOptions().defaults,
+  }
 
   const pinia = createPinia()
   app.use(pinia)

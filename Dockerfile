@@ -124,17 +124,33 @@ COPY --from=r-builder /rv/shinylive-export ./plugins/results-viewer/shinylive-ex
 COPY --from=r-builder /rv/r-packages       ./plugins/results-viewer/r-packages
 
 # Each sub-plugin builds its SystemJS bundle into ../sibyl/public/plugins/<id>/.
-RUN cd plugins/strategus     && npm ci && npm run build
-RUN cd plugins/network       && npm ci && npm run build
-RUN cd plugins/results-viewer && npm ci && npm run build
-RUN cd plugins/jobs && npm ci && npm run build
+# Plugins that consume @ohdsi/atlas-ui (GitHub Packages) need auth: the project
+# .npmrc scopes @ohdsi to npm.pkg.github.com; the token is injected as a BuildKit
+# secret (NODE_AUTH_TOKEN) and written to a throwaway /root/.npmrc inside each
+# RUN, so it is never baked into an image layer.
+RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
+    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
+ && cd plugins/strategus && npm ci && npm run build && rm -f /root/.npmrc
+RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
+    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
+ && cd plugins/network && npm ci && npm run build && rm -f /root/.npmrc
+RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
+    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
+ && cd plugins/results-viewer && npm ci && npm run build && rm -f /root/.npmrc
+RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
+    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
+ && cd plugins/jobs && npm ci && npm run build && rm -f /root/.npmrc
 # notebook-plugin embeds the @trex/notebook lib (file:../notebook) and bundles it
 # from source, so the lib's own deps must be installed first.
 RUN cd plugins/notebook && npm ci
-RUN cd plugins/notebook-plugin && npm ci && npm run build
+RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
+    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
+ && cd plugins/notebook-plugin && npm ci && npm run build && rm -f /root/.npmrc
 # sibyl last — build:trex sets the /plugins/sibyl/ base and copies public/
 # (now containing all sub-plugins + config/plugins.json) into dist/.
-RUN cd plugins/sibyl && npm ci && npm run build:trex
+RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
+    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
+ && cd plugins/sibyl && npm ci && npm run build:trex && rm -f /root/.npmrc
 
 # ---------------------------------------------------------------------------
 # Stage 3: bake the finished sibyl dist into the trex backend.

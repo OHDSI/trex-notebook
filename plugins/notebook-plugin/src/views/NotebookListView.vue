@@ -1,10 +1,14 @@
 <template>
-  <div class="notebook-list">
-    <div class="d-flex align-center mb-4">
-      <h2 class="text-h6">Notebooks</h2>
-      <v-spacer />
+  <AtlasPageShell
+    hero
+    compact
+    eyebrow="OHDSI · Notebooks"
+    title="Notebooks"
+    subtitle="Create and manage analytical notebooks for your cohort studies"
+  >
+    <template #actions>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="emit('new')">New notebook</v-btn>
-    </div>
+    </template>
 
     <v-alert v-if="store.error" type="error" class="mb-4">{{ store.error }}</v-alert>
 
@@ -27,42 +31,33 @@
       <template #no-data>No notebooks yet. Create one with "New notebook".</template>
     </v-data-table>
 
-    <v-dialog v-model="renameDialog" max-width="420">
-      <v-card title="Rename notebook">
-        <v-card-text>
-          <v-text-field
-            v-model="renameName"
-            label="Name"
-            autofocus
-            hide-details
-            @keyup.enter="confirmRename"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="renameDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :disabled="!renameName.trim()" @click="confirmRename">Rename</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <AtlasDialog v-model="renameDialog" eyebrow="RENAME" title="Rename notebook" :max-width="440" @close="renameDialog = false">
+      <v-text-field
+        v-model="renameName"
+        label="Name"
+        autofocus
+        hide-details
+        @keyup.enter="confirmRename"
+      />
+      <template #actions>
+        <AtlasButton variant="ghost" @click="renameDialog = false">Cancel</AtlasButton>
+        <AtlasButton :disabled="!renameName.trim()" @click="confirmRename">Rename</AtlasButton>
+      </template>
+    </AtlasDialog>
 
-    <v-dialog v-model="deleteDialog" max-width="420">
-      <v-card title="Delete notebook">
-        <v-card-text>
-          Delete <strong>{{ deleteTarget?.name }}</strong>? This cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </div>
+    <AtlasDialog v-model="deleteDialog" eyebrow="DELETE" title="Delete notebook" :max-width="440" @close="deleteDialog = false">
+      Delete <strong>{{ deleteTarget?.name }}</strong>? This cannot be undone.
+      <template #actions>
+        <AtlasButton variant="ghost" @click="deleteDialog = false">Cancel</AtlasButton>
+        <AtlasButton variant="danger" @click="confirmDelete">Delete</AtlasButton>
+      </template>
+    </AtlasDialog>
+  </AtlasPageShell>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { AtlasPageShell, AtlasDialog, AtlasButton } from "@ohdsi/atlas-ui";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 import type { NotebookSummary } from "../api/types";
 
@@ -127,6 +122,3 @@ async function duplicate(id: string): Promise<void> {
 onMounted(reload);
 </script>
 
-<style scoped>
-.notebook-list { padding: 4px; }
-</style>

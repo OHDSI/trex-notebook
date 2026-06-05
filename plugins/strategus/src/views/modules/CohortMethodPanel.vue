@@ -200,203 +200,192 @@
     </div>
 
     <!-- Analysis Edit Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="dialogOpen"
-      max-width="560"
+      eyebrow="ANALYSIS"
+      :title="editingIdx === -1 ? 'New Analysis' : 'Edit Analysis'"
+      :max-width="560"
+      @close="dialogOpen = false"
     >
-      <v-card v-if="editingAnalysis">
-        <v-card-title>
-          {{ editingIdx === -1 ? 'New Analysis' : 'Edit Analysis' }}
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pt-4">
-          <v-text-field
-            v-model="editingAnalysis.description"
-            label="Description"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
-            class="mb-4"
-          />
-          <v-select
-            v-model="editingAnalysis.psAdjustmentMethod"
-            :items="psMethodItems"
-            label="PS adjustment method"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
-            class="mb-4"
-          />
-          <!-- Method-specific fields -->
-          <v-text-field
-            v-if="editingAnalysis.psAdjustmentMethod === 'matching'"
-            v-model.number="editingAnalysis.psMatchMaxRatio"
-            label="Matching ratio"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            type="number"
-            min="1"
-            hint="1 = 1:1. >1 = variable ratio"
-            persistent-hint
-            class="mb-4"
-            style="max-width: 200px"
-          />
-          <v-text-field
-            v-else-if="editingAnalysis.psAdjustmentMethod === 'stratification'"
-            v-model.number="editingAnalysis.psStrataCount"
-            label="Number of strata"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            type="number"
-            min="2"
-            hide-details
-            class="mb-4"
-            style="max-width: 200px"
-          />
-          <v-text-field
-            v-else-if="editingAnalysis.psAdjustmentMethod === 'iptw'"
-            v-model.number="editingAnalysis.iptwTruncationFraction"
-            label="IPTW truncation fraction"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            type="number"
-            min="0"
-            max="1"
-            step="0.01"
-            hint="Truncate weights above this percentile (e.g. 0.99)"
-            persistent-hint
-            class="mb-4"
-            style="max-width: 200px"
-          />
-          <v-select
-            v-model="editingAnalysis.outcomeModelType"
-            :items="modelTypeItems"
-            label="Outcome model type"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
-            class="mb-4"
-          />
-          <v-select
-            v-model="editingAnalysis.useCleanWindowForPriorOutcomeLookback"
-            label="Prior outcome lookback"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            :items="[{ title: 'All time prior (recommended)', value: false }, { title: 'Use clean window', value: true }]"
-            hide-details
-          />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="justify-end">
-          <v-btn
-            variant="text"
-            @click="dialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            variant="tonal"
-            color="primary"
-            @click="saveAnalysis"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <template v-if="editingAnalysis">
+        <v-text-field
+          v-model="editingAnalysis.description"
+          label="Description"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          class="mb-4"
+        />
+        <v-select
+          v-model="editingAnalysis.psAdjustmentMethod"
+          :items="psMethodItems"
+          label="PS adjustment method"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          class="mb-4"
+        />
+        <!-- Method-specific fields -->
+        <v-text-field
+          v-if="editingAnalysis.psAdjustmentMethod === 'matching'"
+          v-model.number="editingAnalysis.psMatchMaxRatio"
+          label="Matching ratio"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          type="number"
+          min="1"
+          hint="1 = 1:1. >1 = variable ratio"
+          persistent-hint
+          class="mb-4"
+          style="max-width: 200px"
+        />
+        <v-text-field
+          v-else-if="editingAnalysis.psAdjustmentMethod === 'stratification'"
+          v-model.number="editingAnalysis.psStrataCount"
+          label="Number of strata"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          type="number"
+          min="2"
+          hide-details
+          class="mb-4"
+          style="max-width: 200px"
+        />
+        <v-text-field
+          v-else-if="editingAnalysis.psAdjustmentMethod === 'iptw'"
+          v-model.number="editingAnalysis.iptwTruncationFraction"
+          label="IPTW truncation fraction"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          type="number"
+          min="0"
+          max="1"
+          step="0.01"
+          hint="Truncate weights above this percentile (e.g. 0.99)"
+          persistent-hint
+          class="mb-4"
+          style="max-width: 200px"
+        />
+        <v-select
+          v-model="editingAnalysis.outcomeModelType"
+          :items="modelTypeItems"
+          label="Outcome model type"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          class="mb-4"
+        />
+        <v-select
+          v-model="editingAnalysis.useCleanWindowForPriorOutcomeLookback"
+          label="Prior outcome lookback"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          :items="[{ title: 'All time prior (recommended)', value: false }, { title: 'Use clean window', value: true }]"
+          hide-details
+        />
+      </template>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="dialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          @click="saveAnalysis"
+        >
+          Save
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
 
     <!-- Covariate Features Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="covFeaturesOpen"
-      max-width="700"
-      scrollable
+      eyebrow="SETTINGS"
+      title="Covariate Features"
+      :max-width="700"
+      @close="covFeaturesOpen = false"
     >
-      <v-card>
-        <v-card-title>Covariate Features</v-card-title>
-        <v-divider />
-        <v-card-text style="max-height: 70vh">
-          <!-- Windows -->
-          <div class="text-subtitle-2 mb-2">
-            Time Windows
-          </div>
-          <div class="d-flex ga-3 mb-4">
-            <v-text-field
-              v-model.number="store.cohortMethodSettings.covariateWindows.longTermStartDays"
-              label="Long term start (days)"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              style="max-width: 160px"
-            />
-            <v-text-field
-              v-model.number="store.cohortMethodSettings.covariateWindows.shortTermStartDays"
-              label="Short term start (days)"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              style="max-width: 160px"
-            />
-            <v-text-field
-              v-model.number="store.cohortMethodSettings.covariateWindows.endDays"
-              label="End (days)"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              style="max-width: 120px"
-            />
-          </div>
+      <!-- Windows -->
+      <div class="text-subtitle-2 mb-2">
+        Time Windows
+      </div>
+      <div class="d-flex ga-3 mb-4">
+        <v-text-field
+          v-model.number="store.cohortMethodSettings.covariateWindows.longTermStartDays"
+          label="Long term start (days)"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          type="number"
+          style="max-width: 160px"
+        />
+        <v-text-field
+          v-model.number="store.cohortMethodSettings.covariateWindows.shortTermStartDays"
+          label="Short term start (days)"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          type="number"
+          style="max-width: 160px"
+        />
+        <v-text-field
+          v-model.number="store.cohortMethodSettings.covariateWindows.endDays"
+          label="End (days)"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          type="number"
+          style="max-width: 120px"
+        />
+      </div>
 
-          <!-- Feature groups -->
-          <div
-            v-for="group in covFeatureGroups"
-            :key="group.label"
-            class="mb-4"
-          >
-            <div class="text-subtitle-2 mb-1">
-              {{ group.label }}
-            </div>
-            <div class="d-flex ga-2 flex-wrap">
-              <v-checkbox
-                v-for="flag in group.flags"
-                :key="flag"
-                v-model="store.cohortMethodSettings.covariateFeatures[flag]"
-                :label="flag"
-                density="compact"
-                hide-details
-                class="mr-2"
-              />
-            </div>
-          </div>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="justify-end">
-          <v-btn
-            variant="tonal"
-            @click="covFeaturesOpen = false"
-          >
-            Done
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <!-- Feature groups -->
+      <div
+        v-for="group in covFeatureGroups"
+        :key="group.label"
+        class="mb-4"
+      >
+        <div class="text-subtitle-2 mb-1">
+          {{ group.label }}
+        </div>
+        <div class="d-flex ga-2 flex-wrap">
+          <v-checkbox
+            v-for="flag in group.flags"
+            :key="flag"
+            v-model="store.cohortMethodSettings.covariateFeatures[flag]"
+            :label="flag"
+            density="compact"
+            hide-details
+            class="mr-2"
+          />
+        </div>
+      </div>
+      <template #actions>
+        <AtlasButton
+          @click="covFeaturesOpen = false"
+        >
+          Done
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';

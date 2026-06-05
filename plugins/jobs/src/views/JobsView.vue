@@ -116,9 +116,9 @@ onUnmounted(() => store.stopPolling());
 .poll { display: flex; align-items: center; gap: 4px; font-size: 13px; }
 .layout { display: flex; gap: 12px; align-items: flex-start; }
 table { border-collapse: collapse; flex: 1; }
-th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #eee; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
 tbody tr { cursor: pointer; }
-tbody tr.selected { background: #e3f2fd; }
+tbody tr.selected { background: rgba(var(--v-theme-primary), 0.08); }
 .empty { color: #888; text-align: center; }
 .error { color: #c62828; }
 .note { color: #2e7d32; font-size: 13px; }

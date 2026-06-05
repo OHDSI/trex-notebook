@@ -1,5 +1,11 @@
 <template>
-  <v-card flat class="pa-4">
+  <AtlasPageShell
+    hero
+    compact
+    eyebrow="OHDSI · Network"
+    title="Network"
+    subtitle="Manage federated network studies — execute, submit results, and register this site."
+  >
     <!-- No in-plugin login: access is gated by the trex session, and all API
          calls go through the network-api function proxy, which attaches the
          site's machine token server-side. -->
@@ -15,11 +21,12 @@
       <v-window-item value="mine"><MySubmissionsView /></v-window-item>
       <v-window-item value="register"><RegisterSiteView /></v-window-item>
     </v-window>
-  </v-card>
+  </AtlasPageShell>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { AtlasPageShell } from '@ohdsi/atlas-ui';
 import StudiesToExecuteView from './views/StudiesToExecuteView.vue';
 import SubmitResultsView from './views/SubmitResultsView.vue';
 import MySubmissionsView from './views/MySubmissionsView.vue';

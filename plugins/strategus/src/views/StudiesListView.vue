@@ -1,19 +1,5 @@
 <template>
   <div class="studies-list">
-    <!-- Hero header -->
-    <div class="studies-list__header">
-      <div class="text-overline text-medium-emphasis">
-        OHDSI · Strategus
-      </div>
-      <div class="studies-list__accent" />
-      <h1 class="text-h4 font-weight-light text-primary">
-        Analysis Specifications
-      </h1>
-      <p class="text-body-2 text-medium-emphasis mt-1">
-        Build and manage Strategus analysis specifications for distribution across OMOP sites.
-      </p>
-    </div>
-
     <!-- Toolbar -->
     <div class="studies-list__toolbar">
       <v-text-field
@@ -26,23 +12,6 @@
         hide-details
         class="studies-list__search"
       />
-      <div class="flex-grow-1" />
-      <v-btn
-        variant="tonal"
-        prepend-icon="mdi-cloud-download-outline"
-        :loading="serverLoading"
-        @click="openServerDialog"
-      >
-        Load from server
-      </v-btn>
-      <v-btn
-        color="primary"
-        variant="flat"
-        prepend-icon="mdi-plus"
-        @click="onNew"
-      >
-        New Study
-      </v-btn>
     </div>
 
     <!-- Empty state -->
@@ -114,6 +83,13 @@
           <td>
             <div class="studies-table__name">
               {{ study.name }}
+              <v-chip
+                v-if="studyTypeLabel(study)"
+                size="x-small"
+                color="primary"
+                variant="tonal"
+                class="ml-2"
+              >{{ studyTypeLabel(study) }}</v-chip>
             </div>
             <div
               v-if="study.description"
@@ -173,167 +149,148 @@
     </table>
 
     <!-- Delete dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="deleteDialogOpen"
-      max-width="420"
+      eyebrow="DELETE"
+      title="Delete study?"
+      :max-width="420"
+      @close="deleteDialogOpen = false"
     >
-      <v-card>
-        <v-card-title class="text-h6">
-          Delete study?
-        </v-card-title>
-        <v-card-text>
-          This will permanently remove
-          <strong>{{ pendingDeleteName }}</strong>
-          and cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <div class="flex-grow-1" />
-          <v-btn
-            variant="text"
-            @click="deleteDialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="flat"
-            @click="doDelete"
-          >
-            Delete
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      This will permanently remove
+      <strong>{{ pendingDeleteName }}</strong>
+      and cannot be undone.
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="deleteDialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          variant="danger"
+          @click="doDelete"
+        >
+          Delete
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
 
     <!-- Save to server dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="saveDialogOpen"
-      max-width="480"
+      eyebrow="SERVER"
+      title="Save to server"
+      :max-width="480"
+      @close="saveDialogOpen = false"
     >
-      <v-card>
-        <v-card-title class="text-h6">
-          Save to server
-        </v-card-title>
-        <v-card-text>
-          <p class="text-body-2 text-medium-emphasis mb-4">
-            Publishes this analysis specification to the shared metadata store so
-            it can be opened from other tools.
-          </p>
-          <v-text-field
-            v-model="saveName"
-            label="Name"
-            variant="outlined"
-            density="compact"
-            hide-details
-            class="mb-3"
-          />
-          <v-text-field
-            v-model="saveDescription"
-            label="Description"
-            variant="outlined"
-            density="compact"
-            hide-details
-          />
-        </v-card-text>
-        <v-card-actions>
-          <div class="flex-grow-1" />
-          <v-btn
-            variant="text"
-            @click="saveDialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            :loading="saving"
-            :disabled="!saveName.trim()"
-            @click="doSaveToServer"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <p class="text-body-2 text-medium-emphasis mb-4">
+        Publishes this analysis specification to the shared metadata store so
+        it can be opened from other tools.
+      </p>
+      <v-text-field
+        v-model="saveName"
+        label="Name"
+        variant="outlined"
+        density="compact"
+        hide-details
+        class="mb-3"
+      />
+      <v-text-field
+        v-model="saveDescription"
+        label="Description"
+        variant="outlined"
+        density="compact"
+        hide-details
+      />
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="saveDialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          :disabled="!saveName.trim()"
+          @click="doSaveToServer"
+        >
+          {{ saving ? 'Saving…' : 'Save' }}
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
 
     <!-- Load from server dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="serverDialogOpen"
-      max-width="560"
+      eyebrow="SERVER"
+      title="Load from server"
+      :max-width="560"
+      @close="serverDialogOpen = false"
     >
-      <v-card>
-        <v-card-title class="text-h6">
-          Load from server
-        </v-card-title>
-        <v-card-text>
-          <p
-            v-if="serverError"
-            class="text-body-2 text-error mb-2"
+      <p
+        v-if="serverError"
+        class="text-body-2 text-error mb-2"
+      >
+        {{ serverError }}
+      </p>
+      <div
+        v-if="serverLoading"
+        class="text-body-2 text-medium-emphasis"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="serverDefinitions.length === 0"
+        class="text-body-2 text-medium-emphasis"
+      >
+        No saved definitions on the server.
+      </div>
+      <table
+        v-else
+        class="studies-table"
+      >
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th class="studies-table__col-actions" />
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="def in serverDefinitions"
+            :key="def.rowId"
+            class="studies-table__row"
           >
-            {{ serverError }}
-          </p>
-          <div
-            v-if="serverLoading"
-            class="text-body-2 text-medium-emphasis"
-          >
-            Loading…
-          </div>
-          <div
-            v-else-if="serverDefinitions.length === 0"
-            class="text-body-2 text-medium-emphasis"
-          >
-            No saved definitions on the server.
-          </div>
-          <table
-            v-else
-            class="studies-table"
-          >
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th class="studies-table__col-actions" />
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="def in serverDefinitions"
-                :key="def.rowId"
-                class="studies-table__row"
+            <td>
+              <div class="studies-table__name">
+                {{ def.name }}
+              </div>
+            </td>
+            <td class="text-medium-emphasis text-caption">
+              {{ def.description }}
+            </td>
+            <td>
+              <v-btn
+                size="small"
+                variant="tonal"
+                :loading="openingId === def.rowId"
+                @click="openServerDefinition(def.rowId)"
               >
-                <td>
-                  <div class="studies-table__name">
-                    {{ def.name }}
-                  </div>
-                </td>
-                <td class="text-medium-emphasis text-caption">
-                  {{ def.description }}
-                </td>
-                <td>
-                  <v-btn
-                    size="small"
-                    variant="tonal"
-                    :loading="openingId === def.rowId"
-                    @click="openServerDefinition(def.rowId)"
-                  >
-                    Open
-                  </v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </v-card-text>
-        <v-card-actions>
-          <div class="flex-grow-1" />
-          <v-btn
-            variant="text"
-            @click="serverDialogOpen = false"
-          >
-            Close
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+                Open
+              </v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="serverDialogOpen = false"
+        >
+          Close
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
 
     <!-- Result snackbar -->
     <v-snackbar
@@ -344,15 +301,24 @@
     >
       {{ snackbarMessage }}
     </v-snackbar>
+
+    <!-- Study type picker -->
+    <StudyTypePicker
+      v-model="showTypePicker"
+      @select="onTypeSelected"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStudiesStore, type StudyRecord } from '../store/useStudiesStore';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { GraphqlClient, defaultGraphqlEndpoint } from '../api/graphqlClient';
 import { serializeSpec } from '../services/SpecSerializer';
+import StudyTypePicker from '../components/StudyTypePicker.vue';
+import { applyStudyTypePreset, getPreset, type StudyTypeId } from '../services/StudyTypePresets';
 
 const store = useStudiesStore();
 const strategus = useStrategusStore();
@@ -424,9 +390,21 @@ function formatDate(iso: string): string {
   return date.toLocaleDateString();
 }
 
+const showTypePicker = ref(false);
+
 function onNew(): void {
+  showTypePicker.value = true;
+}
+
+function onTypeSelected(id: StudyTypeId | null): void {
   strategus.resetToDefaults();
+  if (id) applyStudyTypePreset(strategus, id);
   store.openNew();
+}
+
+function studyTypeLabel(study: any): string | null {
+  const id = study?.state?.studyType as StudyTypeId | undefined;
+  return id ? (getPreset(id)?.label ?? null) : null;
 }
 
 function onOpen(id: string): void {
@@ -552,18 +530,13 @@ async function openServerDefinition(id: string): Promise<void> {
     openingId.value = null;
   }
 }
+
+// Expose public API for parent (StrategusApp) to call via template ref
+defineExpose({ onNew, openServerDialog });
 </script>
 
 <style scoped>
 .studies-list { padding: 28px 32px; }
-
-.studies-list__header { margin-bottom: 24px; }
-.studies-list__accent {
-  width: 32px;
-  height: 2px;
-  background: #eb6622;
-  margin: 6px 0 10px;
-}
 
 .studies-list__toolbar {
   display: flex;

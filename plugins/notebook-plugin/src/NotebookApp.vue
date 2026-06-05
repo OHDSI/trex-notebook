@@ -1,14 +1,18 @@
 <template>
   <v-app class="notebook-plugin">
     <v-main>
-      <div class="pa-4">
-        <NotebookListView
-          v-if="view === 'list'"
-          @open="openNotebook"
-          @new="newNotebook"
-        />
+      <!-- List view renders AtlasPageShell, which supplies its own page padding
+           (matching every other plugin). Keep inner padding for the editor. -->
+      <NotebookListView
+        v-if="view === 'list'"
+        @open="openNotebook"
+        @new="newNotebook"
+      />
+      <div
+        v-else
+        class="pa-4"
+      >
         <NotebookEditorView
-          v-else
           :id="activeId"
           @back="goToList"
           @saved="onSaved"

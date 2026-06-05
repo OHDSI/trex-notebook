@@ -1,6 +1,7 @@
 import { h, createApp } from 'vue'
 import singleSpaVue from 'single-spa-vue'
 import { createVuetify } from 'vuetify'
+import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import App from './App.vue'
 import { pluginBase } from './pluginBase'
 
@@ -38,9 +39,10 @@ export interface PluginProps {
 
 // Parcel Vuetify with no theme override — sharing the host's Vuetify
 // theme caused global cascade leaks into Atlas3 (theme tokens collided).
-// Buttons get Atlas-style appearance from the .rv-* scoped CSS instead.
+// We inherit the host CSS theme vars (theme: false) but apply Atlas shared
+// defaults so Vuetify component props match the design system baseline.
 function createParcelVuetify() {
-  return createVuetify({ theme: false })
+  return createVuetify({ theme: false, defaults: buildVuetifyOptions().defaults })
 }
 
 const vueLifecycles = singleSpaVue({

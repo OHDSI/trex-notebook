@@ -167,74 +167,68 @@
     </div>
 
     <!-- Add Negative Control Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="ncDialogOpen"
-      max-width="460"
+      eyebrow="OUTCOME"
+      title="Add Negative Control"
+      :max-width="460"
+      @close="ncDialogOpen = false"
     >
-      <v-card>
-        <v-card-title class="text-h6 pa-4 pb-2">
-          Add Negative Control
-        </v-card-title>
-        <v-card-text class="pa-4 pt-2">
-          <v-row dense>
-            <v-col
-              cols="12"
-              sm="4"
-            >
-              <v-text-field
-                v-model.number="ncForm.cohortId"
-                label="Cohort ID"
-                variant="outlined"
-                density="compact"
-                type="number"
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="8"
-            >
-              <v-text-field
-                v-model="ncForm.cohortName"
-                label="Cohort Name"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model.number="ncForm.outcomeConceptId"
-                label="Outcome Concept ID"
-                variant="outlined"
-                density="compact"
-                type="number"
-              />
-            </v-col>
-          </v-row>
-        </v-card-text>
-        <v-card-actions class="pa-4 pt-0">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="ncDialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :disabled="!ncForm.cohortId || !ncForm.cohortName || !ncForm.outcomeConceptId"
-            @click="addNc"
-          >
-            Add
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <v-row dense>
+        <v-col
+          cols="12"
+          sm="4"
+        >
+          <v-text-field
+            v-model.number="ncForm.cohortId"
+            label="Cohort ID"
+            variant="outlined"
+            density="compact"
+            type="number"
+          />
+        </v-col>
+        <v-col
+          cols="12"
+          sm="8"
+        >
+          <v-text-field
+            v-model="ncForm.cohortName"
+            label="Cohort Name"
+            variant="outlined"
+            density="compact"
+          />
+        </v-col>
+        <v-col cols="12">
+          <v-text-field
+            v-model.number="ncForm.outcomeConceptId"
+            label="Outcome Concept ID"
+            variant="outlined"
+            density="compact"
+            type="number"
+          />
+        </v-col>
+      </v-row>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="ncDialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          :disabled="!ncForm.cohortId || !ncForm.cohortName || !ncForm.outcomeConceptId"
+          @click="addNc"
+        >
+          Add
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { NegativeControlEntry } from '../store/useStrategusStore';
 

@@ -18,11 +18,16 @@
   "trex": {
     "ui": {
       "routes": [
-        { "path": "/sibyl", "dir": "dist", "spa": true }
+        {
+          "path": "/sibyl",
+          "dir": "dist",
+          "spa": true
+        }
       ]
     }
   },
   "dependencies": {
+    "@ohdsi/atlas-ui": "^0.1.0-20260605045838-e3c7c92",
     "pinia": "^2.1.0",
     "single-spa": "^6.0.0",
     "vue": "^3.4.0",

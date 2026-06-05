@@ -80,95 +80,87 @@
     </div>
 
     <!-- Add Model Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="dialogOpen"
-      max-width="480"
+      eyebrow="MODEL"
+      title="Add Validation Model"
+      :max-width="480"
+      @close="dialogOpen = false"
     >
-      <v-card rounded="lg">
-        <v-card-title class="text-subtitle-1 pt-4 px-4">
-          Add Validation Model
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pt-4">
-          <v-text-field
-            v-model="form.plpModelPath"
-            label="PLP model path"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details="auto"
-            :rules="[v => !!v || 'Required']"
-            class="mb-3"
-          />
-          <div class="d-flex ga-3 mb-3">
-            <v-text-field
-              v-model.number="form.targetId"
-              label="Target ID"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              clearable
-              style="flex: 1"
-            />
-            <v-text-field
-              v-model.number="form.outcomeId"
-              label="Outcome ID"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
-              type="number"
-              clearable
-              style="flex: 1"
-            />
-          </div>
-          <v-select
-            v-model="form.recalibrate"
-            label="Recalibrate"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
-            :items="[
-              { title: 'Weak Recalibration', value: 'weakRecalibration' },
-              { title: 'None', value: 'none' },
-            ]"
-            class="mb-3"
-          />
-          <v-checkbox
-            v-model="form.runCovariateSummary"
-            label="Run covariate summary"
-            density="compact"
-            hide-details
-          />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="pa-3">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="dialogOpen = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            variant="tonal"
-            color="primary"
-            :disabled="!form.plpModelPath"
-            @click="addDesign"
-          >
-            Add
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <v-text-field
+        v-model="form.plpModelPath"
+        label="PLP model path"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        hide-details="auto"
+        :rules="[v => !!v || 'Required']"
+        class="mb-3"
+      />
+      <div class="d-flex ga-3 mb-3">
+        <v-text-field
+          v-model.number="form.targetId"
+          label="Target ID"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          type="number"
+          clearable
+          style="flex: 1"
+        />
+        <v-text-field
+          v-model.number="form.outcomeId"
+          label="Outcome ID"
+          variant="outlined"
+          density="compact"
+          rounded="md"
+          hide-details
+          type="number"
+          clearable
+          style="flex: 1"
+        />
+      </div>
+      <v-select
+        v-model="form.recalibrate"
+        label="Recalibrate"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        hide-details
+        :items="[
+          { title: 'Weak Recalibration', value: 'weakRecalibration' },
+          { title: 'None', value: 'none' },
+        ]"
+        class="mb-3"
+      />
+      <v-checkbox
+        v-model="form.runCovariateSummary"
+        label="Run covariate summary"
+        density="compact"
+        hide-details
+      />
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="dialogOpen = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          :disabled="!form.plpModelPath"
+          @click="addDesign"
+        >
+          Add
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 

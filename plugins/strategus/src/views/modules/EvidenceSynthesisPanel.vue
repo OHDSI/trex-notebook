@@ -177,170 +177,162 @@
     </div>
 
     <!-- Add Analysis Dialog -->
-    <v-dialog
+    <AtlasDialog
       v-model="addDialog"
-      max-width="480"
+      eyebrow="SYNTHESIS"
+      title="Add Synthesis Analysis"
+      :max-width="480"
+      @close="addDialog = false"
     >
-      <v-card rounded="lg">
-        <v-card-title class="text-subtitle-1 pt-4 px-4">
-          Add Synthesis Analysis
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pt-4">
+      <v-text-field
+        v-model="newAnalysis.description"
+        label="Description"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        class="mb-3"
+      />
+      <v-select
+        v-model="newAnalysis.analysisType"
+        label="Analysis type"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        :items="[
+          { title: 'Random Effects', value: 'RandomEffects' },
+          { title: 'Fixed Effects', value: 'FixedEffects' },
+          { title: 'Bayesian', value: 'Bayesian' },
+        ]"
+        class="mb-3"
+      />
+      <v-select
+        v-model="newAnalysis.sourceMethod"
+        label="Source method"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        :items="[
+          { title: 'Cohort Method', value: 'CohortMethod' },
+          { title: 'Self-Controlled Case Series', value: 'SelfControlledCaseSeries' },
+        ]"
+        class="mb-3"
+      />
+      <v-select
+        v-model="newAnalysis.likelihoodApproximation"
+        label="Likelihood approximation"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        :items="[
+          { title: 'Adaptive Grid', value: 'adaptive grid' },
+          { title: 'Normal', value: 'normal' },
+        ]"
+        class="mb-3"
+      />
+      <v-select
+        v-model="newAnalysis.controlType"
+        label="Control type"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        :items="[
+          { title: 'Outcome', value: 'outcome' },
+          { title: 'Exposure', value: 'exposure' },
+        ]"
+        class="mb-3"
+      />
+      <v-text-field
+        v-model.number="newAnalysis.alpha"
+        label="Alpha"
+        variant="outlined"
+        density="compact"
+        rounded="md"
+        type="number"
+        step="0.001"
+        class="mb-3"
+      />
+      <template v-if="newAnalysis.analysisType === 'Bayesian'">
+        <div class="text-caption text-medium-emphasis mb-2">
+          Bayesian Settings
+        </div>
+        <div class="d-flex ga-3 mb-3">
           <v-text-field
-            v-model="newAnalysis.description"
-            label="Description"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            class="mb-3"
-          />
-          <v-select
-            v-model="newAnalysis.analysisType"
-            label="Analysis type"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            :items="[
-              { title: 'Random Effects', value: 'RandomEffects' },
-              { title: 'Fixed Effects', value: 'FixedEffects' },
-              { title: 'Bayesian', value: 'Bayesian' },
-            ]"
-            class="mb-3"
-          />
-          <v-select
-            v-model="newAnalysis.sourceMethod"
-            label="Source method"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            :items="[
-              { title: 'Cohort Method', value: 'CohortMethod' },
-              { title: 'Self-Controlled Case Series', value: 'SelfControlledCaseSeries' },
-            ]"
-            class="mb-3"
-          />
-          <v-select
-            v-model="newAnalysis.likelihoodApproximation"
-            label="Likelihood approximation"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            :items="[
-              { title: 'Adaptive Grid', value: 'adaptive grid' },
-              { title: 'Normal', value: 'normal' },
-            ]"
-            class="mb-3"
-          />
-          <v-select
-            v-model="newAnalysis.controlType"
-            label="Control type"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            :items="[
-              { title: 'Outcome', value: 'outcome' },
-              { title: 'Exposure', value: 'exposure' },
-            ]"
-            class="mb-3"
-          />
-          <v-text-field
-            v-model.number="newAnalysis.alpha"
-            label="Alpha"
+            v-model.number="newAnalysis.chainLength"
+            label="Chain length"
             variant="outlined"
             density="compact"
             rounded="md"
             type="number"
-            step="0.001"
-            class="mb-3"
+            hide-details
           />
-          <template v-if="newAnalysis.analysisType === 'Bayesian'">
-            <div class="text-caption text-medium-emphasis mb-2">
-              Bayesian Settings
-            </div>
-            <div class="d-flex ga-3 mb-3">
-              <v-text-field
-                v-model.number="newAnalysis.chainLength"
-                label="Chain length"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                type="number"
-                hide-details
-              />
-              <v-text-field
-                v-model.number="newAnalysis.burnIn"
-                label="Burn-in"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                type="number"
-                hide-details
-              />
-            </div>
-            <div class="d-flex ga-3 mb-3">
-              <v-text-field
-                v-model.number="newAnalysis.subSampleFrequency"
-                label="Subsample frequency"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                type="number"
-                hide-details
-              />
-              <v-text-field
-                v-model.number="newAnalysis.seed"
-                label="Seed"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                type="number"
-                hide-details
-              />
-            </div>
-            <div class="d-flex ga-3 mb-3">
-              <v-text-field
-                v-model.number="newAnalysis.df"
-                label="Degrees of freedom"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                type="number"
-                hide-details
-              />
-              <v-checkbox
-                v-model="newAnalysis.robust"
-                label="Robust"
-                density="compact"
-                hide-details
-              />
-            </div>
-          </template>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="pa-3">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="addDialog = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            variant="tonal"
-            color="primary"
-            @click="addAnalysis"
-          >
-            Add
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          <v-text-field
+            v-model.number="newAnalysis.burnIn"
+            label="Burn-in"
+            variant="outlined"
+            density="compact"
+            rounded="md"
+            type="number"
+            hide-details
+          />
+        </div>
+        <div class="d-flex ga-3 mb-3">
+          <v-text-field
+            v-model.number="newAnalysis.subSampleFrequency"
+            label="Subsample frequency"
+            variant="outlined"
+            density="compact"
+            rounded="md"
+            type="number"
+            hide-details
+          />
+          <v-text-field
+            v-model.number="newAnalysis.seed"
+            label="Seed"
+            variant="outlined"
+            density="compact"
+            rounded="md"
+            type="number"
+            hide-details
+          />
+        </div>
+        <div class="d-flex ga-3 mb-3">
+          <v-text-field
+            v-model.number="newAnalysis.df"
+            label="Degrees of freedom"
+            variant="outlined"
+            density="compact"
+            rounded="md"
+            type="number"
+            hide-details
+          />
+          <v-checkbox
+            v-model="newAnalysis.robust"
+            label="Robust"
+            density="compact"
+            hide-details
+          />
+        </div>
+      </template>
+      <template #actions>
+        <AtlasButton
+          variant="ghost"
+          @click="addDialog = false"
+        >
+          Cancel
+        </AtlasButton>
+        <AtlasButton
+          @click="addAnalysis"
+        >
+          Add
+        </AtlasButton>
+      </template>
+    </AtlasDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
+import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';

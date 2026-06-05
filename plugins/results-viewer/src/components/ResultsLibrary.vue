@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import JSZip from 'jszip'
+import { AtlasPageShell } from '@ohdsi/atlas-ui'
 import {
   listResults, addResult, deleteResult, getResultBlob, exportResult,
   type ResultMeta,
@@ -113,50 +114,39 @@ async function onDrop(e: DragEvent) {
        role for drop zones; keyboard users have the Import button instead. -->
   <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
   <div
-    class="rv-page"
+    class="rv-drop-zone"
     role="region"
     aria-label="Analysis results library, drop a ZIP to import"
     @dragover="onDragOver"
     @drop="onDrop"
   >
-    <div class="rv-card">
-      <!-- Atlas hero-style header -->
-      <header class="rv-header">
-        <div class="rv-header-text">
-          <div class="rv-eyebrow-row">
-            <span class="rv-eyebrow">OHDSI · Strategus</span>
-            <span class="rv-accent-rule" />
-          </div>
-          <h1 class="rv-title">
-            Analysis Results
-          </h1>
-          <p class="rv-subtitle">
-            Saved Strategus result exports. Open a result to view it in the
-            HADES viewer; import to add a new ZIP; export to download any
-            stored result.
-          </p>
-        </div>
-        <div class="rv-header-actions">
-          <v-btn
-            color="primary"
-            variant="flat"
-            size="default"
-            prepend-icon="mdi-upload"
-            :disabled="loading"
-            @click.stop="triggerImport"
-          >
-            Import Result
-          </v-btn>
-          <input
-            ref="fileInputRef"
-            type="file"
-            accept=".zip"
-            aria-label="Import Strategus result ZIP"
-            style="display:none"
-            @change="onImport"
-          >
-        </div>
-      </header>
+    <AtlasPageShell
+      hero
+      compact
+      eyebrow="OHDSI · Strategus"
+      title="Analysis Results"
+      subtitle="Saved Strategus result exports. Open a result to view it in the HADES viewer; import to add a new ZIP; export to download any stored result."
+    >
+      <template #actions>
+        <v-btn
+          color="primary"
+          variant="flat"
+          size="default"
+          prepend-icon="mdi-upload"
+          :disabled="loading"
+          @click.stop="triggerImport"
+        >
+          Import Result
+        </v-btn>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".zip"
+          aria-label="Import Strategus result ZIP"
+          style="display:none"
+          @change="onImport"
+        >
+      </template>
 
       <v-alert
         v-if="error"
@@ -286,101 +276,18 @@ async function onDrop(e: DragEvent) {
           </div>
         </div>
       </section>
-    </div>
+    </AtlasPageShell>
   </div>
 </template>
 
 <style scoped>
-/* Mirror AtlasPageShell visual rhythm without importing Atlas3 components. */
-.rv-page {
+/* Drop zone wrapper — full area, no visual chrome of its own */
+.rv-drop-zone {
   min-height: 100%;
   width: 100%;
   display: flex;
-  padding: 24px;
+  flex-direction: column;
   box-sizing: border-box;
-  background: rgb(241, 243, 246);  /* surface-variant approximation */
-}
-
-/* Atlas-look buttons inside the library — scoped, no global theme leak.
- * Vuetify renders <button class="v-btn"...>; we paint over the bits that
- * look generic so the buttons match Atlas without touching Vuetify theme. */
-.rv-page :deep(.v-btn) {
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-}
-.rv-page :deep(.v-btn.text-primary),
-.rv-page :deep(.v-btn--variant-flat.bg-primary) {
-  background-color: #1f425a !important;
-  color: #ffffff !important;
-}
-.rv-page :deep(.v-btn--variant-flat.bg-primary:hover) {
-  background-color: #163349 !important;
-}
-.rv-page :deep(.v-btn--variant-text.text-primary),
-.rv-page :deep(.v-btn--variant-text) {
-  color: #1f425a !important;
-}
-.rv-page :deep(.v-btn--variant-text.text-error) {
-  color: #ff5252 !important;
-}
-.rv-card {
-  width: 100%;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 1px 3px rgba(15, 23, 42, 0.06);
-  border: 1px solid #e5e7eb;
-  padding: 28px 32px 32px;
-  align-self: flex-start;
-}
-
-/* Header: Atlas hero pattern (eyebrow row + orange accent + light-weight title) */
-.rv-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-.rv-header-text { flex: 1; min-width: 0; }
-.rv-header-actions { flex-shrink: 0; display: flex; gap: 8px; }
-
-.rv-eyebrow-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.rv-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6b7280;
-}
-.rv-accent-rule {
-  display: inline-block;
-  width: 28px;
-  height: 2px;
-  background: #eb6622;  /* Atlas orange */
-  border-radius: 2px;
-}
-.rv-title {
-  font-size: 26px;
-  font-weight: 300;
-  line-height: 1.2;
-  color: #14365b;  /* Atlas primary navy */
-  letter-spacing: 0.01em;
-  margin: 0;
-}
-.rv-subtitle {
-  font-size: 13px;
-  color: #6b7280;
-  line-height: 1.5;
-  margin: 4px 0 0;
-  max-width: 640px;
 }
 
 .rv-alert { margin-bottom: 16px; border-radius: 10px; }
@@ -392,12 +299,12 @@ async function onDrop(e: DragEvent) {
   align-items: center;
   padding: 56px 16px;
   text-align: center;
-  color: #6b7280;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .rv-empty-title {
   font-size: 1.05rem;
   font-weight: 500;
-  color: #1f2937;
+  color: rgb(var(--v-theme-on-surface));
   margin-top: 12px;
 }
 .rv-empty-sub {
@@ -412,14 +319,14 @@ async function onDrop(e: DragEvent) {
   padding: 56px 16px;
   gap: 12px;
 }
-.rv-loading-text { font-size: 0.9rem; color: #374151; }
+.rv-loading-text { font-size: 0.9rem; color: rgba(var(--v-theme-on-surface), 0.7); }
 
 /* Table-style list */
 .rv-table {
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
+  background: rgb(var(--v-theme-surface));
 }
 .rv-row {
   display: grid;
@@ -427,23 +334,23 @@ async function onDrop(e: DragEvent) {
   align-items: center;
   gap: 16px;
   padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 .rv-row:last-child { border-bottom: none; }
 .rv-row-head {
-  background: #fafbfc;
+  background: rgb(var(--v-theme-surface-variant));
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #6b7280;
+  color: rgba(var(--v-theme-on-surface), 0.6);
   padding: 10px 16px;
 }
 .rv-row-item {
   cursor: pointer;
   transition: background 0.12s;
 }
-.rv-row-item:hover { background: rgba(235, 102, 34, 0.04); }
+.rv-row-item:hover { background: rgba(var(--v-theme-primary), 0.04); }
 .rv-col-name {
   display: flex;
   align-items: center;
@@ -452,14 +359,14 @@ async function onDrop(e: DragEvent) {
 }
 .rv-row-name-text {
   font-weight: 500;
-  color: #1f2937;
+  color: rgb(var(--v-theme-on-surface));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .rv-col-size, .rv-col-date {
   font-size: 0.86rem;
-  color: #4b5563;
+  color: rgba(var(--v-theme-on-surface), 0.7);
   white-space: nowrap;
 }
 .rv-col-actions {

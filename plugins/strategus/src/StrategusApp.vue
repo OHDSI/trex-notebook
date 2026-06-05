@@ -1,13 +1,31 @@
 <template>
   <!-- List mode: studies list (no sidebar) -->
-  <div
+  <AtlasPageShell
     v-if="studiesStore.mode === 'list'"
-    class="strategus-app-list"
+    hero
+    eyebrow="OHDSI · Strategus"
+    title="Studies"
+    subtitle="Build and manage Strategus analysis specifications for distribution across OMOP sites."
   >
-    <div class="strategus-app-list__shell">
-      <StudiesListView />
-    </div>
-  </div>
+    <template #actions>
+      <v-btn
+        variant="tonal"
+        prepend-icon="mdi-cloud-download-outline"
+        @click="listViewRef?.openServerDialog()"
+      >
+        Load from server
+      </v-btn>
+      <v-btn
+        color="primary"
+        variant="flat"
+        prepend-icon="mdi-plus"
+        @click="listViewRef?.onNew()"
+      >
+        New Study
+      </v-btn>
+    </template>
+    <StudiesListView ref="listViewRef" />
+  </AtlasPageShell>
 
   <!-- Editor mode: full sidebar + detail layout -->
   <StrategusLayout v-else>
@@ -16,7 +34,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, onMounted } from 'vue';
+import { computed, provide, onMounted, ref } from 'vue';
+import { AtlasPageShell } from '@ohdsi/atlas-ui';
 import StrategusLayout from './components/StrategusLayout.vue';
 import OverviewPanel from './views/OverviewPanel.vue';
 import StudyPanel from './views/StudyPanel.vue';
@@ -44,6 +63,7 @@ const props = defineProps<{ authContext: unknown; messageBus: unknown }>();
 provide('messageBus', props.messageBus);
 const store = useStrategusStore();
 const studiesStore = useStudiesStore();
+const listViewRef = ref<InstanceType<typeof StudiesListView> | null>(null);
 
 const panelMap: Record<string, unknown> = {
   overview: OverviewPanel,
@@ -81,17 +101,3 @@ onMounted(() => {
   });
 });
 </script>
-<style>
-.strategus-app-list {
-  height: calc(100vh - 60px);
-  padding: 24px;
-  background: #f6f7f9;
-  overflow-y: auto;
-}
-.strategus-app-list__shell {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.04);
-  min-height: 100%;
-}
-</style>

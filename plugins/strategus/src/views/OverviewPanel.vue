@@ -1,5 +1,18 @@
 <template>
   <div>
+    <!-- Study-type guidance banner -->
+    <v-alert
+      v-if="studyTypePreset"
+      type="info"
+      variant="tonal"
+      density="comfortable"
+      class="mb-4"
+    >
+      <div class="text-subtitle-2">{{ studyTypePreset.label }}</div>
+      <div class="text-body-2 mb-1">{{ studyTypePreset.question }}</div>
+      <div class="text-caption">Define: {{ studyTypePreset.requiredRoles.join(' · ') }}</div>
+    </v-alert>
+
     <!-- Page header -->
     <div class="text-overline text-medium-emphasis">
       Strategus Analysis
@@ -139,12 +152,15 @@ import { ref, computed } from 'vue';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import { deserializeSpec } from '../services/SpecDeserializer';
+import { getPreset } from '../services/StudyTypePresets';
 import type { AnalysisSpecification } from '../models/AnalysisSpec';
 import type { SidebarItem } from '../models/Validation';
 import OverviewCard from './OverviewCard.vue';
 
 const store = useStrategusStore();
 const validation = useValidation();
+
+const studyTypePreset = computed(() => store.studyType ? getPreset(store.studyType) : null);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const importError = ref(false);
