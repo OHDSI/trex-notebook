@@ -20,6 +20,65 @@ shinylive::export(
   export_dir
 )
 
+cat("\nStep 1b: Bundle the prebuilt WebR (WASM) duckdb from the WebR repo\n")
+# The app's library(duckdb) + the DatabaseConnector shim's duckdb::duckdb() run
+# ONLY inside WebR. duckdb is NOT compiled on the host (the native build fails and
+# isn't needed); we pull the prebuilt WASM binary straight from the WebR repo and
+# drop it into the package set. The WebR R version here matches the bundled DBI
+# (1.3.0 == r-wasm 4.5), so pin the 4.5 duckdb. shinylive does not fetch it on its
+# own once the shim is a pure-R package, so we add it explicitly.
+webr_r_ver <- "4.5"
+duckdb_ver <- "1.5.2"
+duckdb_dir <- file.path(pkg_lib_dir, "duckdb")
+if (!dir.exists(duckdb_dir)) dir.create(duckdb_dir, recursive = TRUE)
+duckdb_tgz <- file.path(duckdb_dir, paste0("duckdb_", duckdb_ver, ".tgz"))
+duckdb_url <- sprintf(
+  "https://repo.r-wasm.org/bin/emscripten/contrib/%s/duckdb_%s.tgz",
+  webr_r_ver, duckdb_ver
+)
+cat("  downloading", duckdb_url, "\n")
+download.file(duckdb_url, duckdb_tgz, mode = "wb", quiet = TRUE)
+if (!file.exists(duckdb_tgz) || file.info(duckdb_tgz)$size == 0) {
+  stop("failed to download prebuilt WebR duckdb from ", duckdb_url)
+}
+cat("  bundled", basename(duckdb_tgz), "(", file.info(duckdb_tgz)$size, "bytes)\n")
+
+cat("\nStep 1c: Enable shinylive's built-in service-worker asset caching\n")
+# shinylive's own service worker (shinylive-sw.js) already does cache-first
+# caching of every /shinylive/ asset (the WebR wasm/data + package tarballs), but
+# ships with `useCaching = false`. Flip it on so a reopen serves the runtime from
+# the SW cache instead of re-fetching/revalidating hundreds of files. We patch
+# shinylive's own SW rather than registering a second one — a separate worker
+# would either lose the scope race (shinylive owns /shinylive/) or conflict with
+# it. Also fold the app build id into the cache version so each rebuild
+# invalidates cleanly.
+# shinylive's export contains more than one copy of shinylive-sw.js (the active
+# one the loader registers sits at the export root). Patch every copy so the
+# served worker actually has caching on.
+sw_files <- list.files(export_dir, pattern = "^shinylive-sw\\.js$",
+                        recursive = TRUE, full.names = TRUE)
+if (length(sw_files) == 0) {
+  stop("build-shinylive-export: no shinylive-sw.js found under ", export_dir)
+}
+build_id <- Sys.getenv("RV_BUILD_ID", unset = format(Sys.time(), "%Y%m%d%H%M%S"))
+patched_any <- FALSE
+for (sw_path in sw_files) {
+  txt <- readChar(sw_path, file.info(sw_path)$size)
+  before <- txt
+  txt <- sub("var useCaching = false;", "var useCaching = true;", txt, fixed = TRUE)
+  txt <- sub('var version = "v10";',
+             sprintf('var version = "v10-%s";', build_id), txt, fixed = TRUE)
+  if (!identical(txt, before)) {
+    writeLines(txt, sw_path, sep = "")
+    patched_any <- TRUE
+    cat("  patched", sw_path, "\n")
+  }
+}
+if (!patched_any) {
+  stop("build-shinylive-export: useCaching/version markers not found in any shinylive-sw.js")
+}
+cat("  enabled useCaching, version tagged", build_id, "\n")
+
 cat("\nStep 2: Override Java-dep packages with pure-R shims\n")
 temp_lib <- tempfile("shim-libs-")
 dir.create(temp_lib)
@@ -42,8 +101,14 @@ for (pkg in c("SqlRender", "DatabaseConnector", "CirceR")) {
   # (shinylive expects pkg_<version>.tgz where version is in metadata.rds)
   target_dir <- file.path(pkg_lib_dir, pkg)
   if (!dir.exists(target_dir)) {
-    cat("    WARNING: target dir doesn't exist, skipping:", target_dir, "\n")
-    next
+    # shinylive::export only creates a package dir for packages it resolved a
+    # WebR binary for. A pure-shim package with no WebR binary (e.g.
+    # DatabaseConnector — not in the WebR CRAN repo) has no dir, so the old
+    # "skip" silently dropped its shim → WebR couldn't load it → the viewer fell
+    # back to a degraded UI. Create the dir so the shim tgz is bundled (Step 4
+    # then adds its metadata entry).
+    cat("    Creating missing package dir for pure-shim:", pkg, "\n")
+    dir.create(target_dir, recursive = TRUE)
   }
 
   existing_tgz <- list.files(target_dir, pattern = "\\.tgz$", full.names = TRUE)
@@ -115,7 +180,8 @@ if (file.exists(metadata_path)) {
   template <- metadata[["dplyr"]]
 
   for (pkg in c("SqlRender", "DatabaseConnector", "CirceR", "ResultModelManager",
-                 "OhdsiShinyModules", "OhdsiShinyAppBuilder", "OhdsiReportGenerator")) {
+                 "OhdsiShinyModules", "OhdsiShinyAppBuilder", "OhdsiReportGenerator",
+                 "duckdb")) {
     target_dir <- file.path(pkg_lib_dir, pkg)
     tgz_files <- list.files(target_dir, pattern = "\\.tgz$")
     if (length(tgz_files) == 0) {

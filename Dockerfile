@@ -58,7 +58,7 @@ RUN Rscript -e 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/_
       "shinylive", \
       "ResultModelManager", "OhdsiShinyAppBuilder", "OhdsiReportGenerator", \
       "shiny", "shinydashboard", "shinyWidgets", "shinycssloaders", \
-      "DBI", "duckdb", "RSQLite", "reactable", "jsonlite", "dplyr", "ggplot2", "plotly", \
+      "DBI", "RSQLite", "reactable", "jsonlite", "dplyr", "ggplot2", "plotly", \
       "rlang", "readr", "R6", "pool", "dbplyr", "lubridate", "fastmap", "withr", \
       "gridExtra", "markdown", "checkmate", "stringr", "tibble", "tidyr", \
       "purrr", "scales", "RColorBrewer", \

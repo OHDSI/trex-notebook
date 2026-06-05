@@ -66,7 +66,13 @@ function trySendData() {
 function onMessage(event: MessageEvent) {
   const t = event.data?.type
   if (t === 'SHINYLIVE_READY') {
+    // The app only posts this once WebR/Shiny has finished booting — on a cold
+    // first load that is 1–3 minutes, long after the initial blind send window
+    // expired. Drive the send from this event (and keep retrying until the app
+    // acks) so a late-booting app is always served. Without this, the overlay
+    // sticks on "Sending result data…" forever.
     loadingMessage.value = 'Sending result data…'
+    beginSending()
     return
   }
   if (t === 'DATA_RECEIVED') {
@@ -85,8 +91,31 @@ function onMessage(event: MessageEvent) {
   }
 }
 
+// Post the result data into the iframe and keep retrying until the app acks
+// with DATA_RECEIVED. The retry must outlast WebR's cold-boot time (1–3 min),
+// not a short fixed window: the app cannot receive anything until its Shiny
+// runtime is up, and it announces that via SHINYLIVE_READY (which also calls
+// this directly). Cleared on DATA_RECEIVED (onMessage) and on unmount.
+function beginSending() {
+  if (dataReceived || props.files.size === 0) return
+  trySendData()
+  if (sendInterval) return
+  let attempts = 0
+  const maxAttempts = 200 // ~10 min safety net; normally cleared far sooner by the ack
+  sendInterval = setInterval(() => {
+    attempts += 1
+    if (dataReceived || attempts >= maxAttempts) {
+      if (sendInterval) clearInterval(sendInterval)
+      sendInterval = null
+      return
+    }
+    trySendData()
+  }, 3000)
+}
+
 function startSendCycle() {
   if (sendInterval) clearInterval(sendInterval)
+  sendInterval = null
   if (props.files.size === 0) return
   dataReceived = false
   isReady.value = false
@@ -96,18 +125,9 @@ function startSendCycle() {
   elapsedTimer = setInterval(() => {
     elapsedSec.value = Math.floor((Date.now() - loadStartedAt.value) / 1000)
   }, 1000)
-  let attempts = 0
-  const maxAttempts = 12
-  trySendData()
-  sendInterval = setInterval(() => {
-    attempts += 1
-    if (dataReceived || attempts >= maxAttempts) {
-      if (sendInterval) clearInterval(sendInterval)
-      sendInterval = null
-      return
-    }
-    trySendData()
-  }, 5000)
+  // Kick an initial (blind) send in case the app is already listening, then let
+  // SHINYLIVE_READY re-drive it once the app finishes booting.
+  beginSending()
 }
 
 watch(() => props.files, () => { startSendCycle() }, { deep: false })

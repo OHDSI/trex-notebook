@@ -87,11 +87,12 @@ services:
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:-mypass}
     volumes:
-      - ./plugins/metadata-api/migrations:/migrations:ro
+      - ./plugins/metadata-api/migrations:/migrations/metadata:ro
+      - ./plugins/network-api/migrations:/migrations/network:ro
     entrypoint:
       - /bin/sh
       - -c
-      - 'for f in /migrations/V*.sql; do echo "applying $$f"; psql -h postgres -U postgres -d testdb -v ON_ERROR_STOP=1 -f "$$f" || exit 1; done'
+      - 'for f in /migrations/metadata/V*.sql /migrations/network/V*.sql; do echo "applying $$f"; psql -h postgres -U postgres -d testdb -v ON_ERROR_STOP=1 -f "$$f" || exit 1; done'
     restart: 'no'
 
   # Pre-chowns the storage named volume to uid 1000 (node) so trex-server — which
@@ -258,6 +259,10 @@ services:
       NETWORK_MACHINE_CLIENT_ID: ${NETWORK_MACHINE_CLIENT_ID:-}
       NETWORK_CLIENT_SECRET: ${NETWORK_CLIENT_SECRET:-}
       NETWORK_TOKEN_SCOPE: ${NETWORK_TOKEN_SCOPE:-}
+      # AES-256-GCM key (base64 32 bytes) the network-api function uses to encrypt
+      # the per-site machine secret at rest in network.site_credential after a
+      # self-signup is approved and the node claims its credentials.
+      NETWORK_ENC_KEY: ${NETWORK_ENC_KEY:-}
       # Optional: override the browser's proxy base (defaults to the plugin's
       # same-origin /plugins/network-api/network-api mount). Written into
       # window.__networkPluginConfig by write-network-config.sh.
