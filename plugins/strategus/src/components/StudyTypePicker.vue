@@ -17,7 +17,7 @@
           class="study-type-card-wrapper"
           @click="choose(p.id)"
         >
-          <AtlasCard padding="md" class="study-type-card">
+          <AtlasCard padding="md" interactive class="study-type-card">
             <div class="study-type-card__label">{{ p.label }}</div>
             <div class="study-type-card__q">{{ p.question }}</div>
           </AtlasCard>

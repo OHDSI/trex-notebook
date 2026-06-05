@@ -1,82 +1,72 @@
 <template>
-  <v-card
+  <AtlasCard
     variant="outlined"
     class="tci-card mb-3"
+    padding="sm"
   >
-    <v-card-text class="pa-3">
-      <div class="d-flex align-center justify-space-between">
-        <!-- T vs C -->
-        <div class="d-flex align-center gap-2 flex-wrap">
-          <v-chip
-            color="primary"
-            variant="tonal"
-            size="small"
-            label
-          >
-            {{ targetName }}
-          </v-chip>
-          <span class="text-caption text-medium-emphasis font-weight-bold">vs</span>
-          <v-chip
-            color="secondary"
-            variant="tonal"
-            size="small"
-            label
-          >
-            {{ comparatorName }}
-          </v-chip>
-        </div>
-        <!-- Actions -->
-        <div class="d-flex align-center">
-          <v-btn
-            icon
-            size="x-small"
-            variant="text"
-            color="primary"
-            @click="$emit('edit')"
-          >
-            <v-icon size="16">
-              mdi-pencil-outline
-            </v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            size="x-small"
-            variant="text"
-            color="error"
-            @click="$emit('delete')"
-          >
-            <v-icon size="16">
-              mdi-delete-outline
-            </v-icon>
-          </v-btn>
-        </div>
+    <div class="d-flex align-center justify-space-between">
+      <!-- T vs C -->
+      <div class="d-flex align-center gap-2 flex-wrap">
+        <AtlasChip
+          tone="primary"
+          variant="tonal"
+          size="sm"
+        >
+          {{ targetName }}
+        </AtlasChip>
+        <span class="text-caption text-medium-emphasis font-weight-bold">vs</span>
+        <AtlasChip
+          tone="neutral"
+          variant="tonal"
+          size="sm"
+        >
+          {{ comparatorName }}
+        </AtlasChip>
       </div>
+      <!-- Actions -->
+      <div class="d-flex align-center">
+        <AtlasIconButton
+          icon="mdi-pencil-outline"
+          ariaLabel="Edit"
+          tone="neutral"
+          size="sm"
+          @click="$emit('edit')"
+        />
+        <AtlasIconButton
+          icon="mdi-delete-outline"
+          ariaLabel="Delete"
+          tone="danger"
+          size="sm"
+          @click="$emit('delete')"
+        />
+      </div>
+    </div>
 
-      <!-- Detail row -->
-      <div class="d-flex align-center flex-wrap gap-3 mt-2">
-        <div class="detail-item">
-          <span class="text-caption text-medium-emphasis">Indication:</span>
-          <span class="text-caption ml-1">{{ indicationName }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="text-caption text-medium-emphasis">Gender:</span>
-          <span class="text-caption ml-1">{{ genderLabel }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="text-caption text-medium-emphasis">Age:</span>
-          <span class="text-caption ml-1">{{ ageLabel }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="text-caption text-medium-emphasis">Excluded concepts:</span>
-          <span class="text-caption ml-1">{{ tci.excludedCovariateConceptIds.length }}</span>
-        </div>
+    <!-- Detail row -->
+    <div class="d-flex align-center flex-wrap gap-3 mt-2">
+      <div class="detail-item">
+        <span class="text-caption text-medium-emphasis">Indication:</span>
+        <span class="text-caption ml-1">{{ indicationName }}</span>
       </div>
-    </v-card-text>
-  </v-card>
+      <div class="detail-item">
+        <span class="text-caption text-medium-emphasis">Gender:</span>
+        <span class="text-caption ml-1">{{ genderLabel }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="text-caption text-medium-emphasis">Age:</span>
+        <span class="text-caption ml-1">{{ ageLabel }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="text-caption text-medium-emphasis">Excluded concepts:</span>
+        <span class="text-caption ml-1">{{ tci.excludedCovariateConceptIds.length }}</span>
+      </div>
+    </div>
+  </AtlasCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasCard, AtlasChip, AtlasIconButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { TciDefinition } from '../store/useStrategusStore';
 

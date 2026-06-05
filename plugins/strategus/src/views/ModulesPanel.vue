@@ -22,18 +22,18 @@
         class="module-section"
       >
         <h2 class="module-section__heading">
-          <v-icon
+          <AtlasIcon
             :icon="mod.icon"
             size="18"
           />
           <span class="module-section__title">{{ mod.title }}</span>
-          <v-tooltip
+          <AtlasTooltip
             :text="statusFor(mod.key).message"
             location="right"
             :open-delay="200"
           >
             <template #activator="{ props: tipProps }">
-              <v-icon
+              <AtlasIcon
                 v-bind="tipProps"
                 :icon="iconFor(mod.key)"
                 :color="colorFor(mod.key)"
@@ -41,12 +41,10 @@
                 class="ml-2"
               />
             </template>
-          </v-tooltip>
-          <v-spacer />
-          <v-switch
+          </AtlasTooltip>
+          <AtlasSpacer />
+          <AtlasSwitch
             :model-value="true"
-            density="compact"
-            hide-details
             color="primary"
             inset
             @update:model-value="store.toggleModule(mod.moduleName)"
@@ -64,18 +62,16 @@
         :id="mod.id"
         class="module-row module-row--disabled"
       >
-        <v-icon
+        <AtlasIcon
           :icon="mod.icon"
           size="16"
           class="module-row__icon"
         />
         <span class="module-row__title">{{ mod.title }}</span>
         <span class="module-row__hint">Disabled</span>
-        <v-spacer />
-        <v-switch
+        <AtlasSpacer />
+        <AtlasSwitch
           :model-value="false"
-          density="compact"
-          hide-details
           color="primary"
           inset
           @update:model-value="store.toggleModule(mod.moduleName)"
@@ -87,6 +83,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasIcon, AtlasTooltip, AtlasSpacer, AtlasSwitch } from '@ohdsi/atlas-ui';
 import CohortDiagnosticsPanel from './modules/CohortDiagnosticsPanel.vue';
 import CharacterizationPanel from './modules/CharacterizationPanel.vue';
 import CohortIncidencePanel from './modules/CohortIncidencePanel.vue';

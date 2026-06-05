@@ -7,20 +7,20 @@
     @click="store.activePanel = panel"
     @keydown.enter.space.prevent="store.activePanel = panel"
   >
-    <v-icon
+    <AtlasIcon
       :icon="icon"
       size="18"
       class="sidebar-item__icon"
     />
     <span class="sidebar-item__label">{{ label }}</span>
-    <v-tooltip
+    <AtlasTooltip
       v-if="validationResult.message"
       :text="validationResult.message"
       location="right"
       :open-delay="300"
     >
       <template #activator="{ props: tooltipProps }">
-        <v-icon
+        <AtlasIcon
           v-bind="tooltipProps"
           class="sidebar-item__status ml-auto"
           :icon="statusIcon"
@@ -28,20 +28,18 @@
           size="14"
         />
       </template>
-    </v-tooltip>
-    <v-icon
+    </AtlasTooltip>
+    <AtlasIcon
       v-else
       class="sidebar-item__status ml-auto"
       :icon="statusIcon"
       :color="statusColor"
       size="14"
     />
-    <v-switch
+    <AtlasSwitch
       v-if="toggle"
       :model-value="enabled"
-      density="compact"
-      hide-details
-      color="primary"
+      label=""
       class="sidebar-item__toggle ml-1"
       @update:model-value="$emit('toggle')"
       @click.stop
@@ -51,6 +49,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasIcon, AtlasTooltip, AtlasSwitch } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import type { SidebarItem } from '../models/Validation';

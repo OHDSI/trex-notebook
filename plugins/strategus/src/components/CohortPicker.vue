@@ -7,22 +7,16 @@
     @close="$emit('update:modelValue', false)"
     @update:model-value="$emit('update:modelValue', $event)"
   >
-    <v-text-field
+    <AtlasTextField
       v-model="search"
-      prepend-inner-icon="mdi-magnify"
+      prepend-icon="mdi-magnify"
       label="Search cohorts"
-      variant="outlined"
-      density="compact"
-      rounded="md"
-      hide-details
       class="mb-3"
     />
 
-    <v-table
+    <table
       v-if="cohorts.length > 0"
-      density="comfortable"
-      hover
-      class="rounded-lg"
+      class="cohort-table"
     >
       <thead>
         <tr>
@@ -42,7 +36,7 @@
         <tr
           v-for="cohort in filteredCohorts"
           :key="cohort.cohortId"
-          style="cursor: pointer"
+          class="cohort-table__row"
           @click="selectCohort(cohort)"
         >
           <td class="text-medium-emphasis">
@@ -54,13 +48,13 @@
           </td>
         </tr>
       </tbody>
-    </v-table>
+    </table>
 
     <div
       v-else-if="loading"
       class="text-center py-6"
     >
-      <v-progress-circular
+      <AtlasProgressCircular
         indeterminate
         color="primary"
         size="32"
@@ -72,41 +66,31 @@
 
     <!-- Manual entry fallback -->
     <div v-else>
-      <v-alert
-        type="info"
+      <AtlasAlert
+        severity="info"
         variant="tonal"
-        density="compact"
         class="mb-3"
       >
         Could not load cohorts from Atlas. You can enter cohort details manually.
-      </v-alert>
-      <v-text-field
+      </AtlasAlert>
+      <AtlasTextField
         v-model.number="manualId"
         label="Cohort ID"
         type="number"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         class="mb-3"
       />
-      <v-text-field
+      <AtlasTextField
         v-model="manualName"
         label="Cohort Name"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         class="mb-3"
       />
-      <v-btn
-        color="primary"
-        variant="flat"
-        class="text-none"
-        rounded="lg"
+      <AtlasButton
+        variant="primary"
         :disabled="!manualName"
         @click="selectManual"
       >
         Add
-      </v-btn>
+      </AtlasButton>
     </div>
 
     <template #actions>
@@ -122,7 +106,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasTextField, AtlasProgressCircular, AtlasAlert } from '@ohdsi/atlas-ui';
 
 interface AtlasCohort {
   cohortId: number;
@@ -187,3 +171,42 @@ function selectManual() {
   manualName.value = '';
 }
 </script>
+
+<style scoped>
+.cohort-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cohort-table th,
+.cohort-table td {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.cohort-table thead tr {
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.cohort-table th {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.cohort-table__row {
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.cohort-table__row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.text-right {
+  text-align: right;
+}
+</style>

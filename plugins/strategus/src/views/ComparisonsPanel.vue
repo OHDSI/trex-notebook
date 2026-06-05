@@ -40,15 +40,15 @@
     </div>
 
     <div class="d-flex justify-end">
-      <v-btn
-        color="primary"
+      <AtlasButton
         variant="tonal"
-        size="small"
+        tone="primary"
+        size="sm"
         prepend-icon="mdi-plus"
         @click="openAddDialog"
       >
         Add Comparison
-      </v-btn>
+      </AtlasButton>
     </div>
 
     <!-- Add/Edit Dialog -->
@@ -59,99 +59,82 @@
       :max-width="520"
       @close="dialogOpen = false"
     >
-      <v-row dense>
-        <v-col
+      <AtlasRow dense>
+        <AtlasCol
           cols="12"
           sm="6"
         >
-          <v-select
+          <AtlasSelect
             v-model="form.targetId"
             label="Target"
             :items="targetItems"
             item-title="cohortName"
             item-value="cohortId"
-            variant="outlined"
-            density="compact"
             no-data-text="No Target cohorts assigned"
           />
-        </v-col>
-        <v-col
+        </AtlasCol>
+        <AtlasCol
           cols="12"
           sm="6"
         >
-          <v-select
+          <AtlasSelect
             v-model="form.comparatorId"
             label="Comparator"
             :items="comparatorItems"
             item-title="cohortName"
             item-value="cohortId"
-            variant="outlined"
-            density="compact"
             no-data-text="No Comparator cohorts assigned"
           />
-        </v-col>
-        <v-col cols="12">
-          <v-select
+        </AtlasCol>
+        <AtlasCol cols="12">
+          <AtlasSelect
             v-model="form.indicationId"
             label="Indication Cohort (optional)"
             :items="indicationItems"
             item-title="title"
             item-value="value"
-            variant="outlined"
-            density="compact"
           />
-        </v-col>
-        <v-col cols="12">
-          <v-select
+        </AtlasCol>
+        <AtlasCol cols="12">
+          <AtlasSelect
             v-model="form.genderConceptIds"
             label="Gender"
             :items="genderOptions"
             item-title="label"
             item-value="value"
-            variant="outlined"
-            density="compact"
             multiple
-            chips
-            closable-chips
           />
-        </v-col>
-        <v-col
+        </AtlasCol>
+        <AtlasCol
           cols="12"
           sm="6"
         >
-          <v-text-field
-            v-model.number="form.minAge"
+          <AtlasTextField
+            :model-value="form.minAge ?? ''"
             label="Min Age (optional)"
-            variant="outlined"
-            density="compact"
             type="number"
-            clearable
+            @update:model-value="v => form.minAge = v === '' || v == null ? null : Number(v)"
           />
-        </v-col>
-        <v-col
+        </AtlasCol>
+        <AtlasCol
           cols="12"
           sm="6"
         >
-          <v-text-field
-            v-model.number="form.maxAge"
+          <AtlasTextField
+            :model-value="form.maxAge ?? ''"
             label="Max Age (optional)"
-            variant="outlined"
-            density="compact"
             type="number"
-            clearable
+            @update:model-value="v => form.maxAge = v === '' || v == null ? null : Number(v)"
           />
-        </v-col>
-        <v-col cols="12">
-          <v-text-field
+        </AtlasCol>
+        <AtlasCol cols="12">
+          <AtlasTextField
             v-model="excludedConceptsStr"
             label="Excluded covariate concept IDs"
             hint="Comma-separated concept IDs (e.g., drug ingredients to exclude from PS model)"
-            persistent-hint
-            variant="outlined"
-            density="compact"
           />
-        </v-col>
-      </v-row>
+        </AtlasCol>
+      </AtlasRow>
       <template #actions>
         <AtlasButton
           variant="ghost"
@@ -172,7 +155,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasSelect, AtlasTextField, AtlasRow, AtlasCol } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { TciDefinition } from '../store/useStrategusStore';
 import TciCard from '../components/TciCard.vue';

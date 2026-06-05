@@ -1,18 +1,17 @@
 <template>
   <div class="advanced-section">
-    <v-btn
-      variant="text"
-      color="primary"
-      size="small"
+    <AtlasButton
+      variant="ghost"
+      size="sm"
       class="text-none"
       @click="open = !open"
     >
-      <v-icon
+      <AtlasIcon
         :icon="open ? 'mdi-chevron-down' : 'mdi-chevron-right'"
         size="18"
       />
       Advanced
-    </v-btn>
+    </AtlasButton>
     <v-expand-transition>
       <div
         v-show="open"
@@ -25,6 +24,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
+import { AtlasButton, AtlasIcon } from '@ohdsi/atlas-ui';
 const open = ref(false);
 </script>
 <style scoped>

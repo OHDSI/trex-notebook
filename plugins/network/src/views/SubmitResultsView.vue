@@ -1,17 +1,18 @@
 <template>
   <div>
     <h2 class="text-h6 mb-3">Submit results</h2>
-    <v-select v-model="studyId" :items="studyItems" label="Study" />
+    <AtlasSelect v-model="studyId" :items="studyItems" label="Study" item-title="title" item-value="value" />
     <v-file-input v-model="files" label="Result .db files" accept=".db" multiple />
-    <v-btn :disabled="!canSubmit" :loading="busy" @click="submit">Submit</v-btn>
-    <v-alert v-if="message" :type="error ? 'error' : 'success'" variant="tonal" class="mt-4">
+    <AtlasButton :disabled="!canSubmit" :loading="busy" @click="submit">Submit</AtlasButton>
+    <AtlasAlert v-if="message" :severity="error ? 'danger' : 'success'" variant="tonal" class="mt-4">
       {{ message }}
-    </v-alert>
+    </AtlasAlert>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { AtlasAlert, AtlasButton, AtlasSelect } from '@ohdsi/atlas-ui';
 import { useNetworkStore } from '../store/useNetworkStore';
 
 const store = useNetworkStore();

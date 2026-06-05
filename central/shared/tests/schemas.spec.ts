@@ -38,6 +38,18 @@ describe('initiateSubmissionSchema', () => {
     const r = initiateSubmissionSchema.safeParse({ files: [{ filename: 'results.db' }] });
     expect(r.success).toBe(true);
   });
+  it('accepts .db.gz filenames', () => {
+    const r = initiateSubmissionSchema.safeParse({ files: [{ filename: 'results.db.gz' }] });
+    expect(r.success).toBe(true);
+  });
+  it('still rejects non-db filenames', () => {
+    const r = initiateSubmissionSchema.safeParse({ files: [{ filename: 'results.zip' }] });
+    expect(r.success).toBe(false);
+  });
+  it('rejects unsafe characters even with a .db.gz suffix', () => {
+    const r = initiateSubmissionSchema.safeParse({ files: [{ filename: '../evil.db.gz' }] });
+    expect(r.success).toBe(false);
+  });
 });
 
 describe('signupSchema', () => {

@@ -7,20 +7,20 @@
     @keydown.enter.space.prevent="$emit('click')"
   >
     <div class="overview-tile__top">
-      <v-icon
+      <AtlasIcon
         :color="iconColor || 'primary'"
         size="24"
         class="overview-tile__icon"
       >
         {{ icon }}
-      </v-icon>
-      <v-icon
+      </AtlasIcon>
+      <AtlasIcon
         v-if="status && status.status !== 'neutral'"
         :color="statusColor"
         size="18"
       >
         {{ statusIcon }}
-      </v-icon>
+      </AtlasIcon>
     </div>
     <div class="overview-tile__title">
       {{ title }}
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasIcon } from '@ohdsi/atlas-ui';
 import type { ValidationResult } from '../models/Validation';
 
 const props = defineProps<{

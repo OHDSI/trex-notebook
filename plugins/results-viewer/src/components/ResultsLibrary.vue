@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import JSZip from 'jszip'
-import { AtlasPageShell } from '@ohdsi/atlas-ui'
+import { AtlasPageShell, AtlasAlert, AtlasButton, AtlasIcon, AtlasIconButton, AtlasProgressCircular } from '@ohdsi/atlas-ui'
+import { gunzipBuffer } from '../webr/gunzip'
 import {
   listResults, addResult, deleteResult, getResultBlob, exportResult,
   type ResultMeta,
@@ -71,6 +72,19 @@ async function openMeta(meta: ResultMeta) {
     const blob = await getResultBlob(meta.id)
     if (!blob) throw new Error('File no longer in storage')
     const arr = await blob.arrayBuffer()
+    // A submitted binary DuckDB results file (optionally gzip-compressed) is
+    // passed straight through as a single `results.db` entry; ShinyFrame sends
+    // it to the viewer's DuckDB via the binary channel. Otherwise treat as a
+    // ZIP of CSV/parquet exports.
+    if (meta.name.endsWith('.db.gz')) {
+      const raw = await gunzipBuffer(arr)
+      emit('loaded', new Map([['results.db', raw]]))
+      return
+    }
+    if (meta.name.endsWith('.db')) {
+      emit('loaded', new Map([['results.db', arr]]))
+      return
+    }
     const zip = await JSZip.loadAsync(arr)
     const map = new Map<string, ArrayBuffer>()
     const entries = Object.entries(zip.files).filter(([, f]) => !f.dir)
@@ -128,37 +142,34 @@ async function onDrop(e: DragEvent) {
       subtitle="Saved Strategus result exports. Open a result to view it in the HADES viewer; import to add a new ZIP; export to download any stored result."
     >
       <template #actions>
-        <v-btn
-          color="primary"
-          variant="flat"
-          size="default"
+        <AtlasButton
+          variant="primary"
           prepend-icon="mdi-upload"
           :disabled="loading"
           @click.stop="triggerImport"
         >
           Import Result
-        </v-btn>
+        </AtlasButton>
         <input
           ref="fileInputRef"
           type="file"
-          accept=".zip"
-          aria-label="Import Strategus result ZIP"
+          accept=".zip,.db,.db.gz"
+          aria-label="Import Strategus result ZIP or DuckDB (.db/.db.gz)"
           style="display:none"
           @change="onImport"
         >
       </template>
 
-      <v-alert
+      <AtlasAlert
         v-if="error"
-        type="error"
+        severity="danger"
         variant="tonal"
-        density="compact"
         class="rv-alert"
         closable
-        @click:close="error = ''"
+        @close="error = ''"
       >
         {{ error }}
-      </v-alert>
+      </AtlasAlert>
 
       <!-- Body -->
       <section class="rv-body">
@@ -166,7 +177,7 @@ async function onDrop(e: DragEvent) {
           v-if="loading"
           class="rv-loading"
         >
-          <v-progress-circular
+          <AtlasProgressCircular
             indeterminate
             color="primary"
             size="36"
@@ -181,7 +192,7 @@ async function onDrop(e: DragEvent) {
           v-else-if="!hasItems"
           class="rv-empty"
         >
-          <v-icon
+          <AtlasIcon
             icon="mdi-folder-open-outline"
             size="48"
             color="grey-lighten-1"
@@ -193,15 +204,14 @@ async function onDrop(e: DragEvent) {
             Import a Strategus result ZIP to get started.
             You can also drop a file anywhere on this page.
           </div>
-          <v-btn
+          <AtlasButton
             class="mt-4"
-            color="primary"
-            variant="flat"
+            variant="primary"
             prepend-icon="mdi-upload"
             @click.stop="triggerImport"
           >
             Import Result
-          </v-btn>
+          </AtlasButton>
         </div>
 
         <div
@@ -232,7 +242,7 @@ async function onDrop(e: DragEvent) {
             @keydown.space.prevent="openMeta(item)"
           >
             <div class="rv-col rv-col-name">
-              <v-icon
+              <AtlasIcon
                 icon="mdi-database-outline"
                 color="primary"
                 size="20"
@@ -249,29 +259,29 @@ async function onDrop(e: DragEvent) {
               class="rv-col rv-col-actions"
               @click.stop
             >
-              <v-btn
-                size="small"
-                variant="text"
+              <AtlasIconButton
                 icon="mdi-download"
-                title="Export ZIP"
+                ariaLabel="Export ZIP"
+                size="sm"
+                variant="text"
+                tone="neutral"
                 @click.stop="onExport(item)"
               />
-              <v-btn
-                size="small"
-                variant="text"
+              <AtlasIconButton
                 icon="mdi-delete-outline"
-                color="error"
-                title="Delete from library"
+                ariaLabel="Delete from library"
+                size="sm"
+                variant="text"
+                tone="danger"
                 @click.stop="onDelete(item)"
               />
-              <v-btn
-                size="small"
-                variant="flat"
-                color="primary"
+              <AtlasButton
+                size="sm"
+                variant="primary"
                 @click.stop="openMeta(item)"
               >
                 Open
-              </v-btn>
+              </AtlasButton>
             </div>
           </div>
         </div>

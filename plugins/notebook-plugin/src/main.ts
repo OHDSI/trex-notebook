@@ -7,34 +7,38 @@ import singleSpaVue from 'single-spa-vue';
 import NotebookApp from './NotebookApp.vue';
 
 const CSS_LINK_ID = 'notebook-plugin-styles';
-const MDI_LINK_ID = 'notebook-plugin-mdi';
 
-function injectPluginCss(uiFilesUrl: string): void {
-  if (document.getElementById(CSS_LINK_ID)) return;
+function injectPluginCss(uiFilesUrl: string): Promise<void> {
+  const existing = document.getElementById(CSS_LINK_ID) as HTMLLinkElement | null;
+  if (existing) {
+    return existing.dataset.loaded === 'true'
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          existing.addEventListener('load', () => resolve(), { once: true });
+          existing.addEventListener('error', () => resolve(), { once: true });
+        });
+  }
   const base = uiFilesUrl
     ? uiFilesUrl.replace(/\/$/, '')
     : `${window.location.origin}/plugins/notebook-plugin`;
-  const link = document.createElement('link');
-  link.id = CSS_LINK_ID;
-  link.rel = 'stylesheet';
-  link.href = base + '/style.css';
-  document.head.appendChild(link);
-}
-
-function removePluginCss(): void {
-  document.getElementById(CSS_LINK_ID)?.remove();
+  return new Promise<void>((resolve) => {
+    const link = document.createElement('link');
+    link.id = CSS_LINK_ID;
+    link.rel = 'stylesheet';
+    link.href = base + '/style.css';
+    // Resolve on load so mount() never paints before CSS applies; resolve (not
+    // reject) on error so a missing file can't hang the parcel forever.
+    link.addEventListener('load', () => { link.dataset.loaded = 'true'; resolve(); }, { once: true });
+    link.addEventListener('error', () => { link.dataset.loaded = 'true'; resolve(); }, { once: true }); // mark settled so a remount doesn't await a dead listener
+    document.head.appendChild(link);
+  });
 }
 
 function injectMdiCss(): void {
-  if (document.getElementById(MDI_LINK_ID)) return;
-  if (typeof document.fonts !== 'undefined' && document.fonts.check && document.fonts.check('16px "Material Design Icons"')) {
-    return;
+  if (typeof document.fonts !== 'undefined' && document.fonts.check?.('16px "Material Design Icons"')) {
+    return; // host already provides MDI
   }
-  const link = document.createElement('link');
-  link.id = MDI_LINK_ID;
-  link.rel = 'stylesheet';
-  link.href = 'https://cdn.jsdelivr.net/npm/@mdi/font@7/css/materialdesignicons.min.css';
-  document.head.appendChild(link);
+  console.warn('[notebook] MDI font not present from host; icons may be missing.');
 }
 
 export interface PluginProps {
@@ -92,7 +96,7 @@ const vueLifecycles = singleSpaVue({
 
 export const bootstrap = async (props: PluginProps) => {
   const baseUrl = props.uiFilesUrl ?? '';
-  injectPluginCss(baseUrl);
+  await injectPluginCss(baseUrl);
   injectMdiCss();
   (window as unknown as { __notebookAuthUserId?: string | null }).__notebookAuthUserId =
     props.authContext?.user?.id ?? null;
@@ -102,7 +106,5 @@ export const bootstrap = async (props: PluginProps) => {
 export const mount = vueLifecycles.mount;
 
 export const unmount = async (props: PluginProps) => {
-  const result = await vueLifecycles.unmount(props);
-  removePluginCss();
-  return result;
+  return vueLifecycles.unmount(props);
 };

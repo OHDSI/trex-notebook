@@ -20,18 +20,18 @@
       class="study-section"
     >
       <h2 class="study-section__heading">
-        <v-icon
+        <AtlasIcon
           :icon="section.icon"
           size="18"
         />
         <span class="study-section__title">{{ section.title }}</span>
-        <v-tooltip
+        <AtlasTooltip
           :text="statusFor(section.key).message"
           location="right"
           :open-delay="200"
         >
           <template #activator="{ props: tipProps }">
-            <v-icon
+            <AtlasIcon
               v-bind="tipProps"
               :icon="iconFor(section.key)"
               :color="colorFor(section.key)"
@@ -39,7 +39,7 @@
               class="ml-2"
             />
           </template>
-        </v-tooltip>
+        </AtlasTooltip>
       </h2>
       <component
         :is="section.component"
@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasIcon, AtlasTooltip } from '@ohdsi/atlas-ui';
 import StudySetupPanel from './StudySetupPanel.vue';
 import CohortsPanel from './CohortsPanel.vue';
 import ComparisonsPanel from './ComparisonsPanel.vue';

@@ -1,17 +1,16 @@
 <template>
   <div>
     <!-- Study-type guidance banner -->
-    <v-alert
+    <AtlasAlert
       v-if="studyTypePreset"
-      type="info"
+      severity="info"
       variant="tonal"
-      density="comfortable"
       class="mb-4"
     >
       <div class="text-subtitle-2">{{ studyTypePreset.label }}</div>
       <div class="text-body-2 mb-1">{{ studyTypePreset.question }}</div>
       <div class="text-caption">Define: {{ studyTypePreset.requiredRoles.join(' · ') }}</div>
-    </v-alert>
+    </AtlasAlert>
 
     <!-- Page header -->
     <div class="text-overline text-medium-emphasis">
@@ -31,23 +30,22 @@
         </p>
       </div>
       <div class="d-flex gap-2 mt-1">
-        <v-btn
-          variant="tonal"
-          size="small"
+        <AtlasButton
+          variant="ghost"
+          size="sm"
           prepend-icon="mdi-import"
           @click="triggerImport"
         >
           Import JSON
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="tonal"
-          size="small"
+        </AtlasButton>
+        <AtlasButton
+          variant="primary"
+          size="sm"
           prepend-icon="mdi-export"
           @click="store.activePanel = 'export'"
         >
           Export
-        </v-btn>
+        </AtlasButton>
       </div>
     </div>
 
@@ -66,8 +64,8 @@
       Study Design
     </div>
 
-    <v-row dense>
-      <v-col
+    <AtlasRow dense>
+      <AtlasCol
         v-for="card in designCards"
         :key="card.panel"
         cols="12"
@@ -83,16 +81,16 @@
           :status="card.status"
           @click="card.anchor ? goToDesignSection(card.anchor) : store.activePanel = card.panel"
         />
-      </v-col>
-    </v-row>
+      </AtlasCol>
+    </AtlasRow>
 
     <!-- Enabled Modules section -->
     <template v-if="enabledModules.length > 0">
       <div class="section-label text-overline text-medium-emphasis mt-6 mb-2">
         Enabled Modules
       </div>
-      <v-row dense>
-        <v-col
+      <AtlasRow dense>
+        <AtlasCol
           v-for="mod in enabledModules"
           :key="mod.panel"
           cols="12"
@@ -108,8 +106,8 @@
             :status="mod.status"
             @click="goToModuleSection(mod.anchor)"
           />
-        </v-col>
-      </v-row>
+        </AtlasCol>
+      </AtlasRow>
     </template>
 
     <!-- Disabled Modules section -->
@@ -118,37 +116,34 @@
         Disabled Modules
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <v-chip
+        <AtlasChip
           v-for="mod in disabledModules"
           :key="mod.panel"
-          size="small"
-          variant="tonal"
+          size="sm"
           :prepend-icon="mod.icon"
+          tone="neutral"
           class="disabled-chip"
           @click="goToModuleSection(mod.anchor)"
         >
           {{ mod.title }}
-        </v-chip>
+        </AtlasChip>
       </div>
     </template>
 
     <!-- Import error snackbar -->
-    <v-snackbar
+    <AtlasSnackbar
       v-model="importError"
       :timeout="4000"
-      color="error"
-      location="bottom right"
-    >
-      <v-icon class="mr-2">
-        mdi-alert-circle
-      </v-icon>
-      {{ importErrorMessage }}
-    </v-snackbar>
+      severity="danger"
+      :text="importErrorMessage"
+      location="bottom"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { AtlasAlert, AtlasButton, AtlasRow, AtlasCol, AtlasChip, AtlasSnackbar } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import { deserializeSpec } from '../services/SpecDeserializer';

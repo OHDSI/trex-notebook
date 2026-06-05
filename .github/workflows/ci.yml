@@ -19,6 +19,8 @@ on:
     types: [opened, ready_for_review, reopened, synchronize]
     paths:
       - "src/**"
+      - "plugins/**"
+      - "scripts/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/ci.yml"
@@ -28,6 +30,8 @@ on:
       - develop
     paths:
       - "src/**"
+      - "plugins/**"
+      - "scripts/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/ci.yml"
@@ -36,6 +40,19 @@ env:
   NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop' }}
 
 jobs:
+  guard-vuetify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check no banned raw Vuetify components
+        run: node scripts/check-no-raw-vuetify.mjs
+
   build:
     runs-on: ubuntu-latest
     steps:

@@ -1,29 +1,30 @@
 <template>
   <div class="register-site">
-    <v-alert v-if="store.error" type="error" class="mb-3">{{ store.error }}</v-alert>
+    <AtlasAlert v-if="store.error" severity="danger" class="mb-3">{{ store.error }}</AtlasAlert>
 
     <template v-if="store.status === 'active'">
-      <v-alert type="success" variant="tonal">This site is registered and connected to the network.</v-alert>
+      <AtlasAlert severity="success" variant="tonal">This site is registered and connected to the network.</AtlasAlert>
     </template>
 
     <template v-else-if="store.status === 'pending'">
-      <v-alert type="info" variant="tonal" class="mb-3">
+      <AtlasAlert severity="info" variant="tonal" class="mb-3">
         Registration request submitted. Awaiting coordinator approval…
-      </v-alert>
-      <v-btn :loading="busy" @click="checkNow">Check now</v-btn>
+      </AtlasAlert>
+      <AtlasButton :loading="busy" @click="checkNow">Check now</AtlasButton>
     </template>
 
     <template v-else>
       <h2 class="text-h6 mb-3">Register this site</h2>
-      <v-text-field v-model="name" label="Site name" :disabled="busy" />
-      <v-text-field v-model="contact" label="Contact email" :disabled="busy" />
-      <v-btn color="primary" :loading="busy" :disabled="!name || !contact" @click="submit">Request registration</v-btn>
+      <AtlasTextField v-model="name" label="Site name" :disabled="busy" />
+      <AtlasTextField v-model="contact" label="Contact email" :disabled="busy" />
+      <AtlasButton tone="primary" :loading="busy" :disabled="!name || !contact" @click="submit">Request registration</AtlasButton>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { AtlasAlert, AtlasButton, AtlasTextField } from '@ohdsi/atlas-ui';
 import { useSignupStore } from '../store/useSignupStore';
 
 const store = useSignupStore();

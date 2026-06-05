@@ -7,36 +7,34 @@
     subtitle="Create and manage analytical notebooks for your cohort studies"
   >
     <template #actions>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="emit('new')">New notebook</v-btn>
+      <AtlasButton variant="primary" prepend-icon="mdi-plus" @click="emit('new')">New notebook</AtlasButton>
     </template>
 
-    <v-alert v-if="store.error" type="error" class="mb-4">{{ store.error }}</v-alert>
+    <AtlasAlert v-if="store.error" severity="danger" class="mb-4">{{ store.error }}</AtlasAlert>
 
-    <v-data-table
+    <AtlasDataTable
       :headers="headers"
       :items="store.notebooks"
       :loading="loading"
       item-value="rowId"
-      density="comfortable"
     >
       <template #item.name="{ item }">
         <a class="text-primary" style="cursor: pointer" @click="emit('open', item.rowId)">{{ item.name }}</a>
       </template>
       <template #item.updatedAt="{ item }">{{ formatDate(item.updatedAt) }}</template>
       <template #item.actions="{ item }">
-        <v-btn icon="mdi-pencil" variant="text" size="small" title="Rename" @click="openRename(item)" />
-        <v-btn icon="mdi-content-copy" variant="text" size="small" title="Duplicate" @click="duplicate(item.rowId)" />
-        <v-btn icon="mdi-delete" variant="text" size="small" title="Delete" @click="openDelete(item)" />
+        <AtlasIconButton icon="mdi-pencil" ariaLabel="Rename" size="sm" @click="openRename(item)" />
+        <AtlasIconButton icon="mdi-content-copy" ariaLabel="Duplicate" size="sm" @click="duplicate(item.rowId)" />
+        <AtlasIconButton icon="mdi-delete" ariaLabel="Delete" size="sm" @click="openDelete(item)" />
       </template>
       <template #no-data>No notebooks yet. Create one with "New notebook".</template>
-    </v-data-table>
+    </AtlasDataTable>
 
     <AtlasDialog v-model="renameDialog" eyebrow="RENAME" title="Rename notebook" :max-width="440" @close="renameDialog = false">
-      <v-text-field
+      <AtlasTextField
         v-model="renameName"
         label="Name"
         autofocus
-        hide-details
         @keyup.enter="confirmRename"
       />
       <template #actions>
@@ -57,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { AtlasPageShell, AtlasDialog, AtlasButton } from "@ohdsi/atlas-ui";
+import { AtlasPageShell, AtlasDialog, AtlasButton, AtlasAlert, AtlasDataTable, AtlasIconButton, AtlasTextField } from "@ohdsi/atlas-ui";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 import type { NotebookSummary } from "../api/types";
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { pluginBase } from '../pluginBase'
+import { AtlasIconButton } from '@ohdsi/atlas-ui'
 
 const props = defineProps<{ files: Map<string, ArrayBuffer> }>()
 const emit = defineEmits<{ reset: [] }>()
@@ -33,9 +34,37 @@ function getInnerFrames(): Window[] {
   }
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  const CH = 0x8000
+  for (let i = 0; i < bytes.length; i += CH) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CH))
+  }
+  return btoa(binary)
+}
+
 function trySendData() {
   const wins = getInnerFrames()
   if (wins.length === 0 || props.files.size === 0) return
+
+  // Prefer a binary DuckDB results file if present: send it base64-chunked.
+  let dbName: string | null = null
+  for (const [name] of props.files) {
+    if (name.endsWith('.db')) { dbName = name; break }
+  }
+  if (dbName) {
+    const b64 = bytesToBase64(new Uint8Array(props.files.get(dbName)!))
+    const DB_CHUNK = 512 * 1024
+    const total = Math.ceil(b64.length / DB_CHUNK)
+    for (const w of wins) w.postMessage({ type: 'RESULT_DB_BEGIN', total }, '*')
+    for (let i = 0; i < total; i++) {
+      const content = b64.slice(i * DB_CHUNK, (i + 1) * DB_CHUNK)
+      for (const w of wins) w.postMessage({ type: 'RESULT_DB_CHUNK', index: i, total, content }, '*')
+    }
+    for (const w of wins) w.postMessage({ type: 'RESULT_DB_END', total }, '*')
+    return
+  }
+
   const dec = new TextDecoder()
   const csvNames: string[] = []
   for (const [name] of props.files) {
@@ -146,14 +175,13 @@ onBeforeUnmount(() => {
 
 <template>
   <div :style="{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }">
-    <v-btn
+    <AtlasIconButton
       icon="mdi-arrow-left"
-      size="x-small"
+      ariaLabel="Back to library"
+      size="sm"
       variant="tonal"
-      color="primary"
-      density="compact"
-      :style="{ position: 'absolute', top: '32px', left: '32px', zIndex: 100, width: '30px', height: '30px', minWidth: '30px' }"
-      title="Back to library"
+      tone="primary"
+      :style="{ position: 'absolute', top: '32px', left: '32px', zIndex: 100 }"
       @click="emit('reset')"
     />
     <iframe

@@ -19,128 +19,117 @@
       />
     </template>
 
-    <v-alert
-      type="info"
+    <AtlasAlert
+      severity="info"
       variant="tonal"
-      density="compact"
       class="mb-4"
     >
       Evidence Synthesis runs on the results database, not the CDM. It combines estimation results (Cohort Method and/or SCCS) from multiple sites into meta-analytic estimates.
-    </v-alert>
+    </AtlasAlert>
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('EvidenceSynthesis') }">
       <!-- Synthesis Analyses card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1 d-flex align-center justify-space-between">
+        <h3 class="card-title text-subtitle-1 d-flex align-center justify-space-between">
           <span>Synthesis Analyses</span>
-          <v-btn
-            size="small"
+          <AtlasButton
+            size="sm"
             variant="tonal"
-            color="primary"
             prepend-icon="mdi-plus"
             @click="openAddDialog"
           >
             Add Analysis
-          </v-btn>
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
+          </AtlasButton>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
           <!-- Empty state -->
           <div
             v-if="store.evidenceSynthesisSettings.analyses.length === 0"
             class="d-flex flex-column align-center py-8 text-medium-emphasis"
           >
-            <v-icon
+            <AtlasIcon
               size="48"
               class="mb-2"
             >
               mdi-chart-scatter-plot
-            </v-icon>
+            </AtlasIcon>
             <span>No synthesis analyses added yet</span>
           </div>
 
           <!-- Analysis list -->
           <template v-else>
-            <v-card
+            <AtlasCard
               v-for="(analysis, idx) in store.evidenceSynthesisSettings.analyses"
               :key="analysis.evidenceSynthesisAnalysisId"
               flat
-              outlined
               rounded="lg"
-              class="mb-2 pa-3"
+              class="mb-2"
+              padding="sm"
               style="border: 1px solid rgba(0,0,0,0.12)"
             >
               <div class="d-flex align-center justify-space-between">
                 <div>
-                  <v-chip
-                    size="small"
+                  <AtlasChip
+                    size="sm"
                     class="mb-1"
                   >
                     {{ analysis.description }}
-                  </v-chip>
+                  </AtlasChip>
                   <div class="text-body-2 text-medium-emphasis">
                     Type: {{ analysis.analysisType }} · Source: {{ analysis.sourceMethod }} · Control: {{ analysis.controlType }} · Approximation: {{ analysis.likelihoodApproximation }}
                   </div>
                 </div>
-                <v-btn
+                <AtlasIconButton
                   icon="mdi-delete"
-                  size="small"
+                  size="sm"
                   variant="text"
-                  color="error"
+                  tone="danger"
+                  ariaLabel="Delete analysis"
                   @click="store.evidenceSynthesisSettings.analyses.splice(idx, 1)"
                 />
               </div>
-            </v-card>
+            </AtlasCard>
           </template>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Advanced -->
       <AdvancedSection>
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-2"
+          padding="none"
         >
-          <v-card-title class="text-subtitle-2 text-medium-emphasis pt-3 px-4">
+          <h3 class="card-title text-subtitle-2 text-medium-emphasis pt-3 px-4">
             Diagnostic Thresholds
-          </v-card-title>
-          <v-card-text>
+          </h3>
+          <div class="card-body">
             <!-- Row 1 -->
             <div class="d-flex ga-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.evidenceSynthesisSettings.mdrrThreshold"
                 label="MDRR threshold"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.01"
                 style="max-width: 150px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.evidenceSynthesisSettings.easeThreshold"
                 label="EASE threshold"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.01"
                 style="max-width: 150px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.evidenceSynthesisSettings.i2Threshold"
                 label="I² threshold"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.01"
                 style="max-width: 150px"
@@ -148,31 +137,23 @@
             </div>
             <!-- Row 2 -->
             <div class="d-flex ga-3 mt-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.evidenceSynthesisSettings.tauThreshold"
                 label="Tau threshold"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.01"
                 style="max-width: 150px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.evidenceSynthesisSettings.alpha"
                 label="Alpha"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.001"
                 style="max-width: 120px"
               />
             </div>
-          </v-card-text>
-        </v-card>
+          </div>
+        </AtlasCard>
       </AdvancedSection>
     </div>
 
@@ -184,20 +165,14 @@
       :max-width="480"
       @close="addDialog = false"
     >
-      <v-text-field
+      <AtlasTextField
         v-model="newAnalysis.description"
         label="Description"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         class="mb-3"
       />
-      <v-select
+      <AtlasSelect
         v-model="newAnalysis.analysisType"
         label="Analysis type"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         :items="[
           { title: 'Random Effects', value: 'RandomEffects' },
           { title: 'Fixed Effects', value: 'FixedEffects' },
@@ -205,48 +180,36 @@
         ]"
         class="mb-3"
       />
-      <v-select
+      <AtlasSelect
         v-model="newAnalysis.sourceMethod"
         label="Source method"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         :items="[
           { title: 'Cohort Method', value: 'CohortMethod' },
           { title: 'Self-Controlled Case Series', value: 'SelfControlledCaseSeries' },
         ]"
         class="mb-3"
       />
-      <v-select
+      <AtlasSelect
         v-model="newAnalysis.likelihoodApproximation"
         label="Likelihood approximation"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         :items="[
           { title: 'Adaptive Grid', value: 'adaptive grid' },
           { title: 'Normal', value: 'normal' },
         ]"
         class="mb-3"
       />
-      <v-select
+      <AtlasSelect
         v-model="newAnalysis.controlType"
         label="Control type"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         :items="[
           { title: 'Outcome', value: 'outcome' },
           { title: 'Exposure', value: 'exposure' },
         ]"
         class="mb-3"
       />
-      <v-text-field
+      <AtlasTextField
         v-model.number="newAnalysis.alpha"
         label="Alpha"
-        variant="outlined"
-        density="compact"
-        rounded="md"
         type="number"
         step="0.001"
         class="mb-3"
@@ -256,60 +219,38 @@
           Bayesian Settings
         </div>
         <div class="d-flex ga-3 mb-3">
-          <v-text-field
+          <AtlasTextField
             v-model.number="newAnalysis.chainLength"
             label="Chain length"
-            variant="outlined"
-            density="compact"
-            rounded="md"
             type="number"
-            hide-details
           />
-          <v-text-field
+          <AtlasTextField
             v-model.number="newAnalysis.burnIn"
             label="Burn-in"
-            variant="outlined"
-            density="compact"
-            rounded="md"
             type="number"
-            hide-details
           />
         </div>
         <div class="d-flex ga-3 mb-3">
-          <v-text-field
+          <AtlasTextField
             v-model.number="newAnalysis.subSampleFrequency"
             label="Subsample frequency"
-            variant="outlined"
-            density="compact"
-            rounded="md"
             type="number"
-            hide-details
           />
-          <v-text-field
+          <AtlasTextField
             v-model.number="newAnalysis.seed"
             label="Seed"
-            variant="outlined"
-            density="compact"
-            rounded="md"
             type="number"
-            hide-details
           />
         </div>
         <div class="d-flex ga-3 mb-3">
-          <v-text-field
+          <AtlasTextField
             v-model.number="newAnalysis.df"
             label="Degrees of freedom"
-            variant="outlined"
-            density="compact"
-            rounded="md"
             type="number"
-            hide-details
           />
-          <v-checkbox
+          <AtlasCheckbox
             v-model="newAnalysis.robust"
             label="Robust"
-            density="compact"
-            hide-details
           />
         </div>
       </template>
@@ -332,7 +273,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasCard, AtlasDivider, AtlasAlert, AtlasIcon, AtlasChip, AtlasTextField, AtlasSelect, AtlasCheckbox, AtlasIconButton } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';
@@ -408,5 +349,12 @@ function addAnalysis() {
 .module-disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+.card-title {
+  padding: 12px 16px 12px;
+  margin: 0;
+}
+.card-body {
+  padding: 16px;
 }
 </style>

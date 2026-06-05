@@ -8,21 +8,20 @@
     subtitle="Build and manage Strategus analysis specifications for distribution across OMOP sites."
   >
     <template #actions>
-      <v-btn
-        variant="tonal"
+      <AtlasButton
+        variant="ghost"
         prepend-icon="mdi-cloud-download-outline"
         @click="listViewRef?.openServerDialog()"
       >
         Load from server
-      </v-btn>
-      <v-btn
-        color="primary"
-        variant="flat"
+      </AtlasButton>
+      <AtlasButton
+        variant="primary"
         prepend-icon="mdi-plus"
         @click="listViewRef?.onNew()"
       >
         New Study
-      </v-btn>
+      </AtlasButton>
     </template>
     <StudiesListView ref="listViewRef" />
   </AtlasPageShell>
@@ -35,7 +34,7 @@
 
 <script setup lang="ts">
 import { computed, provide, onMounted, ref } from 'vue';
-import { AtlasPageShell } from '@ohdsi/atlas-ui';
+import { AtlasPageShell, AtlasButton } from '@ohdsi/atlas-ui';
 import StrategusLayout from './components/StrategusLayout.vue';
 import OverviewPanel from './views/OverviewPanel.vue';
 import StudyPanel from './views/StudyPanel.vue';

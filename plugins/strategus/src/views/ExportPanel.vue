@@ -15,35 +15,35 @@
         </p>
       </div>
       <div class="d-flex gap-2 mt-1">
-        <v-btn
+        <AtlasButton
           variant="tonal"
-          size="small"
+          size="sm"
           prepend-icon="mdi-content-copy"
           @click="copyJson"
         >
           Copy JSON
-        </v-btn>
-        <v-btn
-          color="primary"
+        </AtlasButton>
+        <AtlasButton
           variant="tonal"
-          size="small"
+          tone="primary"
+          size="sm"
           prepend-icon="mdi-download"
           :disabled="!validation.canExport.value"
           @click="downloadJson"
         >
           Export JSON
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          size="small"
+        </AtlasButton>
+        <AtlasButton
+          variant="primary"
+          tone="primary"
+          size="sm"
           prepend-icon="mdi-play"
           data-test="run-analysis"
           :disabled="!validation.canExport.value"
           @click="showRun = true"
         >
           Run analysis
-        </v-btn>
+        </AtlasButton>
       </div>
     </div>
 
@@ -55,45 +55,42 @@
     />
 
     <!-- Validation card -->
-    <v-card
+    <AtlasCard
       variant="outlined"
       class="mb-4"
+      padding="none"
     >
-      <v-card-title class="d-flex align-center pa-4 pb-2">
-        <v-icon
+      <div class="card-title-row pa-4 pb-2">
+        <AtlasIcon
           :color="allValid ? 'success' : 'warning'"
           class="mr-2"
         >
           {{ allValid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-        </v-icon>
+        </AtlasIcon>
         <span class="text-subtitle-1 font-weight-medium">Validation</span>
-        <v-spacer />
-        <v-chip
-          :color="allValid ? 'success' : 'warning'"
-          size="small"
-          variant="tonal"
+        <AtlasSpacer />
+        <AtlasChip
+          :tone="allValid ? 'success' : 'warning'"
+          size="sm"
         >
           {{ allValid ? 'All checks passed' : 'Issues found' }}
-        </v-chip>
-      </v-card-title>
+        </AtlasChip>
+      </div>
 
-      <v-list
-        density="compact"
-        class="pa-0"
-      >
-        <v-divider />
-        <v-list-item
+      <AtlasList class="pa-0">
+        <AtlasDivider />
+        <AtlasListItem
           v-for="check in validationChecks"
           :key="check.key"
         >
           <template #prepend>
-            <v-icon
+            <AtlasIcon
               :color="check.result.status === 'valid' ? 'success' : check.result.status === 'error' ? 'error' : 'warning'"
               size="small"
               class="mr-1"
             >
               {{ check.result.status === 'valid' ? 'mdi-check-circle-outline' : 'mdi-alert-outline' }}
-            </v-icon>
+            </AtlasIcon>
           </template>
           <v-list-item-title class="text-body-2">
             {{ check.label }}
@@ -101,53 +98,58 @@
           <v-list-item-subtitle class="text-caption">
             {{ check.result.message }}
           </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
-    </v-card>
+        </AtlasListItem>
+      </AtlasList>
+    </AtlasCard>
 
     <!-- JSON Preview card -->
-    <v-card variant="outlined">
-      <v-card-title class="d-flex align-center pa-4 pb-2">
-        <v-icon class="mr-2">
+    <AtlasCard
+      variant="outlined"
+      padding="none"
+    >
+      <div class="card-title-row pa-4 pb-2">
+        <AtlasIcon class="mr-2">
           mdi-code-json
-        </v-icon>
+        </AtlasIcon>
         <span class="text-subtitle-1 font-weight-medium">JSON Preview</span>
-        <v-spacer />
-        <v-btn
-          variant="text"
-          size="small"
+        <AtlasSpacer />
+        <AtlasButton
+          variant="ghost"
+          size="sm"
           :prepend-icon="fullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
           @click="fullscreen = !fullscreen"
         >
           {{ fullscreen ? 'Collapse' : 'Full screen' }}
-        </v-btn>
-      </v-card-title>
-      <v-divider />
+        </AtlasButton>
+      </div>
+      <AtlasDivider />
       <div
         class="json-preview-wrapper"
         :style="{ maxHeight: fullscreen ? '80vh' : '300px' }"
       >
         <pre class="json-preview">{{ jsonPreview }}</pre>
       </div>
-    </v-card>
+    </AtlasCard>
 
     <!-- Copy confirmation snackbar -->
-    <v-snackbar
+    <AtlasSnackbar
       v-model="snackbar"
       :timeout="2000"
-      color="success"
-      location="bottom right"
+      severity="success"
+      location="bottom"
+      closable
     >
-      <v-icon class="mr-2">
+      <AtlasIcon class="mr-2">
         mdi-check
-      </v-icon>
+      </AtlasIcon>
       JSON copied to clipboard
-    </v-snackbar>
+    </AtlasSnackbar>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { AtlasButton, AtlasCard, AtlasDivider, AtlasIcon, AtlasSpacer, AtlasChip, AtlasList, AtlasListItem, AtlasSnackbar } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import { serializeSpec } from '../services/SpecSerializer';
@@ -224,5 +226,10 @@ function downloadJson() {
   line-height: 1.6;
   overflow-x: auto;
   white-space: pre;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
 }
 </style>

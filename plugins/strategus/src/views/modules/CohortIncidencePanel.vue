@@ -21,182 +21,146 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('CohortIncidence') }">
       <!-- Stratification card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="card-title text-subtitle-1">
           Stratification
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
           <div class="d-flex ga-6">
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.cohortIncidenceSettings.byAge"
               label="By age"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.cohortIncidenceSettings.byGender"
               label="By gender"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.cohortIncidenceSettings.byYear"
               label="By year"
-              density="compact"
-              hide-details
             />
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Advanced -->
       <AdvancedSection>
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-2"
+          padding="none"
         >
-          <v-card-text>
-            <v-text-field
+          <div class="card-body">
+            <AtlasTextField
               v-model="ageBreaksStr"
               label="Age breaks"
-              variant="outlined"
-              density="compact"
-              rounded="md"
               hint="Comma-separated age boundaries"
-              persistent-hint
               style="max-width: 400px"
             />
-          </v-card-text>
-        </v-card>
+          </div>
+        </AtlasCard>
 
         <!-- Per-CI TAR windows -->
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-4"
+          padding="none"
         >
-          <v-card-title class="text-subtitle-1">
+          <h3 class="card-title text-subtitle-1">
             Time-at-Risk Windows (Cohort Incidence)
-          </v-card-title>
-          <v-card-subtitle class="text-caption text-medium-emphasis pb-1">
+          </h3>
+          <p class="card-subtitle text-caption text-medium-emphasis">
             These TAR windows are used only by Cohort Incidence. When empty, the global TAR windows are used.
-          </v-card-subtitle>
-          <v-divider />
-          <v-card-text>
-            <v-table
+          </p>
+          <AtlasDivider />
+          <div class="card-body">
+            <AtlasDataTable
               v-if="store.cohortIncidenceTars.length > 0"
+              :headers="tarTableHeaders"
+              :items="store.cohortIncidenceTars"
               density="compact"
               class="bordered-table mb-3"
             >
-              <thead>
-                <tr>
-                  <th>Label</th>
-                  <th>Start Offset</th>
-                  <th>Start Anchor</th>
-                  <th>End Offset</th>
-                  <th>End Anchor</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(tar, idx) in store.cohortIncidenceTars"
-                  :key="idx"
-                >
-                  <td>
-                    <v-text-field
-                      v-model="tar.label"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <v-text-field
-                      v-model.number="tar.riskWindowStart"
-                      variant="plain"
-                      density="compact"
-                      type="number"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <v-select
-                      v-model="tar.startAnchor"
-                      :items="anchorItems"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <v-text-field
-                      v-model.number="tar.riskWindowEnd"
-                      variant="plain"
-                      density="compact"
-                      type="number"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <v-select
-                      v-model="tar.endAnchor"
-                      :items="anchorItems"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <v-btn
-                      icon="mdi-delete-outline"
-                      size="x-small"
-                      variant="text"
-                      color="error"
-                      @click="removeCiTar(idx)"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
+              <template #item.label="{ item }">
+                <AtlasTextField
+                  v-model="item.label"
+                />
+              </template>
+              <template #item.riskWindowStart="{ item }">
+                <AtlasTextField
+                  v-model.number="item.riskWindowStart"
+                  type="number"
+                />
+              </template>
+              <template #item.startAnchor="{ item }">
+                <AtlasSelect
+                  v-model="item.startAnchor"
+                  :items="anchorItems"
+                />
+              </template>
+              <template #item.riskWindowEnd="{ item }">
+                <AtlasTextField
+                  v-model.number="item.riskWindowEnd"
+                  type="number"
+                />
+              </template>
+              <template #item.endAnchor="{ item }">
+                <AtlasSelect
+                  v-model="item.endAnchor"
+                  :items="anchorItems"
+                />
+              </template>
+              <template #item.actions="{ index }">
+                <AtlasIconButton
+                  icon="mdi-delete-outline"
+                  size="sm"
+                  variant="text"
+                  tone="danger"
+                  ariaLabel="Remove TAR"
+                  @click="removeCiTar(index)"
+                />
+              </template>
+            </AtlasDataTable>
             <p
               v-else
               class="text-caption text-medium-emphasis mb-3"
             >
               No CI-specific TARs defined — using global TAR windows.
             </p>
-            <v-btn
-              size="small"
+            <AtlasButton
+              size="sm"
               variant="tonal"
-              color="primary"
               prepend-icon="mdi-plus"
               @click="addCiTar"
             >
               Add TAR
-            </v-btn>
-          </v-card-text>
-        </v-card>
+            </AtlasButton>
+          </div>
+        </AtlasCard>
 
         <!-- CI Analysis list -->
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-4"
+          padding="none"
         >
-          <v-card-title class="text-subtitle-1">
+          <h3 class="card-title text-subtitle-1">
             Analysis List
-          </v-card-title>
-          <v-card-subtitle class="text-caption text-medium-emphasis pb-1">
+          </h3>
+          <p class="card-subtitle text-caption text-medium-emphasis">
             Each entry specifies which targets, outcomes, and TAR windows to combine. When empty, all targets × all outcomes × all TARs are used.
-          </v-card-subtitle>
-          <v-divider />
-          <v-card-text>
+          </p>
+          <AtlasDivider />
+          <div class="card-body">
             <div
               v-if="store.cohortIncidenceAnalyses.length === 0"
               class="text-caption text-medium-emphasis mb-3"
@@ -210,64 +174,55 @@
             >
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-caption font-weight-medium">Analysis {{ idx + 1 }}</span>
-                <v-btn
+                <AtlasIconButton
                   icon="mdi-delete-outline"
-                  size="x-small"
+                  size="sm"
                   variant="text"
-                  color="error"
+                  tone="danger"
+                  ariaLabel="Remove analysis"
                   @click="removeCiAnalysis(idx)"
                 />
               </div>
-              <v-row dense>
-                <v-col cols="4">
-                  <v-select
+              <AtlasRow dense>
+                <AtlasCol cols="4">
+                  <AtlasSelect
                     v-model="analysis.targets"
                     label="Targets (cohort IDs)"
                     :items="targetCohortItems"
                     multiple
                     chips
-                    variant="outlined"
-                    density="compact"
-                    hide-details
                   />
-                </v-col>
-                <v-col cols="4">
-                  <v-select
+                </AtlasCol>
+                <AtlasCol cols="4">
+                  <AtlasSelect
                     v-model="analysis.outcomes"
                     label="Outcomes (1-based index)"
                     :items="outcomeIndexItems"
                     multiple
                     chips
-                    variant="outlined"
-                    density="compact"
-                    hide-details
                   />
-                </v-col>
-                <v-col cols="4">
-                  <v-select
+                </AtlasCol>
+                <AtlasCol cols="4">
+                  <AtlasSelect
                     v-model="analysis.tars"
                     label="TARs (1-based index)"
                     :items="tarIndexItems"
                     multiple
                     chips
-                    variant="outlined"
-                    density="compact"
-                    hide-details
                   />
-                </v-col>
-              </v-row>
+                </AtlasCol>
+              </AtlasRow>
             </div>
-            <v-btn
-              size="small"
+            <AtlasButton
+              size="sm"
               variant="tonal"
-              color="primary"
               prepend-icon="mdi-plus"
               @click="addCiAnalysis"
             >
               Add Analysis
-            </v-btn>
-          </v-card-text>
-        </v-card>
+            </AtlasButton>
+          </div>
+        </AtlasCard>
       </AdvancedSection>
     </div>
   </div>
@@ -275,6 +230,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasCard, AtlasDivider, AtlasCheckbox, AtlasTextField, AtlasSelect, AtlasButton, AtlasIconButton, AtlasDataTable, AtlasRow, AtlasCol } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import type { CohortIncidenceAnalysis } from '../../store/useStrategusStore';
 import { createDefaultTimeAtRisk } from '../../services/DefaultsFactory';
@@ -294,6 +250,15 @@ const ageBreaksStr = computed({
 const anchorItems = [
   { title: 'Cohort start', value: 'cohort start' },
   { title: 'Cohort end', value: 'cohort end' },
+];
+
+const tarTableHeaders = [
+  { key: 'label', title: 'Label', sortable: false },
+  { key: 'riskWindowStart', title: 'Start Offset', sortable: false },
+  { key: 'startAnchor', title: 'Start Anchor', sortable: false },
+  { key: 'riskWindowEnd', title: 'End Offset', sortable: false },
+  { key: 'endAnchor', title: 'End Anchor', sortable: false },
+  { key: 'actions', title: '', sortable: false },
 ];
 
 // Items for analysis-list selects
@@ -347,5 +312,19 @@ function removeCiAnalysis(idx: number) {
 .bordered-table {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
+}
+
+.card-title {
+  padding: 12px 16px;
+  margin: 0;
+}
+
+.card-subtitle {
+  padding: 0 16px 4px;
+  margin: 0;
+}
+
+.card-body {
+  padding: 16px;
 }
 </style>

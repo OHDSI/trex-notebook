@@ -21,25 +21,25 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('TreatmentPatterns') }">
       <!-- Card 1: Cohort Roles -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="text-subtitle-1 card-title-pad">
           Cohort Roles
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
-          <v-alert
-            type="info"
+        </h3>
+        <AtlasDivider />
+        <div class="card-body-pad">
+          <AtlasAlert
+            severity="info"
             variant="tonal"
-            density="compact"
             class="mb-3"
           >
             Assign treatment pattern roles to your cohorts. 'Target' defines the population, 'Event' cohorts are the treatments to track, 'Exit' cohorts end the observation.
-          </v-alert>
-          <v-table density="compact">
+          </AtlasAlert>
+          <table class="tp-table">
             <thead>
               <tr>
                 <th>Cohort Name</th>
@@ -55,16 +55,12 @@
               >
                 <td>{{ cohort.cohortName }}</td>
                 <td>
-                  <v-select
+                  <AtlasSelect
                     :model-value="getTpRole(cohort.cohortId)"
                     :items="[{ title: '—', value: null }, { title: 'target', value: 'target' }, { title: 'event', value: 'event' }, { title: 'exit', value: 'exit' }]"
-                    variant="outlined"
-                    density="compact"
-                    rounded="md"
-                    hide-details
                     clearable
                     style="max-width: 160px"
-                    @update:model-value="(v) => setTpRole(cohort.cohortId, cohort.cohortName, v)"
+                    @update:model-value="(v) => setTpRole(cohort.cohortId, cohort.cohortName, v as string | null)"
                   />
                 </td>
               </tr>
@@ -77,181 +73,136 @@
                 </td>
               </tr>
             </tbody>
-          </v-table>
-        </v-card-text>
-      </v-card>
+          </table>
+        </div>
+      </AtlasCard>
 
       <!-- Card 2: Pathway Settings -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="text-subtitle-1 card-title-pad">
           Pathway Settings
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body-pad">
           <div class="d-flex ga-3">
-            <v-text-field
+            <AtlasTextField
               v-model.number="store.treatmentPatternsSettings.maxPathLength"
               label="Max path length"
-              variant="outlined"
-              density="compact"
-              rounded="md"
               type="number"
               hint="Maximum number of treatment steps to track"
-              persistent-hint
               style="max-width: 150px"
             />
-            <v-text-field
+            <AtlasTextField
               v-model.number="store.treatmentPatternsSettings.combinationWindow"
               label="Combination window (days)"
-              variant="outlined"
-              density="compact"
-              rounded="md"
               type="number"
               hint="Window for overlapping treatments to count as combination"
-              persistent-hint
               style="max-width: 180px"
             />
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Advanced -->
       <AdvancedSection>
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-2"
+          padding="md"
         >
-          <v-card-text>
+          <div>
             <!-- Row 1 -->
             <div class="d-flex ga-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.treatmentPatternsSettings.eraCollapseSize"
                 label="Era collapse size (days)"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 180px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.treatmentPatternsSettings.minEraDuration"
                 label="Min era duration (days)"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 180px"
               />
             </div>
             <!-- Row 2 -->
             <div class="d-flex ga-3 mt-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.treatmentPatternsSettings.minPostCombinationDuration"
                 label="Min post-combination duration"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 220px"
               />
-              <v-select
+              <AtlasSelect
                 v-model="store.treatmentPatternsSettings.filterTreatments"
                 label="Filter treatments"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 :items="['First', 'Changes', 'All']"
                 style="max-width: 150px"
               />
             </div>
             <!-- Row 3 -->
             <div class="d-flex ga-3 mt-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.treatmentPatternsSettings.minCellCount"
                 label="Min cell count"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 130px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.treatmentPatternsSettings.ageWindow"
                 label="Age window (years)"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 130px"
               />
             </div>
             <!-- Row 4 -->
             <div class="d-flex ga-3 mt-3">
-              <v-select
+              <AtlasSelect
                 v-model="store.treatmentPatternsSettings.includeTreatments"
                 label="Include treatments"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 :items="['First', 'Changes', 'All']"
                 style="max-width: 150px"
               />
-              <v-select
+              <AtlasSelect
                 v-model="store.treatmentPatternsSettings.censorType"
                 label="Censor type"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 :items="['minCellCount', 'remove', 'mean']"
                 style="max-width: 150px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.treatmentPatternsSettings.indexDateOffset"
                 label="Index date offset"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 150px"
               />
             </div>
             <!-- Row 5 -->
             <div class="d-flex ga-6 mt-3">
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.treatmentPatternsSettings.stratify"
                 label="Stratify by age/gender"
-                density="compact"
-                hide-details
               />
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.treatmentPatternsSettings.concatTargets"
                 label="Concatenate targets"
-                density="compact"
-                hide-details
               />
             </div>
-          </v-card-text>
-        </v-card>
+          </div>
+        </AtlasCard>
       </AdvancedSection>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { AtlasCard, AtlasDivider, AtlasAlert, AtlasTextField, AtlasSelect, AtlasCheckbox } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';
@@ -280,5 +231,26 @@ function setTpRole(cohortId: number, cohortName: string, role: string | null) {
 .module-disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.card-title-pad {
+  padding: 12px 16px;
+  font-weight: 500;
+}
+
+.card-body-pad {
+  padding: 16px;
+}
+
+.tp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tp-table th,
+.tp-table td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>

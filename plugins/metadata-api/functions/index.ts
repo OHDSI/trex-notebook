@@ -9,6 +9,7 @@
 // SQL transport is isolated in sql.ts (the DuckDB→Postgres `_config` attach).
 import { query, lit } from "./sql.ts";
 import { encryptSecret } from "./crypto.ts";
+import { gzipBytes, findResultsDb, putToUrl } from "./export.ts";
 // `zip` is NOT present in the trexsql image (verified: command -v zip -> absent;
 // only unzip/gzip/tar exist), so we zip in-process with the JSR zip-js lib instead
 // of Deno.Command("zip", ...). Pure-Deno, no native binary needed.
@@ -76,6 +77,22 @@ Deno.serve(async (req: Request) => {
                  ${lit(bucket)}, ${lit(key)}, ${bytes.length}, ${lit(userId)})`,
       );
       return json({ status: "ok", bucket, key, sizeBytes: bytes.length });
+    }
+
+    // POST /results/export-gz  { jobId, uploadUrl, dbFilename? }
+    // Gzip the run's results DB and PUT it to a central presigned S3 URL.
+    if (path === "/results/export-gz" && req.method === "POST") {
+      const b = await req.json();
+      if (!b.jobId || !b.uploadUrl) return json({ error: "BAD_REQUEST" }, 400);
+      if (!OUTPUT_BASE) return json({ error: "NOT_CONFIGURED" }, 503);
+      const runDir = `${OUTPUT_BASE}/${b.jobId}`;
+      const dbPath = await findResultsDb(runDir, b.dbFilename);
+      if (!dbPath) return json({ error: "RESULTS_DB_NOT_FOUND" }, 404);
+      const raw = await Deno.readFile(dbPath);
+      if (raw.byteLength === 0) return json({ error: "RESULTS_DB_EMPTY" }, 409);
+      const gz = await gzipBytes(raw);
+      const etag = await putToUrl(String(b.uploadUrl), gz);
+      return json({ status: "ok", sizeBytes: gz.byteLength, etag });
     }
 
     return json({ error: "NOT_FOUND" }, 404);

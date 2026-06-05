@@ -8,7 +8,7 @@ export const initiateSubmissionSchema = z.object({
           .string()
           .trim()
           .min(1)
-          .regex(/\.db$/, 'must be a .db file')
+          .regex(/\.db(\.gz)?$/, 'must be a .db or .db.gz file')
           .regex(/^[A-Za-z0-9._-]+$/, 'invalid filename'),
       }),
     )

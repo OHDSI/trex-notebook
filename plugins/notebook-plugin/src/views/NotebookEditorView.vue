@@ -1,26 +1,22 @@
 <template>
   <div class="notebook-editor">
     <div class="d-flex align-center mb-3" style="gap: 8px;">
-      <v-btn icon="mdi-arrow-left" variant="text" title="Back" @click="emit('back')" />
-      <v-text-field
+      <AtlasIconButton icon="mdi-arrow-left" ariaLabel="Back" @click="emit('back')" />
+      <AtlasTextField
         v-model="name"
         label="Name"
-        hide-details
-        density="compact"
         style="max-width: 320px;"
       />
-      <v-text-field
+      <AtlasTextField
         v-model="description"
         label="Description"
-        hide-details
-        density="compact"
       />
-      <v-spacer />
-      <v-chip v-if="dirty" color="warning" size="small">Unsaved</v-chip>
-      <v-btn color="primary" :loading="saving" :disabled="!name" @click="save">Save</v-btn>
+      <AtlasSpacer />
+      <AtlasChip v-if="dirty" tone="warning" size="sm">Unsaved</AtlasChip>
+      <AtlasButton variant="primary" :loading="saving" :disabled="!name" @click="save">Save</AtlasButton>
     </div>
 
-    <v-alert v-if="error" type="error" class="mb-3">{{ error }}</v-alert>
+    <AtlasAlert v-if="error" severity="danger" class="mb-3">{{ error }}</AtlasAlert>
 
     <Notebook
       v-if="ready"
@@ -42,6 +38,7 @@ import {
   createEmptyNotebook,
 } from "@trex/notebook";
 import type { NotebookData } from "@trex/notebook";
+import { AtlasAlert, AtlasButton, AtlasChip, AtlasIconButton, AtlasSpacer, AtlasTextField } from "@ohdsi/atlas-ui";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 
 const props = defineProps<{ id: string | null }>();

@@ -9,12 +9,12 @@
     <!-- No in-plugin login: access is gated by the trex session, and all API
          calls go through the network-api function proxy, which attaches the
          site's machine token server-side. -->
-    <v-tabs v-model="tab" class="mb-4">
-      <v-tab value="studies">Studies</v-tab>
-      <v-tab value="submit">Submit</v-tab>
-      <v-tab value="mine">My submissions</v-tab>
-      <v-tab value="register">Register site</v-tab>
-    </v-tabs>
+    <AtlasTabs v-model="tab" class="mb-4">
+      <AtlasTab value="studies">Studies</AtlasTab>
+      <AtlasTab value="submit">Submit</AtlasTab>
+      <AtlasTab value="mine">My submissions</AtlasTab>
+      <AtlasTab value="register">Register site</AtlasTab>
+    </AtlasTabs>
     <v-window v-model="tab">
       <v-window-item value="studies"><StudiesToExecuteView /></v-window-item>
       <v-window-item value="submit"><SubmitResultsView /></v-window-item>
@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { AtlasPageShell } from '@ohdsi/atlas-ui';
+import { AtlasPageShell, AtlasTabs, AtlasTab } from '@ohdsi/atlas-ui';
 import StudiesToExecuteView from './views/StudiesToExecuteView.vue';
 import SubmitResultsView from './views/SubmitResultsView.vue';
 import MySubmissionsView from './views/MySubmissionsView.vue';

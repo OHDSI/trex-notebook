@@ -21,22 +21,20 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('PLP') }">
       <!-- Model Design card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="card-title text-subtitle-1">
           Model Design
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
-          <v-select
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
+          <AtlasSelect
             v-model="store.plpSettings.modelType"
             label="Model type"
-            variant="outlined"
-            density="compact"
-            rounded="md"
             :items="[
               { title: 'LASSO Logistic Regression', value: 'lassoLogisticRegression' },
               { title: 'Gradient Boosting', value: 'gradientBoosting' },
@@ -47,118 +45,91 @@
             ]"
             style="max-width: 320px"
           />
-          <v-alert
-            type="info"
+          <AtlasAlert
+            severity="info"
             variant="tonal"
-            density="compact"
             class="mt-3"
           >
             One model design is created per target × outcome × time-at-risk combination.
-          </v-alert>
-        </v-card-text>
-      </v-card>
+          </AtlasAlert>
+        </div>
+      </AtlasCard>
 
       <!-- Covariate Features card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="card-title text-subtitle-1">
           Covariate Features
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useDemographicsGender"
               label="Demographics: Gender"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useDemographicsAgeGroup"
               label="Demographics: Age group"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useConditionGroupEraLongTerm"
               label="Conditions: Group era (long term)"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useDrugGroupEraLongTerm"
               label="Drugs: Group era (long term)"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useVisitConceptCountLongTerm"
               label="Visits: Concept count (long term)"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useProcedureGroupEraLongTerm"
               label="Procedures: Group era (long term)"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useMeasurementValueLongTerm"
               label="Measurements: Value (long term)"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.plpSettings.useObservationEraLongTerm"
               label="Observations: Era (long term)"
-              density="compact"
-              hide-details
             />
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Advanced -->
       <AdvancedSection>
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-2"
+          padding="none"
         >
-          <v-card-text>
+          <div class="card-body">
             <div class="d-flex ga-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.maxSampleSize"
                 label="Max sample size"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 180px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.testFraction"
                 label="Test fraction"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.05"
                 style="max-width: 130px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.nfold"
                 label="N-fold"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 100px"
               />
@@ -169,28 +140,20 @@
             </div>
 
             <div class="d-flex ga-3 align-center">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.minFraction"
                 label="Min fraction"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.001"
                 style="max-width: 130px"
               />
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.plpSettings.normalize"
                 label="Normalize"
-                density="compact"
-                hide-details
               />
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.plpSettings.removeRedundancy"
                 label="Remove redundancy"
-                density="compact"
-                hide-details
               />
             </div>
 
@@ -199,48 +162,32 @@
             </div>
 
             <div class="d-flex ga-6">
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.plpSettings.removeSubjectsWithPriorOutcome"
                 label="Remove subjects with prior outcome"
-                density="compact"
-                hide-details
               />
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.plpSettings.requireTimeAtRisk"
                 label="Require time at risk"
-                density="compact"
-                hide-details
               />
             </div>
 
             <div class="d-flex ga-3 mt-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.washoutPeriod"
                 label="Washout period"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 150px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.priorOutcomeLookback"
                 label="Prior outcome lookback"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 150px"
               />
-              <v-select
+              <AtlasSelect
                 v-model="store.plpSettings.splitType"
                 label="Split type"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 :items="[
                   { title: 'By subject', value: 'subject' },
                   { title: 'By time', value: 'time' },
@@ -255,13 +202,9 @@
             </div>
 
             <div class="d-flex ga-3 align-center">
-              <v-select
+              <AtlasSelect
                 v-model="store.plpSettings.samplingStrategy"
                 label="Sampling strategy"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 :items="[
                   { title: 'None', value: 'none' },
                   { title: 'Under-sample non-outcomes', value: 'underSample' },
@@ -269,14 +212,10 @@
                 ]"
                 style="max-width: 260px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-if="store.plpSettings.samplingStrategy !== 'none'"
                 v-model.number="store.plpSettings.samplingNumberOutcomesToSampleTo"
                 label="Target outcome count"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 200px"
               />
@@ -287,32 +226,27 @@
             </div>
 
             <div class="d-flex ga-3 align-center">
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.plpSettings.runCalibration"
                 label="Run calibration"
-                density="compact"
-                hide-details
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.plpSettings.calibrationBins"
                 label="Calibration bins"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 150px"
                 :disabled="!store.plpSettings.runCalibration"
               />
             </div>
-          </v-card-text>
-        </v-card>
+          </div>
+        </AtlasCard>
       </AdvancedSection>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { AtlasCard, AtlasDivider, AtlasSelect, AtlasAlert, AtlasCheckbox, AtlasTextField } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';
@@ -325,5 +259,14 @@ const store = useStrategusStore();
 .module-disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.card-title {
+  padding: 12px 16px 12px;
+  margin: 0;
+}
+
+.card-body {
+  padding: 16px;
 }
 </style>

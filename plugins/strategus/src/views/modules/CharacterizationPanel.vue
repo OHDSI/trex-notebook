@@ -21,128 +21,97 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('Characterization') }">
       <!-- Analyses to Include card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="card-title text-subtitle-1">
           Analyses to Include
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.characterizationSettings.includeTimeToEvent"
               label="Time-to-event"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.characterizationSettings.includeDechallengeRechallenge"
               label="Dechallenge-rechallenge"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.characterizationSettings.includeTargetBaseline"
               label="Target baseline"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.characterizationSettings.includeRiskFactors"
               label="Risk factors"
-              density="compact"
-              hide-details
             />
-            <v-checkbox
+            <AtlasCheckbox
               v-model="store.characterizationSettings.includeCaseSeries"
               label="Case series"
-              density="compact"
-              hide-details
             />
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Advanced -->
       <AdvancedSection>
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-2"
+          padding="none"
         >
-          <v-card-text>
+          <div class="card-body">
             <div class="d-flex ga-3 mb-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.characterizationSettings.minCharacterizationMean"
                 label="Min characterization mean"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 step="0.01"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.characterizationSettings.minPriorObservation"
                 label="Min prior observation (days)"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
               />
             </div>
             <div class="d-flex ga-3 mb-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.characterizationSettings.dechallengeStopInterval"
                 label="Dechallenge stop interval"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.characterizationSettings.dechallengeEvaluationWindow"
                 label="Dechallenge eval window"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
               />
             </div>
             <div class="d-flex ga-3 mb-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.characterizationSettings.casePreTargetDuration"
                 label="Case pre-target duration"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.characterizationSettings.casePostOutcomeDuration"
                 label="Case post-outcome duration"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
               />
             </div>
-          </v-card-text>
-        </v-card>
+          </div>
+        </AtlasCard>
       </AdvancedSection>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { AtlasCard, AtlasDivider, AtlasCheckbox, AtlasTextField } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';
@@ -155,5 +124,14 @@ const store = useStrategusStore();
 .module-disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.card-title {
+  padding: 12px 16px 12px;
+  margin: 0;
+}
+
+.card-body {
+  padding: 16px;
 }
 </style>

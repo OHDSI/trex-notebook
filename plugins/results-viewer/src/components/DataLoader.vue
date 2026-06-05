@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import JSZip from 'jszip'
+import { AtlasAlert, AtlasButton, AtlasCard, AtlasIcon, AtlasProgressCircular } from '@ohdsi/atlas-ui'
 
 const emit = defineEmits<{ loaded: [files: Map<string, ArrayBuffer>] }>()
 
@@ -70,21 +71,21 @@ async function processZip(file: File) {
 
 <template>
   <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 120px)', padding: '32px' }">
-    <v-card
+    <AtlasCard
       :style="{ maxWidth: '520px', width: '100%' }"
-      variant="elevated"
+      padding="md"
     >
-      <v-card-title :style="{ display: 'flex', alignItems: 'center', gap: '12px' }">
-        <v-icon
+      <h3 :style="{ display: 'flex', alignItems: 'center', gap: '12px', margin: '0 0 4px' }">
+        <AtlasIcon
           icon="mdi-chart-box-outline"
           color="primary"
           size="32"
         />
         Analysis Results
-      </v-card-title>
-      <v-card-subtitle>View OHDSI Strategus analysis results</v-card-subtitle>
+      </h3>
+      <p :style="{ margin: '0 0 16px', color: 'rgba(var(--v-theme-on-surface), 0.6)', fontSize: '0.875rem' }">View OHDSI Strategus analysis results</p>
 
-      <v-card-text>
+      <div>
         <div
           role="button"
           tabindex="0"
@@ -102,7 +103,7 @@ async function processZip(file: File) {
           @drop="onDrop"
         >
           <template v-if="loading">
-            <v-progress-circular
+            <AtlasProgressCircular
               indeterminate
               color="primary"
               :style="{ marginBottom: '12px' }"
@@ -112,7 +113,7 @@ async function processZip(file: File) {
             </div>
           </template>
           <template v-else>
-            <v-icon
+            <AtlasIcon
               icon="mdi-cloud-upload-outline"
               size="36"
               color="primary"
@@ -124,14 +125,13 @@ async function processZip(file: File) {
             <div class="text-body-2 text-medium-emphasis mb-4">
               ZIP file containing parquet or CSV result tables
             </div>
-            <v-btn
-              color="primary"
-              variant="flat"
-              size="small"
+            <AtlasButton
+              variant="primary"
+              size="sm"
               @click.stop="triggerFilePicker"
             >
               Browse files
-            </v-btn>
+            </AtlasButton>
             <input
               id="result-file-input"
               ref="fileInputRef"
@@ -143,16 +143,15 @@ async function processZip(file: File) {
           </template>
         </div>
 
-        <v-alert
+        <AtlasAlert
           v-if="error"
-          type="error"
+          severity="danger"
           variant="tonal"
-          density="compact"
           class="mt-3"
         >
           {{ error }}
-        </v-alert>
-      </v-card-text>
-    </v-card>
+        </AtlasAlert>
+      </div>
+    </AtlasCard>
   </div>
 </template>

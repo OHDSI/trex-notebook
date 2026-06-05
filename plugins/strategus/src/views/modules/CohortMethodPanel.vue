@@ -21,25 +21,25 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('CohortMethod') }">
       <!-- Analyses list card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1 d-flex align-center justify-space-between">
+        <h3 class="card-title text-subtitle-1 d-flex align-center justify-space-between">
           <span>Analyses</span>
-          <v-btn
-            size="small"
+          <AtlasButton
+            size="sm"
             variant="tonal"
-            color="primary"
             prepend-icon="mdi-plus"
             @click="addAnalysis"
           >
             Add Analysis
-          </v-btn>
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-2">
+          </AtlasButton>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body pa-2">
           <div
             v-for="(analysis, idx) in store.cohortMethodSettings.analyses"
             :key="analysis.analysisId"
@@ -54,18 +54,20 @@
                 · {{ modelTypeLabel(analysis.outcomeModelType) }}
               </div>
             </div>
-            <v-btn
+            <AtlasIconButton
               icon="mdi-pencil"
-              size="x-small"
+              size="sm"
               variant="text"
+              ariaLabel="Edit analysis"
               class="mr-1"
               @click="openEditDialog(idx)"
             />
-            <v-btn
+            <AtlasIconButton
               icon="mdi-delete"
-              size="x-small"
+              size="sm"
               variant="text"
-              color="error"
+              tone="danger"
+              ariaLabel="Delete analysis"
               :disabled="store.cohortMethodSettings.analyses.length <= 1"
               @click="deleteAnalysis(idx)"
             />
@@ -76,25 +78,24 @@
           >
             No analyses defined. Click "Add Analysis" to create one.
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Empirical calibration -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="card-title text-subtitle-1">
           Calibration
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
-          <v-checkbox
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
+          <AtlasCheckbox
             v-model="store.cohortMethodSettings.useEmpiricalCalibration"
             label="Empirical calibration (requires negative controls)"
-            density="compact"
-            hide-details
           />
           <div
             v-if="store.cohortMethodSettings.useEmpiricalCalibration && store.negativeControls.length === 0"
@@ -102,51 +103,40 @@
           >
             Add negative controls in Study Design first.
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Advanced -->
       <AdvancedSection>
-        <v-card
+        <AtlasCard
           flat
           rounded="lg"
           class="mt-2"
+          padding="none"
         >
-          <v-card-text>
+          <div class="card-body">
             <div class="d-flex ga-3 mb-3">
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.cohortMethodSettings.maxCohortSizeForFitting"
                 label="Max cohort size for fitting"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 200px"
               />
-              <v-text-field
+              <AtlasTextField
                 v-model.number="store.cohortMethodSettings.maxCovBalanceCohortSize"
                 label="Max cov. balance cohort size"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 type="number"
                 style="max-width: 200px"
               />
             </div>
             <div class="d-flex ga-6 mb-4">
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.cohortMethodSettings.restrictToCommonPeriod"
                 label="Restrict to common period"
-                density="compact"
-                hide-details
               />
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.cohortMethodSettings.firstExposureOnly"
                 label="First exposure only"
-                density="compact"
-                hide-details
               />
             </div>
 
@@ -154,31 +144,21 @@
             <div class="text-subtitle-2 mb-2">
               Custom Covariates
             </div>
-            <v-text-field
+            <AtlasTextField
               :model-value="store.cohortMethodSettings.includedCovariateConceptIds.join(', ')"
               label="Included concept IDs (comma-separated)"
-              variant="outlined"
-              density="compact"
-              rounded="md"
-              hide-details
               class="mb-3"
               @update:model-value="parseConceptIds($event)"
             />
             <div class="d-flex ga-3 align-center mb-4">
-              <v-text-field
+              <AtlasTextField
                 v-model="store.cohortMethodSettings.customCovariateGroupName"
                 label="Group name"
-                variant="outlined"
-                density="compact"
-                rounded="md"
-                hide-details
                 style="max-width: 200px"
               />
-              <v-checkbox
+              <AtlasCheckbox
                 v-model="store.cohortMethodSettings.addDescendantsToInclude"
                 label="Include descendants"
-                density="compact"
-                hide-details
               />
             </div>
 
@@ -186,16 +166,16 @@
             <div class="text-subtitle-2 mb-2">
               Covariate Features
             </div>
-            <v-btn
-              size="small"
+            <AtlasButton
+              size="sm"
               variant="tonal"
               prepend-icon="mdi-tune"
               @click="covFeaturesOpen = true"
             >
               Customize covariate features…
-            </v-btn>
-          </v-card-text>
-        </v-card>
+            </AtlasButton>
+          </div>
+        </AtlasCard>
       </AdvancedSection>
     </div>
 
@@ -208,87 +188,59 @@
       @close="dialogOpen = false"
     >
       <template v-if="editingAnalysis">
-        <v-text-field
+        <AtlasTextField
           v-model="editingAnalysis.description"
           label="Description"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           class="mb-4"
         />
-        <v-select
+        <AtlasSelect
           v-model="editingAnalysis.psAdjustmentMethod"
           :items="psMethodItems"
           label="PS adjustment method"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           class="mb-4"
         />
         <!-- Method-specific fields -->
-        <v-text-field
+        <AtlasTextField
           v-if="editingAnalysis.psAdjustmentMethod === 'matching'"
           v-model.number="editingAnalysis.psMatchMaxRatio"
           label="Matching ratio"
-          variant="outlined"
-          density="compact"
-          rounded="md"
           type="number"
           min="1"
           hint="1 = 1:1. >1 = variable ratio"
-          persistent-hint
           class="mb-4"
           style="max-width: 200px"
         />
-        <v-text-field
+        <AtlasTextField
           v-else-if="editingAnalysis.psAdjustmentMethod === 'stratification'"
           v-model.number="editingAnalysis.psStrataCount"
           label="Number of strata"
-          variant="outlined"
-          density="compact"
-          rounded="md"
           type="number"
           min="2"
-          hide-details
           class="mb-4"
           style="max-width: 200px"
         />
-        <v-text-field
+        <AtlasTextField
           v-else-if="editingAnalysis.psAdjustmentMethod === 'iptw'"
           v-model.number="editingAnalysis.iptwTruncationFraction"
           label="IPTW truncation fraction"
-          variant="outlined"
-          density="compact"
-          rounded="md"
           type="number"
           min="0"
           max="1"
           step="0.01"
           hint="Truncate weights above this percentile (e.g. 0.99)"
-          persistent-hint
           class="mb-4"
           style="max-width: 200px"
         />
-        <v-select
+        <AtlasSelect
           v-model="editingAnalysis.outcomeModelType"
           :items="modelTypeItems"
           label="Outcome model type"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           class="mb-4"
         />
-        <v-select
+        <AtlasSelect
           v-model="editingAnalysis.useCleanWindowForPriorOutcomeLookback"
           label="Prior outcome lookback"
-          variant="outlined"
-          density="compact"
-          rounded="md"
           :items="[{ title: 'All time prior (recommended)', value: false }, { title: 'Use clean window', value: true }]"
-          hide-details
         />
       </template>
       <template #actions>
@@ -319,33 +271,21 @@
         Time Windows
       </div>
       <div class="d-flex ga-3 mb-4">
-        <v-text-field
+        <AtlasTextField
           v-model.number="store.cohortMethodSettings.covariateWindows.longTermStartDays"
           label="Long term start (days)"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           type="number"
           style="max-width: 160px"
         />
-        <v-text-field
+        <AtlasTextField
           v-model.number="store.cohortMethodSettings.covariateWindows.shortTermStartDays"
           label="Short term start (days)"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           type="number"
           style="max-width: 160px"
         />
-        <v-text-field
+        <AtlasTextField
           v-model.number="store.cohortMethodSettings.covariateWindows.endDays"
           label="End (days)"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           type="number"
           style="max-width: 120px"
         />
@@ -361,13 +301,11 @@
           {{ group.label }}
         </div>
         <div class="d-flex ga-2 flex-wrap">
-          <v-checkbox
+          <AtlasCheckbox
             v-for="flag in group.flags"
             :key="flag"
             v-model="store.cohortMethodSettings.covariateFeatures[flag]"
             :label="flag"
-            density="compact"
-            hide-details
             class="mr-2"
           />
         </div>
@@ -385,7 +323,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasIconButton, AtlasCard, AtlasDivider, AtlasCheckbox, AtlasTextField, AtlasSelect } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import AdvancedSection from '../../components/AdvancedSection.vue';
@@ -498,8 +436,8 @@ function saveAnalysis() {
   editingAnalysis.value = null;
 }
 
-function parseConceptIds(val: string) {
-  const ids = val
+function parseConceptIds(val: string | number) {
+  const ids = String(val)
     .split(',')
     .map((s) => s.trim())
     .filter((s) => s !== '')
@@ -517,5 +455,14 @@ function parseConceptIds(val: string) {
 
 .analysis-card {
   background: rgb(var(--v-theme-surface-variant));
+}
+
+.card-title {
+  padding: 12px 16px;
+  margin: 0;
+}
+
+.card-body {
+  padding: 16px;
 }
 </style>

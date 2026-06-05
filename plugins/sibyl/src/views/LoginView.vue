@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <v-card :elevation="8" rounded="lg" class="login-card" data-test="login-card">
+    <AtlasCard padding="none" class="login-card" data-test="login-card">
       <div class="login-card__header">
         <img :src="ohdsiLogo" alt="OHDSI" height="44" class="login-card__logo" >
         <div class="login-card__brand">SIBYL</div>
@@ -15,51 +15,46 @@
           role="alert"
           data-test="login-error"
         >
-          <v-icon size="18" color="error" class="mr-2">mdi-alert-circle-outline</v-icon>
+          <AtlasIcon size="18" color="error" class="mr-2">mdi-alert-circle-outline</AtlasIcon>
           <span>{{ error }}</span>
         </div>
 
         <v-form @submit.prevent="onSubmit">
-          <v-text-field
+          <AtlasTextField
             v-model="email"
             label="Email"
             type="email"
-            variant="outlined"
-            prepend-inner-icon="mdi-account-outline"
+            prepend-icon="mdi-account-outline"
             autocomplete="username"
             :disabled="loading"
             data-test="login-email"
             class="mb-3"
-            hide-details="auto"
           />
-          <v-text-field
+          <AtlasTextField
             v-model="password"
             label="Password"
             type="password"
-            variant="outlined"
-            prepend-inner-icon="mdi-lock-outline"
+            prepend-icon="mdi-lock-outline"
             autocomplete="current-password"
             :disabled="loading"
             data-test="login-password"
             class="mb-4"
-            hide-details="auto"
           />
-          <v-btn
+          <AtlasButton
             type="submit"
-            color="primary"
-            size="large"
-            block
+            variant="primary"
+            size="lg"
             :loading="loading"
             class="login-card__submit"
             data-test="login-submit"
           >
             Sign in
-          </v-btn>
+          </AtlasButton>
         </v-form>
       </div>
 
       <div class="login-card__footer">SIBYL · OHDSI</div>
-    </v-card>
+    </AtlasCard>
   </div>
 </template>
 
@@ -68,6 +63,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ohdsiLogo from '@/assets/ohdsi-logo.png'
+import { AtlasCard, AtlasIcon, AtlasTextField, AtlasButton } from '@ohdsi/atlas-ui'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -166,6 +162,7 @@ async function onSubmit() {
   letter-spacing: 0;
   font-weight: 500;
   margin-top: 4px;
+  width: 100%;
 }
 
 .login-card__footer {

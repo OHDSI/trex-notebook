@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useNetworkStore } from '../../src/store/useNetworkStore';
 import type { ApiClient } from '../../src/api/client';
+import type { HadesJobDetail } from '../../src/api/hadesTypes';
 
 beforeEach(() => setActivePinia(createPinia()));
 const fakeApi = (o: Partial<ApiClient>) => o as unknown as ApiClient;
@@ -55,5 +56,62 @@ describe('useNetworkStore', () => {
     const pkg = await store.getPackage('s1');
     expect(get).toHaveBeenCalledWith('/studies/s1/package');
     expect(pkg.strategusUrl).toBe('https://get/strategus');
+  });
+});
+
+describe('useNetworkStore submitRun', () => {
+  it('initiates, exports via edge fn, then completes', async () => {
+    const api = fakeApi({
+      post: vi.fn()
+        .mockImplementationOnce((_path: string) =>
+          Promise.resolve({
+            studyId: 's1', siteId: 'site1', version: 2, status: 'pending', files: [],
+            submittedAt: 't', submittedBy: 'u',
+            urls: [{ filename: 'results.db.gz', url: 'https://s3/put' }],
+          }),
+        )
+        .mockImplementationOnce((_path: string) =>
+          Promise.resolve({
+            studyId: 's1', siteId: 'site1', version: 2, status: 'complete', files: [],
+            submittedAt: 't', submittedBy: 'u',
+          }),
+        ),
+    });
+    const store = useNetworkStore(api);
+    const exportSpy = vi.fn().mockResolvedValue(undefined);
+    store._exportGz.value = exportSpy;
+
+    const sub = await store.submitRun('s1', 'job-123');
+
+    expect(exportSpy).toHaveBeenCalledWith('job-123', 'https://s3/put', undefined);
+    expect(sub.status).toBe('complete');
+    expect(sub.version).toBe(2);
+  });
+});
+
+describe('useNetworkStore awaitJob', () => {
+  it('resolves on COMPLETED', async () => {
+    const store = useNetworkStore();
+    store._sleep.value = () => Promise.resolve();
+    const seq: HadesJobDetail[] = [
+      { jobId: 'j', status: 'RUNNING', currentModule: 'CohortGenerator', modulesCompleted: [], errorMessage: null },
+      { jobId: 'j', status: 'COMPLETED', currentModule: null, modulesCompleted: ['CohortGenerator'], errorMessage: null },
+    ];
+    let i = 0;
+    store._hades.value = { execute: vi.fn(), getJob: vi.fn(() => Promise.resolve(seq[i++])) } as never;
+    const job = await store.awaitJob('j');
+    expect(job.status).toBe('COMPLETED');
+  });
+
+  it('throws on FAILED with the error message', async () => {
+    const store = useNetworkStore();
+    store._sleep.value = () => Promise.resolve();
+    store._hades.value = {
+      execute: vi.fn(),
+      getJob: vi.fn(() => Promise.resolve(
+        { jobId: 'j', status: 'FAILED', currentModule: null, modulesCompleted: [], errorMessage: 'boom' },
+      )),
+    } as never;
+    await expect(store.awaitJob('j')).rejects.toThrow('boom');
   });
 });

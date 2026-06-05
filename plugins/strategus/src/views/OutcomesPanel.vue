@@ -15,9 +15,8 @@
     <div class="sub-label">
       Outcomes
     </div>
-    <v-table
+    <table
       v-if="store.outcomes.length > 0"
-      density="compact"
       class="bordered-table mb-4"
     >
       <thead>
@@ -34,50 +33,40 @@
           :key="outcome.cohortId"
         >
           <td>
-            <v-chip
+            <AtlasChip
               v-if="outcomeCohortExists(outcome.cohortId)"
-              size="small"
-              variant="tonal"
-              color="success"
-              label
+              size="sm"
+              tone="success"
             >
               {{ outcomeName(outcome.cohortId) }}
-            </v-chip>
+            </AtlasChip>
             <div
               v-else
               class="d-flex align-center ga-2"
             >
-              <v-chip
-                size="small"
-                variant="tonal"
-                color="success"
-                label
+              <AtlasChip
+                size="sm"
+                tone="success"
               >
                 {{ outcomeName(outcome.cohortId) }}
-              </v-chip>
-              <v-text-field
+              </AtlasChip>
+              <AtlasTextField
                 v-model="outcome.outcomeName"
-                variant="outlined"
-                density="compact"
-                hide-details
                 placeholder="Outcome name"
                 style="max-width: 200px"
               />
             </div>
           </td>
           <td>
-            <v-text-field
+            <AtlasTextField
               v-model.number="outcome.cleanWindow"
-              variant="plain"
-              density="compact"
               type="number"
-              hide-details
               class="clean-window-input"
             />
           </td>
         </tr>
       </tbody>
-    </v-table>
+    </table>
     <div
       v-else
       class="empty-state-compact mb-4"
@@ -97,24 +86,23 @@
       v-if="store.negativeControls.length > 0"
       class="d-flex flex-wrap gap-2 mb-3"
     >
-      <v-chip
+      <AtlasChip
         v-for="nc in visibleControls"
         :key="nc.cohortId"
-        size="small"
+        size="sm"
         closable
-        @click:close="removeNc(nc.cohortId)"
+        @close="removeNc(nc.cohortId)"
       >
         {{ nc.cohortName }}
-      </v-chip>
-      <v-chip
+      </AtlasChip>
+      <AtlasChip
         v-if="store.negativeControls.length > NC_DISPLAY_LIMIT && !showAllNc"
-        size="small"
-        variant="tonal"
-        color="primary"
+        size="sm"
+        tone="primary"
         @click="showAllNc = true"
       >
         +{{ store.negativeControls.length - NC_DISPLAY_LIMIT }} more
-      </v-chip>
+      </AtlasChip>
     </div>
     <div
       v-else
@@ -124,46 +112,41 @@
     </div>
 
     <!-- Settings -->
-    <v-row
+    <AtlasRow
       dense
       class="mt-2"
     >
-      <v-col
+      <AtlasCol
         cols="12"
         sm="6"
       >
-        <v-checkbox
+        <AtlasCheckbox
           v-model="store.ncDetectOnDescendants"
           label="Detect on descendants"
-          density="compact"
-          hide-details
         />
-      </v-col>
-      <v-col
+      </AtlasCol>
+      <AtlasCol
         cols="12"
         sm="6"
       >
-        <v-select
+        <AtlasSelect
           v-model="store.ncOccurrenceType"
           label="Occurrence type"
           :items="occurrenceItems"
-          variant="outlined"
-          density="compact"
-          hide-details
         />
-      </v-col>
-    </v-row>
+      </AtlasCol>
+    </AtlasRow>
 
     <div class="d-flex justify-end mt-2">
-      <v-btn
-        color="primary"
+      <AtlasButton
+        tone="primary"
         variant="tonal"
-        size="small"
+        size="sm"
         prepend-icon="mdi-plus"
         @click="openNcDialog"
       >
         Add Negative Control
-      </v-btn>
+      </AtlasButton>
     </div>
 
     <!-- Add Negative Control Dialog -->
@@ -174,40 +157,36 @@
       :max-width="460"
       @close="ncDialogOpen = false"
     >
-      <v-row dense>
-        <v-col
+      <AtlasRow dense>
+        <AtlasCol
           cols="12"
           sm="4"
         >
-          <v-text-field
-            v-model.number="ncForm.cohortId"
+          <AtlasTextField
+            :model-value="ncForm.cohortId ?? undefined"
             label="Cohort ID"
-            variant="outlined"
-            density="compact"
             type="number"
+            @update:model-value="v => ncForm.cohortId = v ? Number(v) : null"
           />
-        </v-col>
-        <v-col
+        </AtlasCol>
+        <AtlasCol
           cols="12"
           sm="8"
         >
-          <v-text-field
+          <AtlasTextField
             v-model="ncForm.cohortName"
             label="Cohort Name"
-            variant="outlined"
-            density="compact"
           />
-        </v-col>
-        <v-col cols="12">
-          <v-text-field
-            v-model.number="ncForm.outcomeConceptId"
+        </AtlasCol>
+        <AtlasCol cols="12">
+          <AtlasTextField
+            :model-value="ncForm.outcomeConceptId ?? undefined"
             label="Outcome Concept ID"
-            variant="outlined"
-            density="compact"
             type="number"
+            @update:model-value="v => ncForm.outcomeConceptId = v ? Number(v) : null"
           />
-        </v-col>
-      </v-row>
+        </AtlasCol>
+      </AtlasRow>
       <template #actions>
         <AtlasButton
           variant="ghost"
@@ -228,7 +207,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasChip, AtlasTextField, AtlasRow, AtlasCol, AtlasCheckbox, AtlasSelect } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { NegativeControlEntry } from '../store/useStrategusStore';
 

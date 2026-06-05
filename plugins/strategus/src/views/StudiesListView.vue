@@ -2,14 +2,11 @@
   <div class="studies-list">
     <!-- Toolbar -->
     <div class="studies-list__toolbar">
-      <v-text-field
+      <AtlasTextField
         v-model="store.searchTerm"
         label="Search studies"
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="compact"
+        prepend-icon="mdi-magnify"
         clearable
-        hide-details
         class="studies-list__search"
       />
     </div>
@@ -19,7 +16,7 @@
       v-if="store.studies.length === 0"
       class="studies-list__empty"
     >
-      <v-icon
+      <AtlasIcon
         icon="mdi-flask-empty-outline"
         size="48"
         color="grey-lighten-1"
@@ -30,15 +27,14 @@
       <div class="text-body-2 text-medium-emphasis mt-1">
         Create your first Strategus analysis to get started.
       </div>
-      <v-btn
-        color="primary"
-        variant="flat"
+      <AtlasButton
+        variant="primary"
         prepend-icon="mdi-plus"
         class="mt-4"
         @click="onNew"
       >
         New Study
-      </v-btn>
+      </AtlasButton>
     </div>
 
     <!-- No search results -->
@@ -46,7 +42,7 @@
       v-else-if="store.filteredStudies.length === 0"
       class="studies-list__empty"
     >
-      <v-icon
+      <AtlasIcon
         icon="mdi-magnify-close"
         size="48"
         color="grey-lighten-1"
@@ -83,13 +79,12 @@
           <td>
             <div class="studies-table__name">
               {{ study.name }}
-              <v-chip
+              <AtlasChip
                 v-if="studyTypeLabel(study)"
-                size="x-small"
-                color="primary"
-                variant="tonal"
+                size="sm"
+                tone="primary"
                 class="ml-2"
-              >{{ studyTypeLabel(study) }}</v-chip>
+              >{{ studyTypeLabel(study) }}</AtlasChip>
             </div>
             <div
               v-if="study.description"
@@ -112,34 +107,32 @@
           </td>
           <td>
             <div class="studies-table__actions">
-              <v-btn
+              <AtlasIconButton
                 icon="mdi-pencil-outline"
-                size="small"
-                variant="text"
-                density="comfortable"
+                ariaLabel="Edit study"
+                size="sm"
+                tone="neutral"
                 @click.stop="onOpen(study.id)"
               />
-              <v-btn
+              <AtlasIconButton
                 icon="mdi-cloud-upload-outline"
-                size="small"
-                variant="text"
-                density="comfortable"
-                title="Save to server"
+                ariaLabel="Save to server"
+                size="sm"
+                tone="neutral"
                 @click.stop="openSaveDialog(study.id)"
               />
-              <v-btn
+              <AtlasIconButton
                 icon="mdi-content-copy"
-                size="small"
-                variant="text"
-                density="comfortable"
+                ariaLabel="Duplicate study"
+                size="sm"
+                tone="neutral"
                 @click.stop="onDuplicate(study.id)"
               />
-              <v-btn
+              <AtlasIconButton
                 icon="mdi-delete-outline"
-                size="small"
-                variant="text"
-                density="comfortable"
-                color="error"
+                ariaLabel="Delete study"
+                size="sm"
+                tone="danger"
                 @click.stop="confirmDelete(study.id)"
               />
             </div>
@@ -187,20 +180,14 @@
         Publishes this analysis specification to the shared metadata store so
         it can be opened from other tools.
       </p>
-      <v-text-field
+      <AtlasTextField
         v-model="saveName"
         label="Name"
-        variant="outlined"
-        density="compact"
-        hide-details
         class="mb-3"
       />
-      <v-text-field
+      <AtlasTextField
         v-model="saveDescription"
         label="Description"
-        variant="outlined"
-        density="compact"
-        hide-details
       />
       <template #actions>
         <AtlasButton
@@ -270,14 +257,14 @@
               {{ def.description }}
             </td>
             <td>
-              <v-btn
-                size="small"
-                variant="tonal"
+              <AtlasButton
+                size="sm"
+                variant="ghost"
                 :loading="openingId === def.rowId"
                 @click="openServerDefinition(def.rowId)"
               >
                 Open
-              </v-btn>
+              </AtlasButton>
             </td>
           </tr>
         </tbody>
@@ -293,14 +280,13 @@
     </AtlasDialog>
 
     <!-- Result snackbar -->
-    <v-snackbar
+    <AtlasSnackbar
       v-model="snackbarOpen"
       :timeout="3500"
-      :color="snackbarColor"
-      location="bottom right"
-    >
-      {{ snackbarMessage }}
-    </v-snackbar>
+      :severity="snackbarColor === 'error' ? 'danger' : 'success'"
+      :text="snackbarMessage"
+      location="bottom"
+    />
 
     <!-- Study type picker -->
     <StudyTypePicker
@@ -312,7 +298,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasTextField, AtlasIcon, AtlasChip, AtlasIconButton, AtlasSnackbar } from '@ohdsi/atlas-ui';
 import { useStudiesStore, type StudyRecord } from '../store/useStudiesStore';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { GraphqlClient, defaultGraphqlEndpoint } from '../api/graphqlClient';

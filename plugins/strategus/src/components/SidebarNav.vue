@@ -5,7 +5,7 @@
       class="sidebar-nav__back"
       @click="handleBack"
     >
-      <v-icon
+      <AtlasIcon
         icon="mdi-arrow-left"
         size="14"
       />
@@ -43,13 +43,13 @@
           @click="goAnchor(anchor.id)"
         >
           <span class="sidebar-nav__anchor-label">· {{ anchor.label }}</span>
-          <v-tooltip
+          <AtlasTooltip
             :text="anchor.message"
             location="right"
             :open-delay="200"
           >
             <template #activator="{ props: tipProps }">
-              <v-icon
+              <AtlasIcon
                 v-bind="tipProps"
                 :icon="anchor.icon"
                 :color="anchor.color"
@@ -57,7 +57,7 @@
                 class="ml-auto"
               />
             </template>
-          </v-tooltip>
+          </AtlasTooltip>
         </button>
       </div>
 
@@ -78,28 +78,25 @@
             @click="goAnchor(anchor.id)"
           >
             <span class="sidebar-nav__anchor-label">· {{ anchor.label }}</span>
-            <v-tooltip
+            <AtlasTooltip
               v-if="anchor.enabled"
               :text="anchor.message"
               location="right"
               :open-delay="200"
             >
               <template #activator="{ props: tipProps }">
-                <v-icon
+                <AtlasIcon
                   v-bind="tipProps"
                   :icon="anchor.icon"
                   :color="anchor.color"
                   size="12"
                 />
               </template>
-            </v-tooltip>
+            </AtlasTooltip>
           </button>
-          <v-switch
+          <AtlasSwitch
             :model-value="anchor.enabled"
-            density="compact"
-            hide-details
-            color="primary"
-            inset
+            label=""
             class="sidebar-nav__anchor-toggle"
             @update:model-value="store.toggleModule(anchor.moduleName as never)"
           />
@@ -121,6 +118,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasIcon, AtlasTooltip, AtlasSwitch } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useStudiesStore } from '../store/useStudiesStore';
 import { useValidation } from '../store/validation';

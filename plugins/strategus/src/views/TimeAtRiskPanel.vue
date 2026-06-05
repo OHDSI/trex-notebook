@@ -19,320 +19,243 @@
     </template>
 
     <!-- Shared Windows card -->
-    <v-card
+    <AtlasCard
       variant="outlined"
       class="mb-4"
+      padding="none"
     >
-      <v-card-title class="pa-4 pb-2 d-flex align-center justify-space-between">
-        <span class="text-subtitle-1 font-weight-medium">Shared Windows</span>
-      </v-card-title>
-      <v-table density="compact">
-        <thead>
-          <tr>
-            <th>Label</th>
-            <th>Start (days)</th>
-            <th>Start Anchor</th>
-            <th>End (days)</th>
-            <th>End Anchor</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(tar, idx) in store.timeAtRisk"
-            :key="idx"
-          >
-            <td>
-              <v-text-field
-                v-model="tar.label"
-                variant="plain"
-                density="compact"
-                hide-details
-              />
-            </td>
-            <td>
-              <v-text-field
-                v-model.number="tar.riskWindowStart"
-                variant="plain"
-                density="compact"
-                type="number"
-                hide-details
-                style="max-width: 80px"
-              />
-            </td>
-            <td>
-              <v-select
-                v-model="tar.startAnchor"
-                :items="anchorOptions"
-                variant="plain"
-                density="compact"
-                hide-details
-                style="min-width: 140px"
-              />
-            </td>
-            <td>
-              <v-text-field
-                v-model.number="tar.riskWindowEnd"
-                variant="plain"
-                density="compact"
-                type="number"
-                hide-details
-                style="max-width: 80px"
-              />
-            </td>
-            <td>
-              <v-select
-                v-model="tar.endAnchor"
-                :items="anchorOptions"
-                variant="plain"
-                density="compact"
-                hide-details
-                style="min-width: 140px"
-              />
-            </td>
-            <td>
-              <v-btn
-                icon="mdi-delete-outline"
-                size="small"
-                variant="text"
-                color="error"
-                :disabled="store.timeAtRisk.length <= 1"
-                @click="removeSharedWindow(idx)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-      <v-card-actions class="pa-4 pt-2">
-        <v-btn
+      <h3 class="card-title pa-4 pb-2 d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
+        Shared Windows
+      </h3>
+      <AtlasDataTable
+        :headers="tarHeaders"
+        :items="store.timeAtRisk"
+        density="compact"
+      >
+        <template #item.label="{ item }">
+          <AtlasTextField
+            v-model="item.label"
+          />
+        </template>
+        <template #item.riskWindowStart="{ item }">
+          <AtlasTextField
+            v-model.number="item.riskWindowStart"
+            type="number"
+            style="max-width: 80px"
+          />
+        </template>
+        <template #item.startAnchor="{ item }">
+          <AtlasSelect
+            v-model="item.startAnchor"
+            :items="anchorOptions"
+            style="min-width: 140px"
+          />
+        </template>
+        <template #item.riskWindowEnd="{ item }">
+          <AtlasTextField
+            v-model.number="item.riskWindowEnd"
+            type="number"
+            style="max-width: 80px"
+          />
+        </template>
+        <template #item.endAnchor="{ item }">
+          <AtlasSelect
+            v-model="item.endAnchor"
+            :items="anchorOptions"
+            style="min-width: 140px"
+          />
+        </template>
+        <template #item.actions="{ index }">
+          <AtlasIconButton
+            icon="mdi-delete-outline"
+            size="sm"
+            variant="text"
+            tone="danger"
+            ariaLabel="Remove window"
+            :disabled="store.timeAtRisk.length <= 1"
+            @click="removeSharedWindow(index)"
+          />
+        </template>
+      </AtlasDataTable>
+      <div class="card-actions" style="display:flex; gap:8px; justify-content:flex-start; padding: 8px 16px">
+        <AtlasButton
           prepend-icon="mdi-plus"
-          variant="text"
-          size="small"
+          variant="ghost"
+          size="sm"
           @click="addSharedWindow"
         >
           Add Window
-        </v-btn>
-      </v-card-actions>
-    </v-card>
+        </AtlasButton>
+      </div>
+    </AtlasCard>
 
     <!-- Advanced overrides -->
     <AdvancedSection>
       <!-- SCCS Override -->
-      <v-card
+      <AtlasCard
         variant="outlined"
         class="mb-3 mt-2"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1 pa-4 pb-2 font-weight-medium">
+        <h3 class="card-title text-subtitle-1 pa-4 pb-2 font-weight-medium">
           SCCS Override
-        </v-card-title>
-        <v-card-text class="pa-4 pt-0">
+        </h3>
+        <div class="pa-4 pt-0">
           <p class="text-body-2 text-medium-emphasis mb-3">
             Avoid intent-to-treat time-at-risk windows for SCCS. On-treatment or similarly defined TARs are more appropriate.
           </p>
-          <v-checkbox
+          <AtlasCheckbox
             v-model="sccsOverrideEnabled"
             label="Override shared time-at-risk for SCCS"
-            density="compact"
-            hide-details
             class="mb-3"
             @update:model-value="onSccsOverrideToggle"
           />
           <template v-if="store.sccsTimeAtRiskOverride">
-            <v-table density="compact">
-              <thead>
-                <tr>
-                  <th>Label</th>
-                  <th>Start (days)</th>
-                  <th>Start Anchor</th>
-                  <th>End (days)</th>
-                  <th>End Anchor</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(tar, idx) in store.sccsTimeAtRiskOverride"
-                  :key="idx"
-                >
-                  <td>
-                    <v-text-field
-                      v-model="tar.label"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <v-text-field
-                      v-model.number="tar.riskWindowStart"
-                      variant="plain"
-                      density="compact"
-                      type="number"
-                      hide-details
-                      style="max-width: 80px"
-                    />
-                  </td>
-                  <td>
-                    <v-select
-                      v-model="tar.startAnchor"
-                      :items="anchorOptions"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                      style="min-width: 140px"
-                    />
-                  </td>
-                  <td>
-                    <v-text-field
-                      v-model.number="tar.riskWindowEnd"
-                      variant="plain"
-                      density="compact"
-                      type="number"
-                      hide-details
-                      style="max-width: 80px"
-                    />
-                  </td>
-                  <td>
-                    <v-select
-                      v-model="tar.endAnchor"
-                      :items="anchorOptions"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                      style="min-width: 140px"
-                    />
-                  </td>
-                  <td>
-                    <v-btn
-                      icon="mdi-delete-outline"
-                      size="small"
-                      variant="text"
-                      color="error"
-                      :disabled="store.sccsTimeAtRiskOverride!.length <= 1"
-                      @click="removeSccsWindow(idx)"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
+            <AtlasDataTable
+              :headers="tarHeaders"
+              :items="store.sccsTimeAtRiskOverride"
+              density="compact"
+            >
+              <template #item.label="{ item }">
+                <AtlasTextField
+                  v-model="item.label"
+                />
+              </template>
+              <template #item.riskWindowStart="{ item }">
+                <AtlasTextField
+                  v-model.number="item.riskWindowStart"
+                  type="number"
+                  style="max-width: 80px"
+                />
+              </template>
+              <template #item.startAnchor="{ item }">
+                <AtlasSelect
+                  v-model="item.startAnchor"
+                  :items="anchorOptions"
+                  style="min-width: 140px"
+                />
+              </template>
+              <template #item.riskWindowEnd="{ item }">
+                <AtlasTextField
+                  v-model.number="item.riskWindowEnd"
+                  type="number"
+                  style="max-width: 80px"
+                />
+              </template>
+              <template #item.endAnchor="{ item }">
+                <AtlasSelect
+                  v-model="item.endAnchor"
+                  :items="anchorOptions"
+                  style="min-width: 140px"
+                />
+              </template>
+              <template #item.actions="{ index }">
+                <AtlasIconButton
+                  icon="mdi-delete-outline"
+                  size="sm"
+                  variant="text"
+                  tone="danger"
+                  ariaLabel="Remove window"
+                  :disabled="store.sccsTimeAtRiskOverride!.length <= 1"
+                  @click="removeSccsWindow(index)"
+                />
+              </template>
+            </AtlasDataTable>
             <div class="pa-2">
-              <v-btn
+              <AtlasButton
                 prepend-icon="mdi-plus"
-                variant="text"
-                size="small"
+                variant="ghost"
+                size="sm"
                 @click="addSccsWindow"
               >
                 Add Window
-              </v-btn>
+              </AtlasButton>
             </div>
           </template>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- PLP Override -->
-      <v-card variant="outlined">
-        <v-card-title class="text-subtitle-1 pa-4 pb-2 font-weight-medium">
+      <AtlasCard
+        variant="outlined"
+        padding="none"
+      >
+        <h3 class="card-title text-subtitle-1 pa-4 pb-2 font-weight-medium">
           PLP Override
-        </v-card-title>
-        <v-card-text class="pa-4 pt-0">
+        </h3>
+        <div class="pa-4 pt-0">
           <p class="text-body-2 text-medium-emphasis mb-3">
             Patient-Level Prediction typically requires fixed-time windows (e.g., 365 days from cohort start) rather than on-treatment definitions.
           </p>
-          <v-table density="compact">
-            <thead>
-              <tr>
-                <th>Label</th>
-                <th>Start (days)</th>
-                <th>Start Anchor</th>
-                <th>End (days)</th>
-                <th>End Anchor</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(tar, idx) in store.plpTimeAtRiskOverride"
-                :key="idx"
-              >
-                <td>
-                  <v-text-field
-                    v-model="tar.label"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model.number="tar.riskWindowStart"
-                    variant="plain"
-                    density="compact"
-                    type="number"
-                    hide-details
-                    style="max-width: 80px"
-                  />
-                </td>
-                <td>
-                  <v-select
-                    v-model="tar.startAnchor"
-                    :items="anchorOptions"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    style="min-width: 140px"
-                  />
-                </td>
-                <td>
-                  <v-text-field
-                    v-model.number="tar.riskWindowEnd"
-                    variant="plain"
-                    density="compact"
-                    type="number"
-                    hide-details
-                    style="max-width: 80px"
-                  />
-                </td>
-                <td>
-                  <v-select
-                    v-model="tar.endAnchor"
-                    :items="anchorOptions"
-                    variant="plain"
-                    density="compact"
-                    hide-details
-                    style="min-width: 140px"
-                  />
-                </td>
-                <td>
-                  <v-btn
-                    icon="mdi-delete-outline"
-                    size="small"
-                    variant="text"
-                    color="error"
-                    :disabled="store.plpTimeAtRiskOverride.length <= 1"
-                    @click="removePlpWindow(idx)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
+          <AtlasDataTable
+            :headers="tarHeaders"
+            :items="store.plpTimeAtRiskOverride"
+            density="compact"
+          >
+            <template #item.label="{ item }">
+              <AtlasTextField
+                v-model="item.label"
+              />
+            </template>
+            <template #item.riskWindowStart="{ item }">
+              <AtlasTextField
+                v-model.number="item.riskWindowStart"
+                type="number"
+                style="max-width: 80px"
+              />
+            </template>
+            <template #item.startAnchor="{ item }">
+              <AtlasSelect
+                v-model="item.startAnchor"
+                :items="anchorOptions"
+                style="min-width: 140px"
+              />
+            </template>
+            <template #item.riskWindowEnd="{ item }">
+              <AtlasTextField
+                v-model.number="item.riskWindowEnd"
+                type="number"
+                style="max-width: 80px"
+              />
+            </template>
+            <template #item.endAnchor="{ item }">
+              <AtlasSelect
+                v-model="item.endAnchor"
+                :items="anchorOptions"
+                style="min-width: 140px"
+              />
+            </template>
+            <template #item.actions="{ index }">
+              <AtlasIconButton
+                icon="mdi-delete-outline"
+                size="sm"
+                variant="text"
+                tone="danger"
+                ariaLabel="Remove window"
+                :disabled="store.plpTimeAtRiskOverride.length <= 1"
+                @click="removePlpWindow(index)"
+              />
+            </template>
+          </AtlasDataTable>
           <div class="pa-2">
-            <v-btn
+            <AtlasButton
               prepend-icon="mdi-plus"
-              variant="text"
-              size="small"
+              variant="ghost"
+              size="sm"
               @click="addPlpWindow"
             >
               Add Window
-            </v-btn>
+            </AtlasButton>
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
     </AdvancedSection>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { AtlasCard, AtlasDataTable, AtlasTextField, AtlasSelect, AtlasButton, AtlasIconButton, AtlasCheckbox } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { createDefaultTimeAtRisk } from '../services/DefaultsFactory';
 import AdvancedSection from '../components/AdvancedSection.vue';
@@ -341,6 +264,15 @@ const props = defineProps<{ embedded?: boolean }>();
 const store = useStrategusStore();
 
 const anchorOptions: Array<'cohort start' | 'cohort end'> = ['cohort start', 'cohort end'];
+
+const tarHeaders = [
+  { key: 'label', title: 'Label', sortable: false },
+  { key: 'riskWindowStart', title: 'Start (days)', sortable: false },
+  { key: 'startAnchor', title: 'Start Anchor', sortable: false },
+  { key: 'riskWindowEnd', title: 'End (days)', sortable: false },
+  { key: 'endAnchor', title: 'End Anchor', sortable: false },
+  { key: 'actions', title: '', sortable: false },
+];
 
 const sccsOverrideEnabled = computed({
   get: () => store.sccsTimeAtRiskOverride !== null,

@@ -19,9 +19,8 @@
       </p>
     </div>
 
-    <v-table
+    <table
       v-if="store.cohorts.length > 0"
-      density="compact"
       class="bordered-table mb-2"
     >
       <thead>
@@ -45,35 +44,28 @@
             {{ cohort.cohortName }}
           </td>
           <td style="min-width: 160px">
-            <v-select
+            <AtlasSelect
               :model-value="cohort.role"
               :items="roleOptions"
-              density="compact"
-              variant="plain"
-              hide-details
               class="role-select"
-              @update:model-value="val => onRoleChange(cohort, val)"
+              @update:model-value="val => onRoleChange(cohort, val as CohortRole)"
             />
           </td>
           <td class="text-body-2 text-medium-emphasis">
             {{ cohort.subjectCount != null ? cohort.subjectCount.toLocaleString() : '—' }}
           </td>
           <td>
-            <v-btn
-              icon
-              size="x-small"
-              variant="text"
-              color="error"
+            <AtlasIconButton
+              icon="mdi-delete-outline"
+              ariaLabel="Remove cohort"
+              tone="danger"
+              size="sm"
               @click="removeCohort(cohort.cohortId)"
-            >
-              <v-icon size="16">
-                mdi-delete-outline
-              </v-icon>
-            </v-btn>
+            />
           </td>
         </tr>
       </tbody>
-    </v-table>
+    </table>
     <div
       v-else
       class="empty-state-compact"
@@ -82,15 +74,15 @@
     </div>
 
     <div class="d-flex justify-end mb-4">
-      <v-btn
-        color="primary"
+      <AtlasButton
         variant="tonal"
-        size="small"
+        tone="primary"
+        size="sm"
         prepend-icon="mdi-plus"
         @click="showAddDialog = true"
       >
         Add Cohort
-      </v-btn>
+      </AtlasButton>
     </div>
 
     <!-- CohortPicker Dialog -->
@@ -129,18 +121,19 @@
               · ID {{ def.id }}
             </div>
           </div>
-          <v-btn
+          <AtlasIconButton
             icon="mdi-pencil"
-            size="x-small"
-            variant="text"
+            ariaLabel="Edit subset"
+            tone="neutral"
+            size="sm"
             class="mr-1"
             @click="openEditSubsetDialog(def)"
           />
-          <v-btn
+          <AtlasIconButton
             icon="mdi-delete"
-            size="x-small"
-            variant="text"
-            color="error"
+            ariaLabel="Delete subset"
+            tone="danger"
+            size="sm"
             @click="deleteSubsetDef(def.id)"
           />
         </div>
@@ -152,26 +145,23 @@
         No subset definitions yet.
       </div>
 
-      <v-btn
-        size="small"
+      <AtlasButton
+        size="sm"
         variant="tonal"
-        color="primary"
+        tone="primary"
         prepend-icon="mdi-plus"
         class="mb-4"
         @click="openAddSubsetDialog"
       >
         Add Subset Definition
-      </v-btn>
+      </AtlasButton>
 
       <!-- Assignment table: cohorts × subsets -->
       <template v-if="store.cohortSubsetDefinitions.length > 0 && store.cohorts.length > 0">
         <div class="text-caption text-medium-emphasis mb-1">
           Apply subsets to cohorts
         </div>
-        <v-table
-          density="compact"
-          class="bordered-table mb-2"
-        >
+        <table class="bordered-table mb-2">
           <thead>
             <tr>
               <th>Cohort</th>
@@ -201,17 +191,15 @@
                 :key="def.id"
                 class="text-center"
               >
-                <v-checkbox
+                <AtlasCheckbox
                   :model-value="isSubsetAssigned(cohort.cohortId, def.id)"
-                  density="compact"
-                  hide-details
                   class="d-flex justify-center"
                   @update:model-value="val => setSubsetAssignment(cohort.cohortId, def.id, !!val)"
                 />
               </td>
             </tr>
           </tbody>
-        </v-table>
+        </table>
       </template>
     </AdvancedSection>
 
@@ -223,13 +211,10 @@
       :max-width="600"
       @close="showSubsetDialog = false"
     >
-      <v-text-field
+      <AtlasTextField
         v-model="subsetForm.name"
         label="Name"
-        density="compact"
-        variant="outlined"
         class="mb-3"
-        hide-details
       />
 
       <div class="text-caption text-medium-emphasis mb-2">
@@ -242,152 +227,118 @@
         class="operator-card pa-3 mb-2 rounded"
       >
         <div class="d-flex align-center mb-2">
-          <v-select
+          <AtlasSelect
             v-model="op.type"
             :items="operatorTypeItems"
             label="Type"
-            density="compact"
-            variant="outlined"
-            hide-details
             class="flex-grow-1 mr-2"
           />
-          <v-btn
+          <AtlasIconButton
             icon="mdi-delete"
-            size="x-small"
-            variant="text"
-            color="error"
+            ariaLabel="Remove operator"
+            tone="danger"
+            size="sm"
             @click="removeOperator(idx)"
           />
         </div>
 
         <!-- LimitSubsetOperator fields -->
         <template v-if="op.type === 'LimitSubsetOperator'">
-          <v-row dense>
-            <v-col cols="6">
-              <v-text-field
+          <AtlasRow dense>
+            <AtlasCol cols="6">
+              <AtlasTextField
                 v-model.number="op.priorTime"
                 label="Prior time (days)"
                 type="number"
-                density="compact"
-                variant="outlined"
-                hide-details
               />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field
+            </AtlasCol>
+            <AtlasCol cols="6">
+              <AtlasTextField
                 v-model.number="op.followUpTime"
                 label="Follow-up time (days)"
                 type="number"
-                density="compact"
-                variant="outlined"
-                hide-details
               />
-            </v-col>
-          </v-row>
-          <v-select
+            </AtlasCol>
+          </AtlasRow>
+          <AtlasSelect
             v-model="op.limitTo"
             :items="limitToItems"
             label="Limit to"
-            density="compact"
-            variant="outlined"
-            hide-details
             class="mt-2"
           />
-          <v-row
+          <AtlasRow
             dense
             class="mt-2"
           >
-            <v-col cols="6">
-              <v-text-field
+            <AtlasCol cols="6">
+              <AtlasTextField
                 v-model="op.calendarStartDate"
                 label="Calendar start date"
-                density="compact"
-                variant="outlined"
-                hide-details
                 placeholder="YYYY-MM-DD"
               />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field
+            </AtlasCol>
+            <AtlasCol cols="6">
+              <AtlasTextField
                 v-model="op.calendarEndDate"
                 label="Calendar end date"
-                density="compact"
-                variant="outlined"
-                hide-details
                 placeholder="YYYY-MM-DD"
               />
-            </v-col>
-          </v-row>
+            </AtlasCol>
+          </AtlasRow>
         </template>
 
         <!-- DemographicSubsetOperator fields -->
         <template v-else-if="op.type === 'DemographicSubsetOperator'">
-          <v-row dense>
-            <v-col cols="6">
-              <v-text-field
+          <AtlasRow dense>
+            <AtlasCol cols="6">
+              <AtlasTextField
                 v-model.number="op.ageMin"
                 label="Min age"
                 type="number"
-                density="compact"
-                variant="outlined"
-                hide-details
               />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field
+            </AtlasCol>
+            <AtlasCol cols="6">
+              <AtlasTextField
                 v-model.number="op.ageMax"
                 label="Max age"
                 type="number"
-                density="compact"
-                variant="outlined"
-                hide-details
               />
-            </v-col>
-          </v-row>
-          <v-select
+            </AtlasCol>
+          </AtlasRow>
+          <AtlasSelect
             v-model="op.gender"
             :items="genderItems"
             label="Gender"
-            density="compact"
-            variant="outlined"
-            hide-details
             multiple
-            chips
             class="mt-2"
           />
         </template>
 
         <!-- CohortSubsetOperator fields -->
         <template v-else-if="op.type === 'CohortSubsetOperator'">
-          <v-select
+          <AtlasSelect
             v-model="op.cohortIds"
             :items="cohortSelectItems"
             label="Cohorts"
-            density="compact"
-            variant="outlined"
-            hide-details
             multiple
-            chips
             class="mb-2"
           />
-          <v-checkbox
+          <AtlasCheckbox
             v-model="op.negate"
             label="Negate (exclude these cohorts)"
-            density="compact"
-            hide-details
           />
         </template>
       </div>
 
-      <v-btn
-        size="small"
-        variant="text"
-        color="primary"
+      <AtlasButton
+        size="sm"
+        variant="ghost"
+        tone="primary"
         prepend-icon="mdi-plus"
         @click="addOperator"
       >
         Add Operator
-      </v-btn>
+      </AtlasButton>
 
       <template #actions>
         <AtlasButton
@@ -409,7 +360,7 @@
 
 <script setup lang="ts">
 import { ref, computed, inject } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasIconButton, AtlasSelect, AtlasCheckbox, AtlasTextField, AtlasRow, AtlasCol } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../store/useStrategusStore';
 import type { CohortEntry, CohortRole, CohortSubsetDefinition, CohortSubsetOperator } from '../store/useStrategusStore';
 import CohortPicker from '../components/CohortPicker.vue';

@@ -21,32 +21,27 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('SCCS') }">
       <!-- Shared settings card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1">
+        <h3 class="card-title text-subtitle-1">
           SCCS Settings
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
-          <v-text-field
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
+          <AtlasTextField
             v-model.number="store.sccsSettings.maxCasesPerOutcome"
             label="Max cases per outcome"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
             type="number"
             style="max-width: 200px"
             class="mb-4"
           />
-          <v-checkbox
+          <AtlasCheckbox
             v-model="store.sccsSettings.useEmpiricalCalibration"
             label="Empirical calibration (requires negative controls)"
-            density="compact"
-            hide-details
           />
           <div
             v-if="store.sccsSettings.useEmpiricalCalibration && store.negativeControls.length === 0"
@@ -54,29 +49,29 @@
           >
             Add negative controls in Study Design first.
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
 
       <!-- Analyses list card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1 d-flex align-center justify-space-between">
+        <h3 class="card-title text-subtitle-1 d-flex align-center justify-space-between">
           <span>Analyses</span>
-          <v-btn
-            size="small"
+          <AtlasButton
+            size="sm"
             variant="tonal"
-            color="primary"
             prepend-icon="mdi-plus"
             @click="addAnalysis"
           >
             Add Analysis
-          </v-btn>
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-2">
+          </AtlasButton>
+        </h3>
+        <AtlasDivider />
+        <div class="card-body pa-2">
           <div
             v-for="(analysis, idx) in store.sccsSettings.analyses"
             :key="analysis.analysisId"
@@ -100,18 +95,20 @@
                 </template>
               </div>
             </div>
-            <v-btn
+            <AtlasIconButton
               icon="mdi-pencil"
-              size="x-small"
+              size="sm"
               variant="text"
+              ariaLabel="Edit analysis"
               class="mr-1"
               @click="openEditDialog(idx)"
             />
-            <v-btn
+            <AtlasIconButton
               icon="mdi-delete"
-              size="x-small"
+              size="sm"
               variant="text"
-              color="error"
+              tone="danger"
+              ariaLabel="Delete analysis"
               :disabled="store.sccsSettings.analyses.length <= 1"
               @click="deleteAnalysis(idx)"
             />
@@ -122,8 +119,8 @@
           >
             No analyses defined. Click "Add Analysis" to create one.
           </div>
-        </v-card-text>
-      </v-card>
+        </div>
+      </AtlasCard>
     </div>
 
     <!-- Analysis Edit Dialog -->
@@ -135,13 +132,9 @@
       @close="dialogOpen = false"
     >
       <template v-if="editingAnalysis">
-        <v-text-field
+        <AtlasTextField
           v-model="editingAnalysis.description"
           label="Description"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           class="mb-4"
         />
 
@@ -149,169 +142,114 @@
         <div class="text-subtitle-2 text-medium-emphasis mb-2">
           Era Windows
         </div>
-        <v-table
+        <AtlasDataTable
+          :headers="eraWindowHeaders"
+          :items="editingAnalysis.eraWindows"
           density="compact"
           class="mb-2"
         >
-          <thead>
-            <tr>
-              <th>Label</th>
-              <th>Start</th>
-              <th>Start Anchor</th>
-              <th>End</th>
-              <th>End Anchor</th>
-              <th>Exposure of interest</th>
-              <th>Profile likelihood</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(win, widx) in editingAnalysis.eraWindows"
-              :key="widx"
-            >
-              <td>
-                <v-text-field
-                  v-model="win.label"
-                  variant="plain"
-                  density="compact"
-                  hide-details
-                  style="min-width: 110px"
-                />
-              </td>
-              <td>
-                <v-text-field
-                  v-model.number="win.start"
-                  variant="plain"
-                  density="compact"
-                  hide-details
-                  type="number"
-                  style="width: 70px"
-                />
-              </td>
-              <td>
-                <v-select
-                  v-model="win.startAnchor"
-                  :items="anchorOptions"
-                  variant="plain"
-                  density="compact"
-                  hide-details
-                  style="min-width: 110px"
-                />
-              </td>
-              <td>
-                <v-text-field
-                  v-model.number="win.end"
-                  variant="plain"
-                  density="compact"
-                  hide-details
-                  type="number"
-                  style="width: 70px"
-                />
-              </td>
-              <td>
-                <v-select
-                  v-model="win.endAnchor"
-                  :items="anchorOptions"
-                  variant="plain"
-                  density="compact"
-                  hide-details
-                  style="min-width: 110px"
-                />
-              </td>
-              <td class="text-center">
-                <v-checkbox
-                  v-model="win.exposureOfInterest"
-                  density="compact"
-                  hide-details
-                />
-              </td>
-              <td class="text-center">
-                <v-checkbox
-                  v-model="win.profileLikelihood"
-                  density="compact"
-                  hide-details
-                />
-              </td>
-              <td>
-                <v-btn
-                  icon
-                  size="x-small"
-                  variant="text"
-                  color="error"
-                  @click="removeEraWindow(widx)"
-                >
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-        <v-btn
-          size="small"
+          <template #item.label="{ item }">
+            <AtlasTextField
+              v-model="item.label"
+              style="min-width: 110px"
+            />
+          </template>
+          <template #item.start="{ item }">
+            <AtlasTextField
+              v-model.number="item.start"
+              type="number"
+              style="width: 70px"
+            />
+          </template>
+          <template #item.startAnchor="{ item }">
+            <AtlasSelect
+              v-model="item.startAnchor"
+              :items="anchorOptions"
+              style="min-width: 110px"
+            />
+          </template>
+          <template #item.end="{ item }">
+            <AtlasTextField
+              v-model.number="item.end"
+              type="number"
+              style="width: 70px"
+            />
+          </template>
+          <template #item.endAnchor="{ item }">
+            <AtlasSelect
+              v-model="item.endAnchor"
+              :items="anchorOptions"
+              style="min-width: 110px"
+            />
+          </template>
+          <template #item.exposureOfInterest="{ item }">
+            <AtlasCheckbox
+              v-model="item.exposureOfInterest"
+            />
+          </template>
+          <template #item.profileLikelihood="{ item }">
+            <AtlasCheckbox
+              v-model="item.profileLikelihood"
+            />
+          </template>
+          <template #item.actions="{ index }">
+            <AtlasIconButton
+              icon="mdi-delete"
+              size="sm"
+              variant="text"
+              tone="danger"
+              ariaLabel="Remove era window"
+              @click="removeEraWindow(index)"
+            />
+          </template>
+        </AtlasDataTable>
+        <AtlasButton
+          size="sm"
           variant="tonal"
           prepend-icon="mdi-plus"
           class="mb-4"
           @click="addEraWindow"
         >
           Add Era Window
-        </v-btn>
+        </AtlasButton>
 
         <!-- Effects -->
         <div class="text-subtitle-2 text-medium-emphasis mb-2 mt-2">
           Effects
         </div>
         <div class="d-flex ga-4 flex-wrap mb-4">
-          <v-checkbox
+          <AtlasCheckbox
             v-model="editingAnalysis.includeAgeEffect"
             label="Age effect"
-            density="compact"
-            hide-details
           />
-          <v-checkbox
+          <AtlasCheckbox
             v-model="editingAnalysis.includeSeasonality"
             label="Seasonality"
-            density="compact"
-            hide-details
           />
-          <v-checkbox
+          <AtlasCheckbox
             v-model="editingAnalysis.includeCalendarTime"
             label="Calendar time"
-            density="compact"
-            hide-details
           />
         </div>
 
         <!-- Knots + naive period -->
         <div class="d-flex ga-3">
-          <v-text-field
+          <AtlasTextField
             v-model.number="editingAnalysis.naivePeriod"
             label="Naive period (days)"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
             type="number"
             style="max-width: 150px"
           />
-          <v-text-field
+          <AtlasTextField
             v-model.number="editingAnalysis.calendarTimeKnots"
             label="Calendar time knots"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
             type="number"
             style="max-width: 130px"
             :disabled="!editingAnalysis.includeCalendarTime"
           />
-          <v-text-field
+          <AtlasTextField
             v-model.number="editingAnalysis.seasonalityKnots"
             label="Seasonality knots"
-            variant="outlined"
-            density="compact"
-            rounded="md"
-            hide-details
             type="number"
             style="max-width: 130px"
             :disabled="!editingAnalysis.includeSeasonality"
@@ -337,7 +275,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { AtlasDialog, AtlasButton, AtlasCard, AtlasDivider, AtlasTextField, AtlasSelect, AtlasCheckbox, AtlasIconButton, AtlasDataTable } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 import type { SccsAnalysis, SccsEraWindow } from '../../models/ModuleSettings';
@@ -353,6 +291,17 @@ const editingAnalysis = ref<SccsAnalysis | null>(null);
 const anchorOptions = [
   { title: 'Era start', value: 'era start' },
   { title: 'Era end', value: 'era end' },
+];
+
+const eraWindowHeaders = [
+  { key: 'label', title: 'Label', sortable: false },
+  { key: 'start', title: 'Start', sortable: false },
+  { key: 'startAnchor', title: 'Start Anchor', sortable: false },
+  { key: 'end', title: 'End', sortable: false },
+  { key: 'endAnchor', title: 'End Anchor', sortable: false },
+  { key: 'exposureOfInterest', title: 'Exposure of interest', sortable: false },
+  { key: 'profileLikelihood', title: 'Profile likelihood', sortable: false },
+  { key: 'actions', title: '', sortable: false },
 ];
 
 function addAnalysis() {
@@ -416,5 +365,12 @@ function removeEraWindow(idx: number) {
 
 .analysis-card {
   background: rgb(var(--v-theme-surface-variant));
+}
+.card-title {
+  padding: 12px 16px 12px;
+  margin: 0;
+}
+.card-body {
+  padding: 16px;
 }
 </style>

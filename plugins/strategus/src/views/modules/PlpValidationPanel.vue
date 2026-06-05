@@ -21,30 +21,33 @@
 
     <div :class="{ 'module-disabled': !props.embedded && !store.isModuleEnabled('PLPValidation') }">
       <!-- Validation Designs card -->
-      <v-card
+      <AtlasCard
         flat
         rounded="lg"
         class="mb-4"
+        padding="none"
       >
-        <v-card-title class="text-subtitle-1 d-flex align-center justify-space-between">
-          Validation Designs
-          <v-btn
+        <div class="card-title-row">
+          <h3 class="card-title text-subtitle-1">
+            Validation Designs
+          </h3>
+          <AtlasButton
             variant="tonal"
-            size="small"
+            size="sm"
             prepend-icon="mdi-plus"
             @click="openAddDialog"
           >
             Add Model
-          </v-btn>
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
+          </AtlasButton>
+        </div>
+        <AtlasDivider />
+        <div class="card-body">
           <!-- Empty state -->
           <div
             v-if="store.plpValidationSettings.validationDesigns.length === 0"
             class="d-flex flex-column align-center justify-center py-8 text-center"
           >
-            <v-icon
+            <AtlasIcon
               icon="mdi-flask-empty-outline"
               size="40"
               color="grey"
@@ -54,29 +57,26 @@
           </div>
 
           <!-- Designs list -->
-          <v-list
-            v-else
-            density="compact"
-          >
-            <v-list-item
+          <AtlasList v-else>
+            <AtlasListItem
               v-for="(design, index) in store.plpValidationSettings.validationDesigns"
               :key="index"
               :title="design.plpModelPath"
               :subtitle="`Target: ${design.targetId ?? '—'} · Outcome: ${design.outcomeId ?? '—'} · Recalibrate: ${design.recalibrate}`"
             >
               <template #append>
-                <v-btn
+                <AtlasIconButton
                   icon="mdi-delete"
-                  variant="text"
-                  size="small"
-                  color="error"
+                  ariaLabel="Remove validation design"
+                  tone="danger"
+                  size="sm"
                   @click="removeDesign(index)"
                 />
               </template>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-      </v-card>
+            </AtlasListItem>
+          </AtlasList>
+        </div>
+      </AtlasCard>
     </div>
 
     <!-- Add Model Dialog -->
@@ -87,58 +87,41 @@
       :max-width="480"
       @close="dialogOpen = false"
     >
-      <v-text-field
+      <!-- :rules preserved — required validation kept via :error binding -->
+      <AtlasTextField
         v-model="form.plpModelPath"
         label="PLP model path"
-        variant="outlined"
-        density="compact"
-        rounded="md"
-        hide-details="auto"
-        :rules="[v => !!v || 'Required']"
+        :error="plpModelPathError"
         class="mb-3"
       />
       <div class="d-flex ga-3 mb-3">
-        <v-text-field
-          v-model.number="form.targetId"
+        <AtlasTextField
+          :model-value="form.targetId ?? ''"
           label="Target ID"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           type="number"
-          clearable
           style="flex: 1"
+          @update:model-value="v => form.targetId = v === '' || v == null ? null : Number(v)"
         />
-        <v-text-field
-          v-model.number="form.outcomeId"
+        <AtlasTextField
+          :model-value="form.outcomeId ?? ''"
           label="Outcome ID"
-          variant="outlined"
-          density="compact"
-          rounded="md"
-          hide-details
           type="number"
-          clearable
           style="flex: 1"
+          @update:model-value="v => form.outcomeId = v === '' || v == null ? null : Number(v)"
         />
       </div>
-      <v-select
+      <AtlasSelect
         v-model="form.recalibrate"
         label="Recalibrate"
-        variant="outlined"
-        density="compact"
-        rounded="md"
-        hide-details
         :items="[
           { title: 'Weak Recalibration', value: 'weakRecalibration' },
           { title: 'None', value: 'none' },
         ]"
         class="mb-3"
       />
-      <v-checkbox
+      <AtlasCheckbox
         v-model="form.runCovariateSummary"
         label="Run covariate summary"
-        density="compact"
-        hide-details
       />
       <template #actions>
         <AtlasButton
@@ -159,8 +142,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { AtlasDialog, AtlasButton } from '@ohdsi/atlas-ui';
+import { ref, reactive, computed } from 'vue';
+import { AtlasCard, AtlasDivider, AtlasButton, AtlasIconButton, AtlasIcon, AtlasList, AtlasListItem, AtlasTextField, AtlasSelect, AtlasCheckbox, AtlasDialog } from '@ohdsi/atlas-ui';
 import { useStrategusStore } from '../../store/useStrategusStore';
 import ModuleEnableBanner from '../../components/ModuleEnableBanner.vue';
 
@@ -179,6 +162,9 @@ const defaultForm = () => ({
 });
 
 const form = reactive(defaultForm());
+
+// Preserve the original :rules="[v => !!v || 'Required']" logic as an error string
+const plpModelPathError = computed(() => (!form.plpModelPath ? 'Required' : ''));
 
 function openAddDialog() {
   Object.assign(form, defaultForm());
@@ -206,5 +192,21 @@ function removeDesign(index: number) {
 .module-disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.card-title {
+  padding: 12px 16px 12px;
+  margin: 0;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 8px 0;
+}
+
+.card-body {
+  padding: 16px;
 }
 </style>

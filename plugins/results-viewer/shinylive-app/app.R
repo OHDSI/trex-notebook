@@ -380,6 +380,37 @@ if (has_ohdsi) {
         # its loading overlay.
         session$sendCustomMessage("APP_READY", list(tables = length(files)))
       })
+      # Binary DuckDB submission path: a base64-encoded .db file arrives via
+      # input$result_db. Decode it to disk, ATTACH it read-only, and expose its
+      # tables as views on .results_con so the OHDSI modules (which query
+      # unqualified table names) see the submitted data.
+      observeEvent(input$result_db, {
+        b64 <- input$result_db
+        if (is.null(b64) || !nzchar(b64)) return()
+        tryCatch({
+          raw <- jsonlite::base64_dec(b64)
+          dbpath <- file.path(tempdir(), "submitted_results.duckdb")
+          # DETACH any prior attach BEFORE overwriting the file on disk.
+          try(DBI::dbExecute(.results_con, "DETACH submitted"), silent = TRUE)
+          writeBin(raw, dbpath)
+          DBI::dbExecute(.results_con,
+            sprintf("ATTACH '%s' AS submitted (READ_ONLY)", dbpath))
+          tbls <- DBI::dbGetQuery(.results_con,
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'submitted'")$table_name
+          # Copy each submitted table into .results_con as a REAL table.
+          # CREATE OR REPLACE TABLE replaces a pre-created stub table OR a prior
+          # view regardless of type (CREATE OR REPLACE VIEW throws against an
+          # existing table, which the OHDSI stubs are).
+          for (t in tbls) {
+            DBI::dbExecute(.results_con,
+              sprintf('CREATE OR REPLACE TABLE "%s" AS SELECT * FROM submitted."%s"', t, t))
+          }
+          # Data is materialized now; the attached file is no longer needed.
+          try(DBI::dbExecute(.results_con, "DETACH submitted"), silent = TRUE)
+          message("Loaded submitted DuckDB: ", length(tbls), " tables")
+          session$sendCustomMessage("APP_READY", list(tables = length(tbls)))
+        }, error = function(e) message("Failed to load submitted DB: ", e$message))
+      }, ignoreInit = TRUE)
     }
     message("OhdsiShinyAppBuilder fully loaded!")
   }, error = function(e) {
@@ -424,6 +455,36 @@ if (!has_ohdsi) {
       }
       dataLoaded(TRUE)
     })
+    # Binary DuckDB submission path (fallback UI): decode base64 .db, ATTACH it
+    # read-only, and expose its tables as views on .results_con.
+    observeEvent(input$result_db, {
+      b64 <- input$result_db
+      if (is.null(b64) || !nzchar(b64)) return()
+      tryCatch({
+        raw <- jsonlite::base64_dec(b64)
+        dbpath <- file.path(tempdir(), "submitted_results.duckdb")
+        # DETACH any prior attach BEFORE overwriting the file on disk.
+        try(DBI::dbExecute(.results_con, "DETACH submitted"), silent = TRUE)
+        writeBin(raw, dbpath)
+        DBI::dbExecute(.results_con,
+          sprintf("ATTACH '%s' AS submitted (READ_ONLY)", dbpath))
+        tbls <- DBI::dbGetQuery(.results_con,
+          "SELECT table_name FROM information_schema.tables WHERE table_schema = 'submitted'")$table_name
+        # Copy each submitted table into .results_con as a REAL table.
+        # CREATE OR REPLACE TABLE replaces a pre-created stub table OR a prior
+        # view regardless of type (CREATE OR REPLACE VIEW throws against an
+        # existing table, which the OHDSI stubs are).
+        for (t in tbls) {
+          DBI::dbExecute(.results_con,
+            sprintf('CREATE OR REPLACE TABLE "%s" AS SELECT * FROM submitted."%s"', t, t))
+        }
+        # Data is materialized now; the attached file is no longer needed.
+        try(DBI::dbExecute(.results_con, "DETACH submitted"), silent = TRUE)
+        message("Loaded submitted DuckDB: ", length(tbls), " tables")
+        dataLoaded(TRUE)
+        session$sendCustomMessage("APP_READY", list(tables = length(tbls)))
+      }, error = function(e) message("Failed to load submitted DB: ", e$message))
+    }, ignoreInit = TRUE)
     output$data_status <- renderUI({
       if (!dataLoaded()) div(class="alert alert-info", strong("Waiting for data..."))
       else div(class="alert alert-success", strong("Data loaded."))
@@ -642,9 +703,17 @@ ui <- tagList(
       window.top.postMessage({type: 'SHINYLIVE_READY'}, '*');
     }
     var __resultFiles = {};
+    var __resultDb = "";
     window.addEventListener('message', function(event) {
       var d = event.data;
       if (!d) return;
+      if (d.type === 'RESULT_DB_BEGIN') { __resultDb = ""; return; }
+      if (d.type === 'RESULT_DB_CHUNK') { __resultDb += d.content; return; }
+      if (d.type === 'RESULT_DB_END') {
+        Shiny.setInputValue('result_db', __resultDb, {priority: 'event'});
+        if (window.top !== window) window.top.postMessage({type: 'DATA_RECEIVED'}, '*');
+        return;
+      }
       if (d.type === 'RESULT_FILES') {
         Shiny.setInputValue('result_files', d.files, {priority: 'event'});
         if (window.top !== window) window.top.postMessage({type: 'DATA_RECEIVED'}, '*');
