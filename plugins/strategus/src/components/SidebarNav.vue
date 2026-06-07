@@ -61,11 +61,12 @@
         </button>
       </div>
 
-      <!-- Modules section — own page -->
+      <!-- Modules section — same combined page, scrolls to the modules block -->
       <SidebarItem
         icon="mdi-puzzle-outline"
         label="Modules"
         panel="modules"
+        scroll-to="sec-modules"
       />
       <div class="sidebar-nav__anchors">
         <div

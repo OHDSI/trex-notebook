@@ -4,8 +4,8 @@
     :class="{ 'sidebar-item--active': store.activePanel === panel }"
     role="button"
     tabindex="0"
-    @click="store.activePanel = panel"
-    @keydown.enter.space.prevent="store.activePanel = panel"
+    @click="activate"
+    @keydown.enter.space.prevent="activate"
   >
     <AtlasIcon
       :icon="icon"
@@ -60,9 +60,20 @@ const props = defineProps<{
   panel: SidebarItem;
   toggle?: boolean;
   enabled?: boolean;
+  /** Optional element id to scroll to after activating (combined scroll page). */
+  scrollTo?: string;
 }>();
 
 defineEmits<{ toggle: [] }>();
+
+function activate(): void {
+  store.activePanel = props.panel;
+  if (props.scrollTo) {
+    const id = props.scrollTo;
+    // wait for the target panel to render before scrolling
+    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+}
 
 const store = useStrategusStore();
 const validation = useValidation();
