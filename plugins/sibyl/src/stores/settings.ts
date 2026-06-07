@@ -4,9 +4,12 @@ import { GraphqlClient, defaultGraphqlEndpoint } from '@/api/graphqlClient'
 
 export const WEBAPI_SETTING_KEY = 'webapi_url'
 
-const Q_GET = `query($k:String!){ appSettingByKey(key:$k){ value } }`
-const M_UPDATE = `mutation($k:String!,$v:String!){ updateAppSettingByKey(input:{ key:$k, appSettingPatch:{ value:$v } }){ clientMutationId } }`
-const M_CREATE = `mutation($k:String!,$v:String!){ createAppSetting(input:{ appSetting:{ key:$k, value:$v } }){ clientMutationId } }`
+// Schema-prefixed PostGraphile names: trex exposes `notebook.app_settings` as
+// `NotebookAppSetting` (same convention as NotebookCdmConnection in the jobs
+// plugin). PK is `key`, so the accessor/patch mutation are *ByKey.
+const Q_GET = `query($k:String!){ notebookAppSettingByKey(key:$k){ value } }`
+const M_UPDATE = `mutation($k:String!,$v:String!){ updateNotebookAppSettingByKey(input:{ key:$k, notebookAppSettingPatch:{ value:$v } }){ clientMutationId } }`
+const M_CREATE = `mutation($k:String!,$v:String!){ createNotebookAppSetting(input:{ notebookAppSetting:{ key:$k, value:$v } }){ clientMutationId } }`
 
 /** Publish the WebAPI URL so plugins (notebook/strategus) can read it. */
 function publishWebApiUrl(url: string): void {
@@ -24,8 +27,8 @@ export const useSettingsStore = defineStore('settings', () => {
   async function load(): Promise<void> {
     loading.value = true; error.value = null
     try {
-      const data = await client.request<{ appSettingByKey: { value: string } | null }>(Q_GET, { k: WEBAPI_SETTING_KEY })
-      webApiUrl.value = data.appSettingByKey?.value ?? ''
+      const data = await client.request<{ notebookAppSettingByKey: { value: string } | null }>(Q_GET, { k: WEBAPI_SETTING_KEY })
+      webApiUrl.value = data.notebookAppSettingByKey?.value ?? ''
       if (webApiUrl.value) publishWebApiUrl(webApiUrl.value)
     } catch (e) { error.value = e instanceof Error ? e.message : String(e) }
     finally { loading.value = false }
@@ -34,8 +37,8 @@ export const useSettingsStore = defineStore('settings', () => {
   async function save(url: string): Promise<void> {
     saving.value = true; error.value = null
     try {
-      const existing = await client.request<{ appSettingByKey: { value: string } | null }>(Q_GET, { k: WEBAPI_SETTING_KEY })
-      if (existing.appSettingByKey) {
+      const existing = await client.request<{ notebookAppSettingByKey: { value: string } | null }>(Q_GET, { k: WEBAPI_SETTING_KEY })
+      if (existing.notebookAppSettingByKey) {
         await client.request(M_UPDATE, { k: WEBAPI_SETTING_KEY, v: url })
       } else {
         await client.request(M_CREATE, { k: WEBAPI_SETTING_KEY, v: url })

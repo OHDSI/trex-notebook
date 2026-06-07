@@ -14,7 +14,7 @@ describe('settings store', () => {
   afterEach(() => { vi.unstubAllGlobals() })
 
   it('load reads the webapi_url setting', async () => {
-    request.mockResolvedValue({ appSettingByKey: { value: 'https://w/WebAPI' } })
+    request.mockResolvedValue({ notebookAppSettingByKey: { value: 'https://w/WebAPI' } })
     const s = useSettingsStore()
     await s.load()
     expect(s.webApiUrl).toBe('https://w/WebAPI')
@@ -22,20 +22,20 @@ describe('settings store', () => {
   })
 
   it('save updates when the setting already exists', async () => {
-    request.mockResolvedValueOnce({ appSettingByKey: { value: 'old' } })
-    request.mockResolvedValueOnce({ updateAppSettingByKey: { clientMutationId: null } })
+    request.mockResolvedValueOnce({ notebookAppSettingByKey: { value: 'old' } })
+    request.mockResolvedValueOnce({ updateNotebookAppSettingByKey: { clientMutationId: null } })
     const s = useSettingsStore()
     await s.save('https://new/WebAPI')
     expect(s.webApiUrl).toBe('https://new/WebAPI')
-    expect(request.mock.calls[1][0]).toContain('updateAppSettingByKey')
+    expect(request.mock.calls[1][0]).toContain('updateNotebookAppSettingByKey')
   })
 
   it('save creates when the setting does not exist', async () => {
-    request.mockResolvedValueOnce({ appSettingByKey: null })
-    request.mockResolvedValueOnce({ createAppSetting: { clientMutationId: null } })
+    request.mockResolvedValueOnce({ notebookAppSettingByKey: null })
+    request.mockResolvedValueOnce({ createNotebookAppSetting: { clientMutationId: null } })
     const s = useSettingsStore()
     await s.save('https://new/WebAPI')
-    expect(request.mock.calls[1][0]).toContain('createAppSetting')
+    expect(request.mock.calls[1][0]).toContain('createNotebookAppSetting')
   })
 
   it('save captures the error and rethrows', async () => {

@@ -23,7 +23,11 @@ const url = ref('')
 const testing = ref(false)
 const testResult = ref<'ok' | 'fail' | null>(null)
 
-async function onSave() { await store.save(url.value) }
+async function onSave() {
+  // store.save rethrows after recording store.error (shown in the alert above);
+  // swallow here so the click handler doesn't produce an unhandled rejection.
+  try { await store.save(url.value) } catch { /* surfaced via store.error */ }
+}
 async function onTest() {
   testing.value = true; testResult.value = null
   testResult.value = (await store.testConnection(url.value)) ? 'ok' : 'fail'
