@@ -6,7 +6,7 @@
   "trex": {
     "functions": {
       "api": [
-        { "source": "/hades-api", "function": "/functions" }
+        { "source": "/hades-api", "function": "/functions", "allowHostFsAccess": true }
       ],
       "env": {
         "_shared": {

@@ -396,7 +396,7 @@ if (has_ohdsi) {
           DBI::dbExecute(.results_con,
             sprintf("ATTACH '%s' AS submitted (READ_ONLY)", dbpath))
           tbls <- DBI::dbGetQuery(.results_con,
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'submitted'")$table_name
+            "SELECT table_name FROM information_schema.tables WHERE table_catalog = 'submitted'")$table_name
           # Copy each submitted table into .results_con as a REAL table.
           # CREATE OR REPLACE TABLE replaces a pre-created stub table OR a prior
           # view regardless of type (CREATE OR REPLACE VIEW throws against an
@@ -469,7 +469,7 @@ if (!has_ohdsi) {
         DBI::dbExecute(.results_con,
           sprintf("ATTACH '%s' AS submitted (READ_ONLY)", dbpath))
         tbls <- DBI::dbGetQuery(.results_con,
-          "SELECT table_name FROM information_schema.tables WHERE table_schema = 'submitted'")$table_name
+          "SELECT table_name FROM information_schema.tables WHERE table_catalog = 'submitted'")$table_name
         # Copy each submitted table into .results_con as a REAL table.
         # CREATE OR REPLACE TABLE replaces a pre-created stub table OR a prior
         # view regardless of type (CREATE OR REPLACE VIEW throws against an
@@ -703,11 +703,11 @@ ui <- tagList(
       window.top.postMessage({type: 'SHINYLIVE_READY'}, '*');
     }
     var __resultFiles = {};
-    var __resultDb = "";
+    var __resultDb = '';
     window.addEventListener('message', function(event) {
       var d = event.data;
       if (!d) return;
-      if (d.type === 'RESULT_DB_BEGIN') { __resultDb = ""; return; }
+      if (d.type === 'RESULT_DB_BEGIN') { __resultDb = ''; return; }
       if (d.type === 'RESULT_DB_CHUNK') { __resultDb += d.content; return; }
       if (d.type === 'RESULT_DB_END') {
         Shiny.setInputValue('result_db', __resultDb, {priority: 'event'});

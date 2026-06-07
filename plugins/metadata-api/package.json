@@ -7,7 +7,7 @@
     "migrations": { "schema": "notebook", "database": "_config" },
     "functions": {
       "api": [
-        { "source": "/metadata-api", "function": "/functions" }
+        { "source": "/metadata-api", "function": "/functions", "allowHostFsAccess": true }
       ],
       "env": {
         "_shared": {
