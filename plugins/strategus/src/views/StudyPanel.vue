@@ -105,7 +105,9 @@ const confirmOpen = ref(false);
 const saveMsg = ref('');
 const saveError = ref(false);
 
-const spec = computed(() => serializeSpec(store));
+// Cast as StudiesListView/ExportPanel do: serializeSpec is duck-typed against a
+// snapshot whose cohortsByRole/timeAtRisk are slightly looser than the live store.
+const spec = computed(() => serializeSpec(store as unknown as Parameters<typeof serializeSpec>[0]));
 
 async function onSave(): Promise<void> {
   saving.value = true;
