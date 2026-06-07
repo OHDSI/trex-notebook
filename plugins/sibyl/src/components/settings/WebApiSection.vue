@@ -1,15 +1,15 @@
 <template>
   <div class="webapi-section">
-    <v-alert v-if="store.error" type="error" variant="tonal" class="mb-3">{{ store.error }}</v-alert>
+    <AtlasAlert v-if="store.error" severity="danger" variant="tonal" class="mb-3">{{ store.error }}</AtlasAlert>
     <p class="text-medium-emphasis mb-3">
       Base URL of the OHDSI WebAPI Sibyl connects to for fetching cohorts (e.g. https://example.org/WebAPI).
     </p>
-    <v-text-field v-model="url" label="WebAPI URL" placeholder="https://example.org/WebAPI" density="compact" data-test="webapi-url" />
+    <AtlasTextField v-model="url" label="WebAPI URL" placeholder="https://example.org/WebAPI" density="compact" data-test="webapi-url" />
     <div class="d-flex ga-2 align-center">
-      <v-btn color="primary" :loading="store.saving" data-test="webapi-save" @click="onSave">Save</v-btn>
-      <v-btn variant="text" :loading="testing" data-test="webapi-test" @click="onTest">Test connection</v-btn>
-      <v-chip v-if="testResult === 'ok'" color="success" size="small" variant="tonal">Connected</v-chip>
-      <v-chip v-else-if="testResult === 'fail'" color="error" size="small" variant="tonal">Unreachable</v-chip>
+      <AtlasButton variant="primary" :loading="store.saving" data-test="webapi-save" @click="onSave">Save</AtlasButton>
+      <AtlasButton variant="ghost" :loading="testing" data-test="webapi-test" @click="onTest">Test connection</AtlasButton>
+      <AtlasChip v-if="testResult === 'ok'" tone="success" size="sm">Connected</AtlasChip>
+      <AtlasChip v-else-if="testResult === 'fail'" tone="danger" size="sm">Unreachable</AtlasChip>
     </div>
   </div>
 </template>
@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { AtlasAlert, AtlasTextField, AtlasButton, AtlasChip } from '@ohdsi/atlas-ui'
 
 const store = useSettingsStore()
 const url = ref('')

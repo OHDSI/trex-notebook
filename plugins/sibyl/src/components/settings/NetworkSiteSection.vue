@@ -1,25 +1,25 @@
 <template>
   <div class="network-site-section" style="max-width: 520px">
-    <v-alert v-if="store.error" type="error" variant="tonal" class="mb-3">{{ store.error }}</v-alert>
+    <AtlasAlert v-if="store.error" severity="danger" variant="tonal" class="mb-3">{{ store.error }}</AtlasAlert>
 
-    <v-alert v-if="store.status === 'active'" type="success" variant="tonal">
+    <AtlasAlert v-if="store.status === 'active'" severity="success" variant="tonal">
       This site is registered and connected to the network.
-    </v-alert>
+    </AtlasAlert>
 
     <template v-else-if="store.status === 'pending'">
-      <v-alert type="info" variant="tonal" class="mb-3">
+      <AtlasAlert severity="info" variant="tonal" class="mb-3">
         Registration request submitted. Awaiting coordinator approval…
-      </v-alert>
-      <v-btn :loading="busy" data-test="network-check" @click="checkNow">Check now</v-btn>
+      </AtlasAlert>
+      <AtlasButton :loading="busy" data-test="network-check" @click="checkNow">Check now</AtlasButton>
     </template>
 
     <template v-else>
       <p class="text-medium-emphasis mb-3">Register this site with the federated study network.</p>
-      <v-text-field v-model="name" label="Site name" density="compact" :disabled="busy" data-test="network-name" />
-      <v-text-field v-model="contact" label="Contact email" density="compact" :disabled="busy" data-test="network-contact" />
-      <v-btn color="primary" :loading="busy" :disabled="!name || !contact" data-test="network-register" @click="submit">
+      <AtlasTextField v-model="name" label="Site name" density="compact" :disabled="busy" data-test="network-name" />
+      <AtlasTextField v-model="contact" label="Contact email" density="compact" :disabled="busy" data-test="network-contact" />
+      <AtlasButton variant="primary" :loading="busy" :disabled="!name || !contact" data-test="network-register" @click="submit">
         Request registration
-      </v-btn>
+      </AtlasButton>
     </template>
   </div>
 </template>
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useSignupStore } from '@/stores/signup'
+import { AtlasAlert, AtlasButton, AtlasTextField } from '@ohdsi/atlas-ui'
 
 const store = useSignupStore()
 const name = ref('')

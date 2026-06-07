@@ -8,9 +8,9 @@
   >
     <div class="d-flex align-center justify-space-between pa-4">
       <span class="text-h6">Jobs</span>
-      <v-btn icon="mdi-close" variant="text" aria-label="Close jobs panel" data-test="jobs-close" @click="ui.closeJobs()" />
+      <AtlasIconButton icon="mdi-close" variant="text" ariaLabel="Close jobs panel" data-test="jobs-close" @click="ui.closeJobs()" />
     </div>
-    <v-alert v-if="error" type="error" variant="tonal" class="ma-4">{{ error }}</v-alert>
+    <AtlasAlert v-if="error" severity="danger" variant="tonal" class="ma-4">{{ error }}</AtlasAlert>
     <div ref="mountEl" class="jobs-parcel-mount" />
   </v-navigation-drawer>
 </template>
@@ -22,6 +22,7 @@ import { useUiStore } from '@/stores/ui'
 import { useDrawerWidth } from '@/composables/useDrawerWidth'
 import { mountPluginParcel } from '@/plugins/core/PluginParcel'
 import { JOBS_PLUGIN_ID } from '@/plugins/navigation/PluginMenuIntegration'
+import { AtlasIconButton, AtlasAlert } from '@ohdsi/atlas-ui'
 
 const ui = useUiStore()
 const drawerWidth = useDrawerWidth()

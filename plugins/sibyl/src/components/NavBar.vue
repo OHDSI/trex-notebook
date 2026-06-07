@@ -39,17 +39,17 @@
       </nav>
 
       <div class="nav-bar__actions">
-        <v-btn
+        <AtlasIconButton
           icon="mdi-briefcase-clock-outline"
           variant="text"
-          aria-label="Open jobs panel"
+          ariaLabel="Open jobs panel"
           data-test="nav-jobs"
           @click="ui.toggleJobs()"
         />
-        <v-btn
+        <AtlasIconButton
           icon="mdi-cog"
           variant="text"
-          aria-label="Open settings panel"
+          ariaLabel="Open settings panel"
           data-test="nav-settings"
           @click="ui.toggleSettings()"
         />
@@ -69,6 +69,7 @@ import {
 import { useUiStore } from '@/stores/ui'
 import { pluginRegistry } from '@/plugins/core/PluginRegistry'
 import ohdsiLogo from '@/assets/ohdsi-logo.png'
+import { AtlasIconButton } from '@ohdsi/atlas-ui'
 
 const route = useRoute()
 const ui = useUiStore()
