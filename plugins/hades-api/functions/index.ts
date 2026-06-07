@@ -9,6 +9,7 @@ import { query } from "./sql.ts";
 import {
   buildJobsSql, buildStatusSql, buildCancelSql, buildEnvsSql,
   buildSetupEnvSql, buildExecuteSql, normalizeJob, normalizeEnv,
+  isValidEnvName,
 } from "./hades.ts";
 
 const ENVS_BASE = Deno.env.get("HADES_ENVS_BASE_DIR") ?? "";
@@ -68,6 +69,19 @@ Deno.serve(async (req: Request) => {
         // camelCase the REST contract / UI client expect.
         const o = JSON.parse(String(rows[0]?.result ?? "{}"));
         return json({ status: o.status, envName: o.env_name, packages: o.packages, rVersion: o.r_version });
+      }
+      case "deleteEnv": {
+        if (!isValidEnvName(r.name)) return json({ error: "BAD_REQUEST" }, 400);
+        const dir = `${ENVS_BASE}/${r.name}`;
+        // Defense in depth: never remove anything outside ENVS_BASE.
+        if (!dir.startsWith(`${ENVS_BASE}/`)) return json({ error: "BAD_REQUEST" }, 400);
+        try {
+          await Deno.remove(dir, { recursive: true });
+        } catch (e) {
+          if (e instanceof Deno.errors.NotFound) return json({ error: "NOT_FOUND" }, 404);
+          throw e;
+        }
+        return json({ status: "deleted", envName: r.name });
       }
       case "execute": {
         const b = await req.json();
