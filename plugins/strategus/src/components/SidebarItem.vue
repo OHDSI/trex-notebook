@@ -93,7 +93,7 @@ const statusColor = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 3px 12px;
   cursor: pointer;
   border-radius: 6px;
   border-left: 3px solid transparent;

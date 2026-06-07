@@ -301,7 +301,7 @@ function handleBack(): void {
 }
 
 .sidebar-nav__anchors {
-  padding: 2px 0 6px;
+  padding: 0 0 2px;
 }
 
 .sidebar-nav__anchor {
@@ -309,7 +309,7 @@ function handleBack(): void {
   align-items: center;
   width: 100%;
   text-align: left;
-  padding: 3px 12px 3px 32px;
+  padding: 1px 12px 1px 32px;
   font-size: 11px;
   color: rgba(0, 0, 0, 0.5);
   background: none;
@@ -338,6 +338,7 @@ function handleBack(): void {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-height: 0;
 }
 .sidebar-nav__anchor-row .sidebar-nav__anchor {
   flex: 1;
@@ -348,5 +349,17 @@ function handleBack(): void {
   transform-origin: center right;
   margin-right: 4px;
   flex-shrink: 0;
+}
+/* Vuetify's switch reserves a tall control + a details row; collapse both so a
+   module row is only as tall as its text, not ~40px. */
+.sidebar-nav__anchor-toggle :deep(.v-input__details) {
+  display: none;
+}
+.sidebar-nav__anchor-toggle :deep(.v-input__control),
+.sidebar-nav__anchor-toggle :deep(.v-selection-control) {
+  min-height: 22px;
+}
+.sidebar-nav__anchor-toggle :deep(.v-selection-control__wrapper) {
+  height: 22px;
 }
 </style>
