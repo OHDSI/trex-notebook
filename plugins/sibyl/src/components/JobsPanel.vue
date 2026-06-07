@@ -3,7 +3,7 @@
     v-model="open"
     location="right"
     temporary
-    width="900"
+    :width="drawerWidth"
     data-test="jobs-panel"
   >
     <div class="d-flex align-center justify-space-between pa-4">
@@ -19,10 +19,12 @@
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import type { Parcel } from 'single-spa'
 import { useUiStore } from '@/stores/ui'
+import { useDrawerWidth } from '@/composables/useDrawerWidth'
 import { mountPluginParcel } from '@/plugins/core/PluginParcel'
 import { JOBS_PLUGIN_ID } from '@/plugins/navigation/PluginMenuIntegration'
 
 const ui = useUiStore()
+const drawerWidth = useDrawerWidth()
 const open = computed({ get: () => ui.jobsOpen, set: v => { if (!v) ui.closeJobs() } })
 const mountEl = ref<HTMLElement | null>(null)
 const error = ref<string | null>(null)

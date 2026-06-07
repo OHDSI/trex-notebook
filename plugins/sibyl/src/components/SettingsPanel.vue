@@ -3,7 +3,7 @@
     v-model="open"
     location="right"
     temporary
-    width="520"
+    :width="drawerWidth"
     data-test="settings-panel"
   >
     <div class="d-flex align-center justify-space-between pa-4">
@@ -26,11 +26,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useUiStore } from '@/stores/ui'
+import { useDrawerWidth } from '@/composables/useDrawerWidth'
 import EnvironmentsSection from '@/components/settings/EnvironmentsSection.vue'
 import WebApiSection from '@/components/settings/WebApiSection.vue'
 import NetworkSiteSection from '@/components/settings/NetworkSiteSection.vue'
 
 const ui = useUiStore()
+const drawerWidth = useDrawerWidth()
 const tab = ref('envs')
 const open = computed({ get: () => ui.settingsOpen, set: v => { if (!v) ui.closeSettings() } })
 </script>
