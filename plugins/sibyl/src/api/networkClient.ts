@@ -37,6 +37,11 @@ export class NetworkClient {
   }
 }
 
-/** Same-origin network-api mount; respects a host-injected proxyUrl if present. */
+/**
+ * Same-origin network-api base; respects a host-injected proxyUrl if present.
+ * trex mounts network-api at `/plugins/network-api` and its function strips the
+ * FIRST `/network-api` segment, so the working base is the SINGLE-prefix path
+ * (the doubled `/plugins/network-api/network-api` hits the machine-creds gate → 503).
+ */
 export const defaultNetworkBase = (): string =>
-  window.__networkPluginConfig?.proxyUrl || `${location.origin}/plugins/network-api/network-api`
+  window.__networkPluginConfig?.proxyUrl || `${location.origin}/plugins/network-api`
