@@ -64,29 +64,44 @@
       </div>
     </div>
 
-    <!-- Manual entry fallback -->
+    <!-- Manual entry fallback: paste a cohort definition JSON -->
     <div v-else>
       <AtlasAlert
         severity="info"
         variant="tonal"
         class="mb-3"
       >
-        Could not load cohorts from Atlas. You can enter cohort details manually.
+        Could not load cohorts from Atlas. Paste a cohort definition JSON to add one manually —
+        its name and id are read from the JSON.
       </AtlasAlert>
-      <AtlasTextField
-        v-model.number="manualId"
-        label="Cohort ID"
-        type="number"
+      <AtlasAlert
+        v-if="manualError"
+        severity="danger"
+        variant="tonal"
         class="mb-3"
+        data-test="manual-error"
+      >
+        {{ manualError }}
+      </AtlasAlert>
+      <label class="manual-json__label">Cohort definition JSON</label>
+      <textarea
+        v-model="manualJson"
+        class="manual-json"
+        rows="8"
+        spellcheck="false"
+        placeholder='{ "id": 1, "name": "New users of drug X", "expression": { ... } }'
+        data-test="manual-json"
       />
       <AtlasTextField
         v-model="manualName"
-        label="Cohort Name"
-        class="mb-3"
+        label="Name (optional — overrides the name in the JSON)"
+        class="my-3"
+        data-test="manual-name"
       />
       <AtlasButton
         variant="primary"
-        :disabled="!manualName"
+        :disabled="!manualJson.trim()"
+        data-test="manual-add"
         @click="selectManual"
       >
         Add
@@ -107,6 +122,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { AtlasDialog, AtlasButton, AtlasTextField, AtlasProgressCircular, AtlasAlert } from '@ohdsi/atlas-ui';
+import { parseManualCohort } from '../services/parseManualCohort';
 
 interface AtlasCohort {
   cohortId: number;
@@ -128,8 +144,10 @@ const emit = defineEmits<{
 const search = ref('');
 const loading = ref(false);
 const cohorts = ref<AtlasCohort[]>([]);
-const manualId = ref(1);
+const manualJson = ref('');
 const manualName = ref('');
+const manualError = ref<string | null>(null);
+let manualFallbackId = 1;
 
 const filteredCohorts = computed(() => {
   if (!search.value) return cohorts.value;
@@ -160,14 +178,17 @@ function selectCohort(cohort: AtlasCohort) {
 }
 
 function selectManual() {
-  emit('select', {
-    cohortId: manualId.value,
-    cohortName: manualName.value,
-    subjectCount: null,
-    cohortDefinition: '{}',
-  });
+  const result = parseManualCohort(manualJson.value, manualName.value, manualFallbackId);
+  if (!result.ok) {
+    manualError.value = result.error;
+    return;
+  }
+  // Advance the fallback id only when we actually had to use it (no id in JSON).
+  if (typeof JSON.parse(manualJson.value)?.id !== 'number') manualFallbackId++;
+  manualError.value = null;
+  emit('select', result.cohort);
   emit('update:modelValue', false);
-  manualId.value++;
+  manualJson.value = '';
   manualName.value = '';
 }
 </script>
@@ -208,5 +229,27 @@ function selectManual() {
 
 .text-right {
   text-align: right;
+}
+
+.manual-json__label {
+  display: block;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 4px;
+}
+.manual-json {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.manual-json:focus {
+  outline: none;
+  border-color: rgb(var(--v-theme-primary));
 }
 </style>
