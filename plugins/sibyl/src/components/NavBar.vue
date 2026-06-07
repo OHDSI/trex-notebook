@@ -37,6 +37,23 @@
           </li>
         </ul>
       </nav>
+
+      <div class="nav-bar__actions">
+        <v-btn
+          icon="mdi-briefcase-clock-outline"
+          variant="text"
+          aria-label="Open jobs panel"
+          data-test="nav-jobs"
+          @click="ui.toggleJobs()"
+        />
+        <v-btn
+          icon="mdi-cog"
+          variant="text"
+          aria-label="Open settings panel"
+          data-test="nav-settings"
+          @click="ui.toggleSettings()"
+        />
+      </div>
     </div>
   </header>
 </template>
@@ -46,19 +63,22 @@ import { ref, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   generatePluginMenuItems,
+  filterTextNavItems,
   type PluginMenuItem,
 } from '@/plugins/navigation/PluginMenuIntegration'
+import { useUiStore } from '@/stores/ui'
 import { pluginRegistry } from '@/plugins/core/PluginRegistry'
 import ohdsiLogo from '@/assets/ohdsi-logo.png'
 
 const route = useRoute()
+const ui = useUiStore()
 
-const menuItems = ref<PluginMenuItem[]>(generatePluginMenuItems())
+const menuItems = ref<PluginMenuItem[]>(filterTextNavItems(generatePluginMenuItems()))
 
 // Plugins register AFTER the app mounts (see main.ts bootstrap order), so
 // refresh the menu whenever the registry changes (add/remove/hot-reload).
 const unsubscribe = pluginRegistry.onPluginChange(() => {
-  menuItems.value = generatePluginMenuItems()
+  menuItems.value = filterTextNavItems(generatePluginMenuItems())
 })
 onUnmounted(unsubscribe)
 
@@ -107,6 +127,14 @@ function isItemActive(itemRoute: string): boolean {
 .nav-bar__nav-wrapper {
   display: flex;
   align-items: center;
+}
+
+.nav-bar__actions {
+  margin-left: auto;
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .nav-bar__nav-list {

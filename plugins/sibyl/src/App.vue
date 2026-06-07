@@ -4,6 +4,10 @@
     <v-main>
       <router-view />
     </v-main>
+    <template v-if="!isLoginRoute">
+      <SettingsPanel />
+      <JobsPanel />
+    </template>
   </v-app>
 </template>
 
@@ -11,6 +15,8 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
+import SettingsPanel from '@/components/SettingsPanel.vue'
+import JobsPanel from '@/components/JobsPanel.vue'
 
 // The login screen is a focused, full-page card (like Atlas3's login modal) —
 // hide the app nav there.
