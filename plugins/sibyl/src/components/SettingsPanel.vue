@@ -13,10 +13,12 @@
     <v-tabs v-model="tab" color="primary" class="px-2">
       <v-tab value="envs"><v-icon start>mdi-language-r</v-icon>R Environments</v-tab>
       <v-tab value="webapi"><v-icon start>mdi-api</v-icon>WebAPI</v-tab>
+      <v-tab value="network"><v-icon start>mdi-lan-connect</v-icon>Network</v-tab>
     </v-tabs>
     <v-tabs-window v-model="tab" class="pa-4">
       <v-tabs-window-item value="envs"><EnvironmentsSection /></v-tabs-window-item>
       <v-tabs-window-item value="webapi"><WebApiSection /></v-tabs-window-item>
+      <v-tabs-window-item value="network"><NetworkSiteSection /></v-tabs-window-item>
     </v-tabs-window>
   </v-navigation-drawer>
 </template>
@@ -26,6 +28,7 @@ import { ref, computed } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import EnvironmentsSection from '@/components/settings/EnvironmentsSection.vue'
 import WebApiSection from '@/components/settings/WebApiSection.vue'
+import NetworkSiteSection from '@/components/settings/NetworkSiteSection.vue'
 
 const ui = useUiStore()
 const tab = ref('envs')

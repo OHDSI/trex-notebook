@@ -54,6 +54,8 @@ test.describe('header sidepanels', () => {
     await page.getByRole('tab', { name: 'WebAPI' }).click()
     await expect(page.getByTestId('webapi-url')).toBeVisible()
 
+    await expect(page.getByRole('tab', { name: 'Network' })).toBeVisible()
+
     await page.getByTestId('settings-close').click()
     await expect(page.getByTestId('settings-panel')).not.toHaveClass(ACTIVE)
   })
