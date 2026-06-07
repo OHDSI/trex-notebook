@@ -11,73 +11,54 @@
       Toggle each module to include it in the spec. Settings appear inline when enabled.
     </p>
 
-    <!-- Enabled modules: full section with embedded panel -->
-    <template
-      v-for="mod in moduleSections"
+    <!-- Only enabled modules render here; toggle modules on/off from the left nav. -->
+    <section
+      v-for="mod in enabledSections"
+      :id="mod.id"
       :key="mod.id"
+      class="module-section"
     >
-      <section
-        v-if="store.isModuleEnabled(mod.moduleName)"
-        :id="mod.id"
-        class="module-section"
-      >
-        <h2 class="module-section__heading">
-          <AtlasIcon
-            :icon="mod.icon"
-            size="18"
-          />
-          <span class="module-section__title">{{ mod.title }}</span>
-          <AtlasTooltip
-            :text="statusFor(mod.key).message"
-            location="right"
-            :open-delay="200"
-          >
-            <template #activator="{ props: tipProps }">
-              <AtlasIcon
-                v-bind="tipProps"
-                :icon="iconFor(mod.key)"
-                :color="colorFor(mod.key)"
-                size="16"
-                class="ml-2"
-              />
-            </template>
-          </AtlasTooltip>
-          <AtlasSpacer />
-          <AtlasSwitch
-            :model-value="true"
-            color="primary"
-            inset
-            @update:model-value="store.toggleModule(mod.moduleName)"
-          />
-        </h2>
-        <component
-          :is="mod.component"
-          :embedded="true"
-        />
-      </section>
-
-      <!-- Disabled modules: super-compact single row -->
-      <div
-        v-else
-        :id="mod.id"
-        class="module-row module-row--disabled"
-      >
+      <h2 class="module-section__heading">
         <AtlasIcon
           :icon="mod.icon"
-          size="16"
-          class="module-row__icon"
+          size="18"
         />
-        <span class="module-row__title">{{ mod.title }}</span>
-        <span class="module-row__hint">Disabled</span>
+        <span class="module-section__title">{{ mod.title }}</span>
+        <AtlasTooltip
+          :text="statusFor(mod.key).message"
+          location="right"
+          :open-delay="200"
+        >
+          <template #activator="{ props: tipProps }">
+            <AtlasIcon
+              v-bind="tipProps"
+              :icon="iconFor(mod.key)"
+              :color="colorFor(mod.key)"
+              size="16"
+              class="ml-2"
+            />
+          </template>
+        </AtlasTooltip>
         <AtlasSpacer />
         <AtlasSwitch
-          :model-value="false"
+          :model-value="true"
           color="primary"
           inset
           @update:model-value="store.toggleModule(mod.moduleName)"
         />
-      </div>
-    </template>
+      </h2>
+      <component
+        :is="mod.component"
+        :embedded="true"
+      />
+    </section>
+
+    <p
+      v-if="enabledSections.length === 0"
+      class="module-empty text-body-2 text-medium-emphasis"
+    >
+      No modules enabled. Use the toggles in the left navigation to add modules to this study.
+    </p>
   </div>
 </template>
 
@@ -132,6 +113,10 @@ const moduleSections = computed<ModuleSection[]>(() => [
   { id: 'sec-evidenceSynthesis', key: 'evidenceSynthesis', moduleName: 'EvidenceSynthesis', icon: 'mdi-merge', title: 'Evidence Synthesis', component: EvidenceSynthesisPanel },
 ]);
 
+const enabledSections = computed(() =>
+  moduleSections.value.filter((mod) => store.isModuleEnabled(mod.moduleName))
+);
+
 const ICON_BY_STATUS: Record<ValidationStatus, string> = {
   valid: 'mdi-check-circle',
   warning: 'mdi-alert-circle',
@@ -181,26 +166,7 @@ function colorFor(key: SidebarItem): string {
   flex: 0 0 auto;
 }
 
-/* Compact one-line row for disabled modules */
-.module-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 4px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  scroll-margin-top: 24px;
-}
-.module-row:first-of-type { border-top: none; }
-.module-row__icon { color: rgba(0, 0, 0, 0.3); }
-.module-row__title {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.5);
-}
-.module-row__hint {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(0, 0, 0, 0.3);
+.module-empty {
+  padding: 16px 4px;
 }
 </style>

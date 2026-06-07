@@ -30,6 +30,8 @@ export function errorResult(err: unknown): HandlerResult {
       }),
     };
   }
+  // Log unexpected (non-ApiError) failures so a 500 isn't silent in CloudWatch.
+  console.error('[errorResult] unhandled error:', err);
   return {
     statusCode: 500,
     headers: JSON_HEADERS,

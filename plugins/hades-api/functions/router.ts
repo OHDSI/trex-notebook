@@ -5,6 +5,7 @@ export type Routed =
   | { kind: "execute" }
   | { kind: "listEnvs" }
   | { kind: "setupEnv" }
+  | { kind: "deleteEnv"; name: string }
   | { kind: "notFound" };
 
 export function route(method: string, path: string): Routed {
@@ -15,5 +16,7 @@ export function route(method: string, path: string): Routed {
   if (jobItem && method === "DELETE") return { kind: "cancelJob", id: decodeURIComponent(jobItem[1]) };
   if (path === "/envs" && method === "GET") return { kind: "listEnvs" };
   if (path === "/envs" && method === "POST") return { kind: "setupEnv" };
+  const envItem = path.match(/^\/envs\/([^/]+)$/);
+  if (envItem && method === "DELETE") return { kind: "deleteEnv", name: decodeURIComponent(envItem[1]) };
   return { kind: "notFound" };
 }

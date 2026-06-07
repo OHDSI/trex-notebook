@@ -11,6 +11,8 @@ interface Window {
   __atlasVuetify?: unknown
   __pluginLoader?: { retryPlugin: (id: string) => void }
   __pluginRegistry?: unknown
+  __sibylWebApiUrl?: string
+  __networkPluginConfig?: { proxyUrl?: string }
 }
 
 declare module '*.vue' {

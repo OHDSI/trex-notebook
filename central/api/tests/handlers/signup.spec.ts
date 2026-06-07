@@ -28,7 +28,9 @@ describe('createSignup', () => {
     expect(body.claimToken).toBe('tok-test');
     const put = ddb.commandCalls(PutCommand)[0].args[0].input.Item as any;
     expect(put.status).toBe('pending');
-    expect(put.cognitoClientId).toBe('');
+    // cognitoClientId must NOT be written for a pending site: it's the byClientId
+    // GSI key and DynamoDB rejects an empty-string GSI key value.
+    expect(put.cognitoClientId).toBeUndefined();
     expect(put.claimTokenHash).toBe(hashToken('tok-test'));
     expect(put.pendingSecret).toBeUndefined();
   });

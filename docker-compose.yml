@@ -246,7 +246,10 @@ services:
       # base_dir / output_path / work_schema args to hades_setup_env/execute.
       HADES_ENVS_BASE_DIR: /data/hades/envs
       HADES_OUTPUT_BASE_DIR: /data/hades/runs
-      HADES_WORK_SCHEMA: work
+      # trexsql namespaces all persisted data (incl. the baked demo CDM and the
+      # work schema) under the `_config` catalog; the pgwire default catalog is
+      # the empty `memory`, so hades must use catalog-qualified schema names.
+      HADES_WORK_SCHEMA: _config.work
       # network-api function plugin (server-side machine auth). The browser
       # network plugin has NO in-browser login — all its API calls go through the
       # network-api trex function, which uses the per-site CONFIDENTIAL Cognito

@@ -1,0 +1,49 @@
+# Single-node override (experimental, hades e2e only).
+#
+# The default 2-node cluster needs the `flight` extension on the non-data node
+# (trex-server) to open DuckDB sessions on the data node (trex-data). `flight.trex`
+# is NOT shipped in the image and 404s at the release URL, so create_session fails
+# on the hades node. This override makes trex-server a LOCAL data node (sessions
+# are local, no flight client needed) and parks trex-data as an inert, healthy
+# placeholder (compose MERGES depends_on, so trex-data must stay defined+healthy
+# to satisfy trex-server's/metadata-migrate's dependency — we just make it do
+# nothing).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.single.yml --profile cdm up -d
+#
+# Revert to the normal 2-node stack:
+#   docker compose -f docker-compose.yml -f docker-compose.single.yml down
+#   docker compose --profile cdm up -d
+
+services:
+  # Inert placeholder: stays "running + healthy" (satisfies depends_on) but does
+  # nothing — no gossip, no flight. Single-node uses trex-server as the data node.
+  trex-data:
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'echo "single-node: trex-data parked (inert)"; exec sleep infinity'
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 2s
+
+  trex-server:
+    environment:
+      # hades' runner connects back to trex pgwire on TREX_PGWIRE_PORT (default
+      # 5433); our pgwire listens on 5432 inside the container, so pin it.
+      TREX_PGWIRE_PORT: "5432"
+      # e2e CDM: point the hades R runner (r_script.rs HADES_CDM_URL hatch) at the
+      # broadsea-atlasdb Postgres (real OMOP CDM) instead of trex's DuckDB pgwire.
+      # DatabaseConnector speaks native PostgreSQL there, sidestepping the DuckDB
+      # pgwire limitations (regclass type, cross-catalog JDBC reads). Requires the
+      # `cdm` profile (broadsea-atlasdb) to be up. Cohort/work tables are written
+      # to the writable demo_cdm_results schema.
+      HADES_CDM_URL: "postgres://postgres:${POSTGRES_PASSWORD:-mypass}@broadsea-atlasdb:5432/postgres"
+      HADES_WORK_SCHEMA: "demo_cdm_results"
+      # One node named "server" (keeps base SWARM_NODE=server), now a data node
+      # hosting trexas + pgwire. No `flight` extension — sessions are local.
+      SWARM_CONFIG: >-
+        {"cluster_id":"local","nodes":{"server":{"gossip_addr":"trex-server:4200","data_node":true,"extensions":[{"name":"trexas","config":{"host":"0.0.0.0","port":8001,"main_service_path":"/usr/src/core/server","event_worker_path":"/usr/src/core/event","tls_port":8000,"tls_cert_path":"/usr/src/server.crt","tls_key_path":"/usr/src/server.key"}},{"name":"pgwire","config":{"host":"0.0.0.0","port":5432}}]}}}

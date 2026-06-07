@@ -9,6 +9,7 @@ import { query } from "./sql.ts";
 import {
   buildJobsSql, buildStatusSql, buildCancelSql, buildEnvsSql,
   buildSetupEnvSql, buildExecuteSql, normalizeJob, normalizeEnv,
+  isValidEnvName,
 } from "./hades.ts";
 
 const ENVS_BASE = Deno.env.get("HADES_ENVS_BASE_DIR") ?? "";
@@ -69,6 +70,20 @@ Deno.serve(async (req: Request) => {
         const o = JSON.parse(String(rows[0]?.result ?? "{}"));
         return json({ status: o.status, envName: o.env_name, packages: o.packages, rVersion: o.r_version });
       }
+      case "deleteEnv": {
+        if (!isValidEnvName(r.name)) return json({ error: "BAD_REQUEST" }, 400);
+        const dir = `${ENVS_BASE}/${r.name}`;
+        // isValidEnvName already forbids "/" and "..", so `dir` cannot escape
+        // ENVS_BASE; this is a belt-and-suspenders check before an rm -rf.
+        if (!dir.startsWith(`${ENVS_BASE}/`)) return json({ error: "BAD_REQUEST" }, 400);
+        try {
+          await Deno.remove(dir, { recursive: true });
+        } catch (e) {
+          if (e instanceof Deno.errors.NotFound) return json({ error: "NOT_FOUND" }, 404);
+          throw e;
+        }
+        return json({ status: "deleted", envName: r.name });
+      }
       case "execute": {
         const b = await req.json();
         if (!b.spec || !b.cdmSchema || !b.envName) return json({ error: "BAD_REQUEST" }, 400);
@@ -83,13 +98,26 @@ Deno.serve(async (req: Request) => {
           outputPath: runDir, dbName, envName: b.envName, envBaseDir: ENVS_BASE,
         }));
         const result = JSON.parse(String(rows[0]?.result ?? "{}"));
+        // Surface hades_execute failures instead of returning a fake 200/jobId
+        // (e.g. "Rscript not found", spec/cdm errors) — otherwise the caller
+        // thinks the run started when it didn't.
+        if (result.status === "error") {
+          return json({ error: "HADES_EXECUTE_FAILED", detail: String(result.error ?? "hades_execute failed") }, 500);
+        }
         const jobId = result.job_id ?? runId;
         // hades mints its OWN job_id (execute.rs create_job), distinct from our
         // runId-named output dir. The Rscript is still writing to runDir by path,
         // so we must NOT rename it; instead symlink jobId -> runDir so the
         // metadata-api publish step (which only knows jobId) can find the output.
+        // Deno.symlink is blocklisted in the trex edge runtime and throws
+        // synchronously (so .catch doesn't help) — wrap it; the job is still
+        // addressable by jobId via hades_status, only output-dir linkage is lost.
         if (result.job_id && result.job_id !== runId) {
-          await Deno.symlink(runDir, `${OUTPUT_BASE}/${jobId}`).catch(() => {});
+          try {
+            await Deno.symlink(runDir, `${OUTPUT_BASE}/${jobId}`);
+          } catch (_e) {
+            // symlink unavailable — best effort
+          }
         }
         return json({ jobId });
       }

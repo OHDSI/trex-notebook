@@ -59,6 +59,10 @@ export interface ExecuteArgs {
   envBaseDir: string;
 }
 
+export function isValidEnvName(name: string): boolean {
+  return /^[A-Za-z0-9._-]+$/.test(name) && name !== "." && name !== "..";
+}
+
 export function buildExecuteSql(a: ExecuteArgs): string {
   return `SELECT hades_execute(${lit(a.specPath)},${lit(a.cdmSchema)},` +
     `${lit(a.workSchema)},${lit(a.outputPath)},${lit(a.dbName)},` +

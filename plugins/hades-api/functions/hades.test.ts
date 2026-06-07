@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { buildExecuteSql, normalizeJob, splitModules } from "./hades.ts";
+import { buildExecuteSql, isValidEnvName, normalizeJob, splitModules } from "./hades.ts";
 
 Deno.test("splitModules parses a comma list and trims", () => {
   assertEquals(splitModules("A, B ,C"), ["A", "B", "C"]);
@@ -18,6 +18,16 @@ Deno.test("normalizeJob maps hades_jobs row to HadesJob", () => {
   assertEquals(job.status, "RUNNING");
   assertEquals(job.modulesCompleted, ["A", "B"]);
   assertEquals(job.elapsedMs, 1500);
+});
+
+Deno.test("isValidEnvName accepts safe names and rejects traversal", () => {
+  assertEquals(isValidEnvName("study1"), true);
+  assertEquals(isValidEnvName("my-env_2.0"), true);
+  assertEquals(isValidEnvName("."), false);
+  assertEquals(isValidEnvName(".."), false);
+  assertEquals(isValidEnvName("a/b"), false);
+  assertEquals(isValidEnvName("../etc"), false);
+  assertEquals(isValidEnvName(""), false);
 });
 
 Deno.test("buildExecuteSql escapes and orders args", () => {

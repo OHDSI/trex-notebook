@@ -37,7 +37,7 @@ import { computed, provide, onMounted, ref } from 'vue';
 import { AtlasPageShell, AtlasButton } from '@ohdsi/atlas-ui';
 import StrategusLayout from './components/StrategusLayout.vue';
 import OverviewPanel from './views/OverviewPanel.vue';
-import StudyPanel from './views/StudyPanel.vue';
+import DesignPanel from './views/DesignPanel.vue';
 import StudySetupPanel from './views/StudySetupPanel.vue';
 import CohortsPanel from './views/CohortsPanel.vue';
 import ComparisonsPanel from './views/ComparisonsPanel.vue';
@@ -53,7 +53,6 @@ import PlpPanel from './views/modules/PlpPanel.vue';
 import PlpValidationPanel from './views/modules/PlpValidationPanel.vue';
 import TreatmentPatternsPanel from './views/modules/TreatmentPatternsPanel.vue';
 import EvidenceSynthesisPanel from './views/modules/EvidenceSynthesisPanel.vue';
-import ModulesPanel from './views/ModulesPanel.vue';
 import StudiesListView from './views/StudiesListView.vue';
 import { useStrategusStore } from './store/useStrategusStore';
 import { useStudiesStore } from './store/useStudiesStore';
@@ -66,8 +65,9 @@ const listViewRef = ref<InstanceType<typeof StudiesListView> | null>(null);
 
 const panelMap: Record<string, unknown> = {
   overview: OverviewPanel,
-  study: StudyPanel,
-  modules: ModulesPanel,
+  // study + modules are one combined, scrollable page now
+  study: DesignPanel,
+  modules: DesignPanel,
   setup: StudySetupPanel,
   cohorts: CohortsPanel,
   comparisons: ComparisonsPanel,
