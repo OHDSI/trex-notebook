@@ -1,4 +1,5 @@
-import type { Parcel } from 'single-spa'
+import { mountRootParcel, type Parcel } from 'single-spa'
+import { pluginRegistry } from '@/plugins/core/PluginRegistry'
 
 /**
  * Mount a registered plugin as a single-spa parcel into `domElement` (e.g. a
@@ -6,7 +7,6 @@ import type { Parcel } from 'single-spa'
  * construction so the parcel receives the same context as a routed mount.
  */
 export async function mountPluginParcel(pluginId: string, domElement: HTMLElement): Promise<Parcel> {
-  const { pluginRegistry } = await import('@/plugins/core/PluginRegistry')
   const plugin = pluginRegistry.getPlugin(pluginId)
   if (!plugin) throw new Error(`Plugin ${pluginId} is not registered`)
   const { registration } = plugin
@@ -19,8 +19,10 @@ export async function mountPluginParcel(pluginId: string, domElement: HTMLElemen
   if (!window.System) throw new Error('SystemJS is not available')
   const lifecycles = await window.System.import(pluginUrl)
 
-  const { mountRootParcel } = await import('single-spa')
   const uiFilesUrl = `${import.meta.env.BASE_URL}plugins/${registration.id}/`.replace('//', '/')
+  // containerId / autoMount / username / idpUserId (passed by PluginLoader for a
+  // routed mount) are intentionally omitted: a DOM-targeted parcel doesn't need
+  // them, and the jobs plugin only reads uiFilesUrl from its props (see jobs/src/main.ts).
   const parcel = mountRootParcel(lifecycles as Parameters<typeof mountRootParcel>[0], {
     domElement,
     name: registration.name,
