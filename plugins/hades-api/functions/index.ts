@@ -73,7 +73,8 @@ Deno.serve(async (req: Request) => {
       case "deleteEnv": {
         if (!isValidEnvName(r.name)) return json({ error: "BAD_REQUEST" }, 400);
         const dir = `${ENVS_BASE}/${r.name}`;
-        // Defense in depth: never remove anything outside ENVS_BASE.
+        // isValidEnvName already forbids "/" and "..", so `dir` cannot escape
+        // ENVS_BASE; this is a belt-and-suspenders check before an rm -rf.
         if (!dir.startsWith(`${ENVS_BASE}/`)) return json({ error: "BAD_REQUEST" }, 400);
         try {
           await Deno.remove(dir, { recursive: true });

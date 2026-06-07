@@ -23,6 +23,7 @@ Deno.test("normalizeJob maps hades_jobs row to HadesJob", () => {
 Deno.test("isValidEnvName accepts safe names and rejects traversal", () => {
   assertEquals(isValidEnvName("study1"), true);
   assertEquals(isValidEnvName("my-env_2.0"), true);
+  assertEquals(isValidEnvName("."), false);
   assertEquals(isValidEnvName(".."), false);
   assertEquals(isValidEnvName("a/b"), false);
   assertEquals(isValidEnvName("../etc"), false);
