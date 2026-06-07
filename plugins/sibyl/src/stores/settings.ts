@@ -10,7 +10,7 @@ const M_CREATE = `mutation($k:String!,$v:String!){ createAppSetting(input:{ appS
 
 /** Publish the WebAPI URL so plugins (notebook/strategus) can read it. */
 function publishWebApiUrl(url: string): void {
-  ;(window as unknown as { __sibylWebApiUrl?: string }).__sibylWebApiUrl = url
+  window.__sibylWebApiUrl = url
   window.dispatchEvent(new CustomEvent('sibyl:webapi-url-changed', { detail: url }))
 }
 

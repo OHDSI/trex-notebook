@@ -4,6 +4,7 @@ export class GraphqlClient {
   async request<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
     const resp = await fetch(this.endpoint, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables }),
     })

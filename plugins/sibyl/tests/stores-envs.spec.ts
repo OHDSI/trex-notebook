@@ -36,6 +36,16 @@ describe('envs store', () => {
     expect(store.envs).toEqual([{ envName: 'b', path: '/b' }])
   })
 
+  it('provision sets up then refetches and toggles the flag', async () => {
+    setupEnv.mockResolvedValue(undefined)
+    listEnvs.mockResolvedValue([{ envName: 'a', path: '/a' }])
+    const store = useEnvsStore()
+    await store.provision('a', '/locks/a.lock')
+    expect(setupEnv).toHaveBeenCalledWith('a', '/locks/a.lock')
+    expect(store.envs).toEqual([{ envName: 'a', path: '/a' }])
+    expect(store.provisioning).toBe(false)
+  })
+
   it('captures errors as a string', async () => {
     listEnvs.mockRejectedValue(new Error('boom'))
     const store = useEnvsStore()

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
 const request = vi.fn()
@@ -11,6 +11,7 @@ import { useSettingsStore, WEBAPI_SETTING_KEY } from '@/stores/settings'
 
 describe('settings store', () => {
   beforeEach(() => { setActivePinia(createPinia()); request.mockReset() })
+  afterEach(() => { vi.unstubAllGlobals() })
 
   it('load reads the webapi_url setting', async () => {
     request.mockResolvedValue({ appSettingByKey: { value: 'https://w/WebAPI' } })
@@ -35,6 +36,13 @@ describe('settings store', () => {
     const s = useSettingsStore()
     await s.save('https://new/WebAPI')
     expect(request.mock.calls[1][0]).toContain('createAppSetting')
+  })
+
+  it('save captures the error and rethrows', async () => {
+    request.mockRejectedValueOnce(new Error('nope'))
+    const s = useSettingsStore()
+    await expect(s.save('https://new/WebAPI')).rejects.toThrow('nope')
+    expect(s.error).toBe('nope')
   })
 
   it('testConnection pings {url}/info', async () => {
