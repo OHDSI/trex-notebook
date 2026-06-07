@@ -9,4 +9,6 @@ Deno.test("route matches jobs collection and item", () => {
   assertEquals(route("GET", "/envs"), { kind: "listEnvs" });
   assertEquals(route("POST", "/envs"), { kind: "setupEnv" });
   assertEquals(route("GET", "/nope"), { kind: "notFound" });
+  assertEquals(route("DELETE", "/envs/study1"), { kind: "deleteEnv", name: "study1" });
+  assertEquals(route("DELETE", "/envs/o%27brien"), { kind: "deleteEnv", name: "o'brien" });
 });
