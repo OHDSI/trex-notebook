@@ -155,7 +155,44 @@ RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
 # ---------------------------------------------------------------------------
 # Stage 3: bake the finished sibyl dist into the trex backend.
 # ---------------------------------------------------------------------------
-FROM ghcr.io/ohdsi/trexsql:latest@sha256:a57e5d3eadcb73b6f0b70cef28c0e42d2a0a7e0256310bb1eabc2a8ccd4375ae
+FROM ghcr.io/ohdsi/trexsql:latest@sha256:bdeea44d964b2eddf9346aacfc8090311a9cba1b2f1be5a59742445c9bd5cf64
+
+# --- R runtime for hades / Strategus ---------------------------------------
+# The trexsql base ships the hades DuckDB extension but NOT R, so hades_execute
+# fails with "Rscript not found. Install R or set R_HOME." Install R (Debian
+# trixie ships R 4.5.x, matching the HADES package library renv provisions into
+# the hades env) + the shared libs the OHDSI R stack links against at runtime.
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      r-base-core \
+      default-jre-headless \
+      r-cran-rjava \
+      curl \
+      libcurl4 libssl3 libxml2 libsodium23 libpng16-16 \
+ && R CMD javareconf \
+ # rJava's .so needs libjvm.so on the dynamic-linker path; register the JRE's
+ # server lib dir so DatabaseConnector (JDBC) can load at runtime.
+ && echo "$(dirname "$(find /usr/lib/jvm -name libjvm.so | head -1)")" > /etc/ld.so.conf.d/rjava-jvm.conf \
+ && ldconfig \
+ && rm -rf /var/lib/apt/lists/*
+
+# DatabaseConnector (JDBC) needs a driver jar; it reads DATABASECONNECTOR_JAR_FOLDER
+# as the default pathToDriver. Provide the PostgreSQL driver (hades connects to
+# trex's pgwire, which speaks the postgres protocol).
+ENV DATABASECONNECTOR_JAR_FOLDER=/usr/local/jdbc
+RUN mkdir -p /usr/local/jdbc \
+ && curl -fsSL -o /usr/local/jdbc/postgresql-42.7.4.jar \
+      https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
+
+# --- trex core-server patches (overlay the pinned base) --------------------
+# Raise the request-body limit (default ~100kb caps plugin POSTs such as the
+# hades-api /jobs Strategus-spec submission → 413) and stop forwarding the
+# client's stale content-length after the body is re-serialized (→ "user body
+# write aborted: early end"). Upstream fix belongs in OHDSI/trex core/server;
+# patch the baked copy here so a rebuilt image keeps it.
+RUN sed -i 's/router.use(express.json());/router.use(express.json({ limit: "50mb" }));/' /usr/src/core/server/routes/cli-login.ts \
+ && sed -i 's/if (lower === "accept-encoding") continue;/if (lower === "accept-encoding" || lower === "content-length" || lower === "transfer-encoding") continue;/' /usr/src/core/server/plugin/function.ts
+USER node
 
 # package.json carries the trex.ui.routes entry (path /sibyl, dir dist); trex
 # serves the dist under /plugins/sibyl. The dist also contains
