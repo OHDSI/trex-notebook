@@ -10,9 +10,8 @@ on:
     paths:
       - 'plugins/sibyl/**'
 
-# NOTE: the vitest unit suite (test:unit) is not run here — it has a pre-existing
-# jsdom/localStorage env failure in tests/trexAuth.spec.ts tracked separately.
-# type-check + build cover the shell's compilation; e2e (playwright) is separate.
+# The vitest unit suite (test:unit) now runs here — the prior jsdom/localStorage
+# env failure is fixed by a setup shim (tests/setup.ts). e2e (playwright) is separate.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,12 +20,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ohdsi'
       - name: Install
         working-directory: plugins/sibyl
         run: npm install
+        env:
+          # @ohdsi/atlas-ui is served from GitHub Packages, which requires auth
+          # even for reads; without a token npm install 401s.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Type-check
         working-directory: plugins/sibyl
         run: npm run type-check
+      - name: Unit test
+        working-directory: plugins/sibyl
+        run: npm run test:unit
       - name: Build
         working-directory: plugins/sibyl
         run: npm run build

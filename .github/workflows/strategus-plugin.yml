@@ -18,9 +18,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ohdsi'
       - name: Install
         working-directory: plugins/strategus
         run: npm install
+        env:
+          # @ohdsi/atlas-ui is served from GitHub Packages, which requires auth
+          # even for reads; without a token npm install 401s.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Unit test
         working-directory: plugins/strategus
         run: npx vitest run

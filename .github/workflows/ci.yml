@@ -53,90 +53,10 @@ jobs:
       - name: Check no banned raw Vuetify components
         run: node scripts/check-no-raw-vuetify.mjs
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@trex"
-
-      - name: Install dependencies
-        run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm test -- --run
-
-      - name: Update version
-        run: |
-          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' && -n "${{ github.event.inputs.tag }}" ]]; then
-            RELEASE_VERSION=${{ github.event.inputs.tag }}
-            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
-          else
-            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
-          fi
-
-      - name: Build
-        run: npm run build
-
-      - name: Verify build output
-        run: |
-          test -d dist || { echo "ERROR: dist/ not found"; exit 1; }
-          echo "Build output OK: dist/ ($(du -sh dist | cut -f1))"
-
-      - name: Patch private flag for publish
-        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
-
-      - name: Use Node.js - OSS Develop
-        uses: actions/setup-node@v4
-        if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
-        with:
-          node-version: "22"
-          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
-          scope: "@trex"
-
-      - name: Use Node.js - OSS Release
-        uses: actions/setup-node@v4
-        if: env.NPM_ARTIFACT_TYPE == 'OSS-release'
-        with:
-          node-version: "22"
-          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/"
-          scope: "@trex"
-
-      - name: Use Node.js - Project
-        uses: actions/setup-node@v4
-        if: env.NPM_ARTIFACT_TYPE == 'Project'
-        with:
-          node-version: "22"
-          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/ms/npm/registry/"
-          scope: "@trex"
-
-      - name: Publish
-        env:
-          SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
-        run: |
-          if [[ $SHOULD_PUBLISH == true ]]; then
-            npm publish
-          else
-            npm pack
-          fi
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: notebook-dist
-          path: dist/
-          retention-days: 14
+  # NOTE: the old root `build` job (npm ci + typecheck/lint/test + build + publish
+  # of the root @trex/notebook package) was removed. This repo is now a plugins
+  # monorepo with no root package.json/package-lock.json, so the root `npm ci`
+  # could never succeed. Each plugin is built and tested by its own workflow
+  # (sibyl.yml, strategus-plugin.yml, jobs-plugin.yml, network-plugin.yml,
+  # results-viewer.yml, notebook-plugin.yml, function-plugins.yml) and the Docker
+  # image (docker-image.yml) bakes the finished bundles.
