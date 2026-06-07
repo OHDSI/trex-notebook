@@ -23,12 +23,16 @@ export async function createSignup(event: APIGatewayProxyEventV2, deps: Deps): P
 
   const siteId = deps.newId();
   const claimToken = deps.newToken();
-  const item: Site & { claimTokenHash: string } = {
+  // NOTE: do NOT set cognitoClientId here. It is the HASH key of the byClientId
+  // GSI, and DynamoDB rejects an empty-string GSI key attribute ("The
+  // AttributeValue for a key attribute cannot contain an empty string value"),
+  // which surfaced as an opaque 500. A pending site has no Cognito client yet;
+  // cognitoClientId is set on activation (sites.ts), which adds it to the GSI.
+  const item: Omit<Site, 'cognitoClientId'> & { claimTokenHash: string } = {
     siteId,
     name: parsed.data.name,
     contact: parsed.data.contact,
     status: 'pending',
-    cognitoClientId: '',
     createdAt: deps.now(),
     createdBy: 'signup',
     claimTokenHash: hashToken(claimToken),
