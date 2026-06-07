@@ -98,13 +98,26 @@ Deno.serve(async (req: Request) => {
           outputPath: runDir, dbName, envName: b.envName, envBaseDir: ENVS_BASE,
         }));
         const result = JSON.parse(String(rows[0]?.result ?? "{}"));
+        // Surface hades_execute failures instead of returning a fake 200/jobId
+        // (e.g. "Rscript not found", spec/cdm errors) — otherwise the caller
+        // thinks the run started when it didn't.
+        if (result.status === "error") {
+          return json({ error: "HADES_EXECUTE_FAILED", detail: String(result.error ?? "hades_execute failed") }, 500);
+        }
         const jobId = result.job_id ?? runId;
         // hades mints its OWN job_id (execute.rs create_job), distinct from our
         // runId-named output dir. The Rscript is still writing to runDir by path,
         // so we must NOT rename it; instead symlink jobId -> runDir so the
         // metadata-api publish step (which only knows jobId) can find the output.
+        // Deno.symlink is blocklisted in the trex edge runtime and throws
+        // synchronously (so .catch doesn't help) — wrap it; the job is still
+        // addressable by jobId via hades_status, only output-dir linkage is lost.
         if (result.job_id && result.job_id !== runId) {
-          await Deno.symlink(runDir, `${OUTPUT_BASE}/${jobId}`).catch(() => {});
+          try {
+            await Deno.symlink(runDir, `${OUTPUT_BASE}/${jobId}`);
+          } catch (_e) {
+            // symlink unavailable — best effort
+          }
         }
         return json({ jobId });
       }
