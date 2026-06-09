@@ -91,6 +91,7 @@ interface StrategusStore {
   }>;
   activePanel: string;
   moduleRawSettings: Record<string, Record<string, unknown>>;
+  moduleRawProvenance: Record<string, Record<string, unknown>>;
 }
 
 function isCohortDefinitionSharedResources(sr: SharedResource): sr is Extract<SharedResource, { cohortDefinitions: unknown[] }> {
@@ -262,6 +263,17 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
     // Capture raw settings verbatim before any structured parsing
     store.moduleRawSettings[modSpec.module] =
       JSON.parse(JSON.stringify(modSpec.settings ?? {}));
+
+    // Capture module-level provenance (everything alongside `settings` except
+    // the module name, attr_class, and settings itself) so it survives round-trip.
+    const provenance: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(modSpec as unknown as Record<string, unknown>)) {
+      if (k === 'module' || k === 'settings' || k === 'attr_class') continue;
+      provenance[k] = JSON.parse(JSON.stringify(v));
+    }
+    if (Object.keys(provenance).length > 0) {
+      store.moduleRawProvenance[modSpec.module] = provenance;
+    }
 
     switch (modSpec.module) {
       case 'CohortDiagnosticsModule':
