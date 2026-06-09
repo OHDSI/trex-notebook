@@ -441,6 +441,15 @@ function parseCharacterizationSettings(
       if (typeof drEntry['dechallengeStopInterval'] === 'number') settings['dechallengeStopInterval'] = drEntry['dechallengeStopInterval'];
       if (typeof drEntry['dechallengeEvaluationWindow'] === 'number') settings['dechallengeEvaluationWindow'] = drEntry['dechallengeEvaluationWindow'];
     }
+
+    // Read aggregate-covariate numeric scalars from first entry (the editor re-derives
+    // the per-entry targetIds/outcomeIds & risk-windows, so only stable scalars are surfaced here)
+    if (Array.isArray(aggregateCovariateSettings) && aggregateCovariateSettings.length > 0) {
+      const aggEntry = aggregateCovariateSettings[0] as Record<string, unknown>;
+      if (typeof aggEntry['minPriorObservation'] === 'number') settings['minPriorObservation'] = aggEntry['minPriorObservation'];
+      if (typeof aggEntry['casePreTargetDuration'] === 'number') settings['casePreTargetDuration'] = aggEntry['casePreTargetDuration'];
+      if (typeof aggEntry['casePostOutcomeDuration'] === 'number') settings['casePostOutcomeDuration'] = aggEntry['casePostOutcomeDuration'];
+    }
   } else {
     // Legacy flat schema fallback
     const boolKeys = [

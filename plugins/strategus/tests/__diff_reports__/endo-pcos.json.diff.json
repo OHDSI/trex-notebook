@@ -2,259 +2,44 @@
   "summary": {
     "fixture": "endo-pcos.json",
     "numModules": 4,
-    "preservedCount": 123,
+    "preservedCount": 242,
     "modifiedCount": 6,
-    "droppedCount": 12,
-    "addedCount": 13,
-    "preservationRate": 0.8723404255319149,
-    "topGaps": [
-      "moduleSpecifications[1].version",
-      "moduleSpecifications[1].remoteRepo",
-      "moduleSpecifications[1].remoteUsername",
-      "moduleSpecifications[2].version",
-      "moduleSpecifications[2].remoteRepo",
-      "moduleSpecifications[2].remoteUsername",
-      "moduleSpecifications[2].settings.timeToEventSettings",
-      "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-      "moduleSpecifications[2].settings.aggregateCovariateSettings",
-      "moduleSpecifications[3].version",
-      "moduleSpecifications[3].remoteRepo",
-      "moduleSpecifications[3].remoteUsername"
-    ]
+    "droppedCount": 0,
+    "addedCount": 11,
+    "preservationRate": 0.9758064516129032,
+    "topGaps": []
   },
-  "droppedDetail": [
-    {
-      "path": "moduleSpecifications[1].version",
-      "orig": "0.2.0"
-    },
-    {
-      "path": "moduleSpecifications[1].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[1].remoteUsername",
-      "orig": "ohdsi"
-    },
-    {
-      "path": "moduleSpecifications[2].version",
-      "orig": "0.5.0"
-    },
-    {
-      "path": "moduleSpecifications[2].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[2].remoteUsername",
-      "orig": "ohdsi"
-    },
-    {
-      "path": "moduleSpecifications[2].settings.timeToEventSettings",
-      "orig": [
-        {
-          "targetIds": [
-            15426,
-            15421,
-            15445,
-            15426001,
-            15421001,
-            15445001
-          ],
-          "outcomeIds": [
-            15437,
-            14240
-          ],
-          "attr_class": "timeToEventSettings"
-        }
-      ]
-    },
-    {
-      "path": "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-      "orig": [
-        {
-          "targetCohortDefinitionIds": [
-            15426,
-            15421,
-            15445,
-            15426001,
-            15421001,
-            15445001
-          ],
-          "outcomeCohortDefinitionIds": [
-            15437,
-            14240
-          ],
-          "dechallengeStopInterval": 30,
-          "dechallengeEvaluationWindow": 30,
-          "attr_class": "dechallengeRechallengeSettings"
-        }
-      ]
-    },
-    {
-      "path": "moduleSpecifications[2].settings.aggregateCovariateSettings",
-      "orig": [
-        {
-          "targetIds": [
-            15426,
-            15421,
-            15445,
-            15426001,
-            15421001,
-            15445001
-          ],
-          "outcomeIds": [
-            15437,
-            14240
-          ],
-          "minPriorObservation": 365,
-          "riskWindowStart": -365,
-          "startAnchor": "cohort start",
-          "riskWindowEnd": -1,
-          "endAnchor": "cohort start",
-          "covariateSettings": {
-            "temporal": false,
-            "temporalSequence": false,
-            "DemographicsGender": true,
-            "DemographicsAgeGroup": true,
-            "DemographicsRace": true,
-            "DemographicsEthnicity": true,
-            "DemographicsIndexYear": true,
-            "DemographicsIndexMonth": true,
-            "ConditionGroupEraLongTerm": true,
-            "ConditionGroupEraShortTerm": true,
-            "DrugGroupEraLongTerm": true,
-            "DrugGroupEraShortTerm": true,
-            "DrugGroupEraOverlapping": true,
-            "ProcedureOccurrenceLongTerm": true,
-            "ProcedureOccurrenceShortTerm": true,
-            "DeviceExposureLongTerm": true,
-            "DeviceExposureShortTerm": true,
-            "MeasurementLongTerm": true,
-            "MeasurementShortTerm": true,
-            "MeasurementRangeGroupLongTerm": true,
-            "ObservationLongTerm": true,
-            "ObservationShortTerm": true,
-            "CharlsonIndex": true,
-            "Dcsi": true,
-            "Chads2": true,
-            "Chads2Vasc": true,
-            "includedCovariateConceptIds": [],
-            "includedCovariateIds": [],
-            "addDescendantsToInclude": false,
-            "excludedCovariateConceptIds": [],
-            "addDescendantsToExclude": false,
-            "shortTermStartDays": -30,
-            "mediumTermStartDays": -180,
-            "endDays": 0,
-            "longTermStartDays": -365,
-            "attr_class": "covariateSettings",
-            "attr_fun": "getDbDefaultCovariateData"
-          },
-          "attr_class": "aggregateCovariateSettings"
-        },
-        {
-          "targetIds": [
-            15426,
-            15421,
-            15445,
-            15426001,
-            15421001,
-            15445001
-          ],
-          "outcomeIds": [
-            15437,
-            14240
-          ],
-          "minPriorObservation": 365,
-          "riskWindowStart": 1,
-          "startAnchor": "cohort start",
-          "riskWindowEnd": 365,
-          "endAnchor": "cohort start",
-          "covariateSettings": {
-            "temporal": false,
-            "temporalSequence": false,
-            "DemographicsGender": true,
-            "DemographicsAgeGroup": true,
-            "DemographicsRace": true,
-            "DemographicsEthnicity": true,
-            "DemographicsIndexYear": true,
-            "DemographicsIndexMonth": true,
-            "ConditionGroupEraLongTerm": true,
-            "ConditionGroupEraShortTerm": true,
-            "DrugGroupEraLongTerm": true,
-            "DrugGroupEraShortTerm": true,
-            "DrugGroupEraOverlapping": true,
-            "ProcedureOccurrenceLongTerm": true,
-            "ProcedureOccurrenceShortTerm": true,
-            "DeviceExposureLongTerm": true,
-            "DeviceExposureShortTerm": true,
-            "MeasurementLongTerm": true,
-            "MeasurementShortTerm": true,
-            "MeasurementRangeGroupLongTerm": true,
-            "ObservationLongTerm": true,
-            "ObservationShortTerm": true,
-            "CharlsonIndex": true,
-            "Dcsi": true,
-            "Chads2": true,
-            "Chads2Vasc": true,
-            "includedCovariateConceptIds": [],
-            "includedCovariateIds": [],
-            "addDescendantsToInclude": false,
-            "excludedCovariateConceptIds": [],
-            "addDescendantsToExclude": false,
-            "shortTermStartDays": -30,
-            "mediumTermStartDays": -180,
-            "endDays": 0,
-            "longTermStartDays": -365,
-            "attr_class": "covariateSettings",
-            "attr_fun": "getDbDefaultCovariateData"
-          },
-          "attr_class": "aggregateCovariateSettings"
-        }
-      ]
-    },
-    {
-      "path": "moduleSpecifications[3].version",
-      "orig": "0.4.0"
-    },
-    {
-      "path": "moduleSpecifications[3].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[3].remoteUsername",
-      "orig": "ohdsi"
-    }
-  ],
+  "droppedDetail": [],
   "modifiedDetail": [
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].id",
       "orig": 15426001,
-      "rs": 15437
+      "rs": 15426
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].name",
       "orig": "[CU Study-a-Thon] women at risk 2013-2022, aged 15-49, with 365d prior observation -  first ever occurence with at least 365 days prior observation and 1 days follow up observation, females aged 15 - 49, occurs after 2013-01-01 and before 2022-12-31",
-      "rs": "All Visits"
+      "rs": "[CU Study-a-Thon] women at risk 2013-2022, aged 15-49, with 365d prior observation"
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].id",
       "orig": 15421001,
-      "rs": 14240
+      "rs": 15421
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].name",
       "orig": "[DBMI] Endometriosis surgery + 2 codes + female 15-49 -  first ever occurence with at least 365 days prior observation and 1 days follow up observation, females aged 15 - 49, occurs after 2013-01-01 and before 2022-12-31",
-      "rs": "Inpatient or ER Visits"
+      "rs": "[DBMI] Endometriosis surgery + 2 codes + female 15-49"
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2].id",
       "orig": 15445001,
-      "rs": 15426
+      "rs": 15445
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2].name",
       "orig": "[DBMI] Endometriosis indexed on diagnosis -  first ever occurence with at least 365 days prior observation and 1 days follow up observation, females aged 15 - 49, occurs after 2013-01-01 and before 2022-12-31",
-      "rs": "[CU Study-a-Thon] women at risk 2013-2022, aged 15-49, with 365d prior observation"
+      "rs": "[DBMI] Endometriosis indexed on diagnosis"
     }
   ],
   "addedDetail": [
@@ -264,8 +49,6 @@
         "aggregateCovariateSettings": [
           {
             "targetIds": [
-              15437,
-              14240,
               15426,
               15421,
               15445
@@ -325,8 +108,6 @@
           },
           {
             "targetIds": [
-              15437,
-              14240,
               15426,
               15421,
               15445
@@ -389,8 +170,6 @@
           },
           {
             "targetIds": [
-              15437,
-              14240,
               15426,
               15421,
               15445
@@ -455,8 +234,6 @@
         "timeToEventSettings": [
           {
             "targetIds": [
-              15437,
-              14240,
               15426,
               15421,
               15445
@@ -474,8 +251,6 @@
         "dechallengeRechallengeSettings": [
           {
             "targetCohortDefinitionIds": [
-              15437,
-              14240,
               15426,
               15421,
               15445
@@ -515,32 +290,16 @@
       "rs": "characterization_cohorts"
     },
     {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[3]",
-      "rs": {
-        "id": 15421,
-        "name": "[DBMI] Endometriosis surgery + 2 codes + female 15-49",
-        "cohortId": 15421
-      }
-    },
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[4]",
-      "rs": {
-        "id": 15445,
-        "name": "[DBMI] Endometriosis indexed on diagnosis",
-        "cohortId": 15445
-      }
-    },
-    {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].cohortId",
-      "rs": 15437
+      "rs": 15426
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].cohortId",
-      "rs": 14240
+      "rs": 15421
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2].cohortId",
-      "rs": 15426
+      "rs": 15445
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.timeAtRiskDefs[0].label",

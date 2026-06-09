@@ -170,6 +170,49 @@ describe('SpecDeserializer', () => {
     expect(store.characterizationSettings.dechallengeEvaluationWindow).toBe(60);
   });
 
+  // 5b. reads aggregate-covariate scalars (minPriorObservation, case durations) from nested analysis
+  it('reads aggregateCovariateSettings scalars from nested analysis', () => {
+    const store = useStrategusStore();
+    const spec = {
+      sharedResources: [],
+      moduleSpecifications: [
+        {
+          module: 'CharacterizationModule',
+          settings: {
+            analysis: {
+              aggregateCovariateSettings: [
+                {
+                  targetIds: [1],
+                  outcomeIds: [],
+                  minPriorObservation: 730,
+                  casePreTargetDuration: 180,
+                  casePostOutcomeDuration: 90,
+                  attr_class: 'aggregateCovariateSettings',
+                },
+              ],
+              dechallengeRechallengeSettings: [
+                {
+                  targetCohortDefinitionIds: [1],
+                  outcomeCohortDefinitionIds: [10],
+                  dechallengeStopInterval: 30,
+                  dechallengeEvaluationWindow: 30,
+                  attr_class: 'dechallengeRechallengeSettings',
+                },
+              ],
+            },
+            minCharacterizationMean: 0.01,
+          },
+        },
+      ],
+    } as unknown as Parameters<typeof deserializeSpec>[0];
+
+    deserializeSpec(spec, store);
+
+    expect(store.characterizationSettings.minPriorObservation).toBe(730);
+    expect(store.characterizationSettings.casePreTargetDuration).toBe(180);
+    expect(store.characterizationSettings.casePostOutcomeDuration).toBe(90);
+  });
+
   // 6. sets activePanel to 'overview' after import
   it("sets activePanel to 'overview' after import", () => {
     const store = useStrategusStore();
