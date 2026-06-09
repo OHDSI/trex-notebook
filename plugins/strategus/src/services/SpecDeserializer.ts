@@ -289,6 +289,31 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
     }
   }
 
+  // Step 6: Infer cohort roles from the derived design. The Strategus spec does
+  // not label cohorts by role, so they all default to 'Target' (set above). Now
+  // that outcomes and comparisons (TCIs) are parsed, assign Outcome / Comparator
+  // / Indication from how each cohort is actually used. Without this, every
+  // imported study has only Target-role cohorts, so the design validation
+  // spuriously flags "add a cohort with Outcome role" / "add a TCI" on studies
+  // that already define them.
+  const outcomeIds = new Set<number>(store.outcomes.map((o) => o.cohortId));
+  const comparatorIds = new Set<number>();
+  const indicationIds = new Set<number>();
+  const targetIds = new Set<number>();
+  for (const tci of store.comparisons) {
+    targetIds.add(tci.targetId);
+    comparatorIds.add(tci.comparatorId);
+    if (tci.indicationId != null) indicationIds.add(tci.indicationId);
+  }
+  store.cohorts = store.cohorts.map((c) => {
+    let role = c.role;
+    if (outcomeIds.has(c.cohortId)) role = 'Outcome';
+    else if (comparatorIds.has(c.cohortId)) role = 'Comparator';
+    else if (indicationIds.has(c.cohortId)) role = 'Indication';
+    else if (targetIds.has(c.cohortId)) role = 'Target';
+    return { ...c, role };
+  });
+
   // Step 7: Set active panel to overview
   store.activePanel = 'overview';
 }

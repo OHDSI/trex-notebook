@@ -41,9 +41,11 @@ export function useValidation() {
     if (store.outcomes.length === 0) {
       return { status: 'warning', message: 'Add at least 1 outcome' };
     }
-    const invalid = store.outcomes.filter((o) => o.cleanWindow <= 0);
+    // cleanWindow = 0 is valid (no clean window — outcomes may recur immediately,
+    // a common OHDSI CohortIncidence setting). Only a negative value is invalid.
+    const invalid = store.outcomes.filter((o) => o.cleanWindow < 0);
     if (invalid.length > 0) {
-      return { status: 'error', message: `${invalid.length} outcome(s) have cleanWindow ≤ 0` };
+      return { status: 'error', message: `${invalid.length} outcome(s) have cleanWindow < 0` };
     }
     return { status: 'valid', message: `${store.outcomes.length} outcome(s) defined` };
   });
