@@ -934,20 +934,18 @@ function parseSccsSettings(
     });
     sccs.useEmpiricalCalibration = hasNcEntries;
 
-    // Extract outcomes from exposuresOutcomeList entries that are NOT NCs (trueEffectSize !== 1)
-    if (store.outcomes.length === 0) {
-      const seen = new Set<number>();
-      const ooi: Array<{ cohortId: number; cleanWindow: number }> = [];
-      for (const eo of exposuresOutcomeList) {
-        const exposures = eo['exposures'] as Array<Record<string, unknown>> | undefined;
-        const isNc = Array.isArray(exposures) && exposures.some((exp) => exp['trueEffectSize'] === 1);
-        if (isNc) continue;
-        const id = eo['outcomeId'];
-        if (typeof id !== 'number' || seen.has(id)) continue;
-        seen.add(id);
-        ooi.push({ cohortId: id, cleanWindow: 9999 });
-      }
-      if (ooi.length > 0) store.outcomes = ooi;
+    // Extract outcomes from exposuresOutcomeList entries that are NOT NCs
+    // (trueEffectSize !== 1) so SCCS-only studies don't falsely appear to have
+    // "no outcome". Dedup by cohortId and only add ids not already present.
+    const seen = new Set<number>(store.outcomes.map((o) => o.cohortId));
+    for (const eo of exposuresOutcomeList) {
+      const exposures = eo['exposures'] as Array<Record<string, unknown>> | undefined;
+      const isNc = Array.isArray(exposures) && exposures.some((exp) => exp['trueEffectSize'] === 1);
+      if (isNc) continue;
+      const id = eo['outcomeId'];
+      if (typeof id !== 'number' || seen.has(id)) continue;
+      seen.add(id);
+      store.outcomes.push({ cohortId: id, cleanWindow: 9999 });
     }
   }
 }
@@ -961,9 +959,29 @@ function parsePlpSettings(
 
   if (typeof s['skipDiagnostics'] === 'boolean') plp.skipDiagnostics = s['skipDiagnostics'];
 
-  const modelDesignList = s['modelDesignList'] as Array<Record<string, unknown>> | undefined;
+  // PLP settings come in two shapes across fixtures: a wrapper object with a
+  // `modelDesignList` array, or a bare array of model designs (no wrapper).
+  const modelDesignList = (
+    Array.isArray(modSpec.settings)
+      ? (modSpec.settings as Array<Record<string, unknown>>)
+      : (s['modelDesignList'] as Array<Record<string, unknown>> | undefined)
+  );
   if (!Array.isArray(modelDesignList) || modelDesignList.length === 0) return;
   const design = modelDesignList[0];
+
+  // Derive outcomes from PLP model designs so PLP-only studies don't falsely
+  // appear to have "no outcome". Each design's outcomeId is an Outcome-role
+  // cohort (targetId stays Target via the default). Dedup by cohortId and only
+  // add ids not already present (e.g. from CohortIncidence/CohortMethod).
+  {
+    const seen = new Set<number>(store.outcomes.map((o) => o.cohortId));
+    for (const md of modelDesignList) {
+      const outcomeId = md['outcomeId'];
+      if (typeof outcomeId !== 'number' || seen.has(outcomeId)) continue;
+      seen.add(outcomeId);
+      store.outcomes.push({ cohortId: outcomeId, cleanWindow: 9999 });
+    }
+  }
 
   const modelSettings = design['modelSettings'] as Record<string, unknown> | undefined;
   if (modelSettings) {
@@ -1061,7 +1079,11 @@ function parsePlpSettings(
   if (executeSettings) {
     if (typeof executeSettings['runCalibration'] === 'boolean') plp.runCalibration = executeSettings['runCalibration'];
     if (typeof executeSettings['calibrationBins'] === 'number') plp.calibrationBins = executeSettings['calibrationBins'];
-    if (typeof executeSettings['runFeatureEngineering'] === 'boolean') plp.runFeatureEngineering = executeSettings['runFeatureEngineering'];
+    // Real OHDSI specs carry the upstream R typo key `runfeatureEngineering`
+    // (lowercase f); some fixtures use the correct `runFeatureEngineering`.
+    // Accept either casing so the imported value is reflected.
+    const rfe = executeSettings['runFeatureEngineering'] ?? executeSettings['runfeatureEngineering'];
+    if (typeof rfe === 'boolean') plp.runFeatureEngineering = rfe;
     if (typeof executeSettings['runSampleData'] === 'boolean') plp.runSampleData = executeSettings['runSampleData'];
     if (typeof executeSettings['runPreprocessData'] === 'boolean') plp.runPreprocessData = executeSettings['runPreprocessData'];
     if (typeof executeSettings['runModelDevelopment'] === 'boolean') plp.runModelDevelopment = executeSettings['runModelDevelopment'];

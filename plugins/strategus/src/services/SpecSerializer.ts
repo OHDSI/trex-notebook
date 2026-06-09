@@ -1206,10 +1206,36 @@ function buildSccsModule(store: StrategusStoreSnapshot): ModuleSpecification {
   };
 }
 
+// Real OHDSI specs carry the upstream R typo key `runfeatureEngineering`
+// (lowercase f) in PLP executeSettings; some fixtures use the correct
+// `runFeatureEngineering`. The raw module settings are overlaid onto the built
+// settings on serialize, so if the built design emits the OTHER casing both keys
+// would end up in the output and conflict. Detect which key the raw module used
+// (across both PLP shapes — wrapper object vs bare array of designs) and emit
+// under that same key so they never coexist.
+function rawPlpUsesTypoFeatureEngineeringKey(store: StrategusStoreSnapshot): boolean {
+  const raw = store.moduleRawSettings['PatientLevelPredictionModule'];
+  if (!raw) return false;
+  const designs = Array.isArray(raw)
+    ? (raw as unknown as Array<Record<string, unknown>>)
+    : ((raw as Record<string, unknown>)['modelDesignList'] as Array<Record<string, unknown>> | undefined);
+  if (!Array.isArray(designs)) return false;
+  for (const d of designs) {
+    if (!isPlainObject(d)) continue;
+    const es = d['executeSettings'];
+    if (!isPlainObject(es)) continue;
+    // Prefer the correct casing if present; otherwise honour the typo key.
+    if ('runFeatureEngineering' in es) return false;
+    if ('runfeatureEngineering' in es) return true;
+  }
+  return false;
+}
+
 function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
   const plp = store.plpSettings;
   const targets = store.cohortsByRole('Target');
   const plpTars = store.plpTimeAtRiskOverride;
+  const useTypoFeKey = rawPlpUsesTypoFeatureEngineeringKey(store);
   const modelDesignList = [];
   for (const target of targets) {
     for (const outcome of store.outcomes) {
@@ -1270,7 +1296,9 @@ function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
           executeSettings: {
             runSplitData: true,
             runSampleData: plp.runSampleData,
-            runFeatureEngineering: plp.runFeatureEngineering,
+            // Emit under the same casing the raw module used so the two casings
+            // never coexist (see rawPlpUsesTypoFeatureEngineeringKey).
+            [useTypoFeKey ? 'runfeatureEngineering' : 'runFeatureEngineering']: plp.runFeatureEngineering,
             runPreprocessData: plp.runPreprocessData,
             runModelDevelopment: plp.runModelDevelopment,
             runCovariateSummary: plp.runCovariateSummary,
