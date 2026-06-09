@@ -33,8 +33,13 @@ const ALL_FEATURE_FLAGS = [
   'MeasurementLongTerm',
   'MeasurementShortTerm',
   'MeasurementRangeGroupLongTerm',
+  'MeasurementRangeGroupShortTerm',
+  'MeasurementValueAsConceptLongTerm',
+  'MeasurementValueAsConceptShortTerm',
   'ObservationLongTerm',
   'ObservationShortTerm',
+  'ObservationValueAsConceptLongTerm',
+  'ObservationValueAsConceptShortTerm',
   'CharlsonIndex',
   'Dcsi',
   'Chads2',
@@ -69,12 +74,21 @@ export function createDefaultCovariateSettings(opts?: CovariateDefaultsOptions |
     endDays = opts.endDays ?? 0;
   }
 
-  // Build feature flags: defaults are all true, override with provided values
+  // Build feature flags: defaults are all true, override with provided values.
+  // Also emit any override-only feature keys not in the canonical list so that
+  // value-as-concept / range-group groups round-trip through the serializer.
   const featureFlags: Record<string, boolean> = {};
   for (const flag of ALL_FEATURE_FLAGS) {
     featureFlags[flag] = featureOverrides !== undefined && flag in featureOverrides
       ? featureOverrides[flag]
       : true;
+  }
+  if (featureOverrides) {
+    for (const flag of Object.keys(featureOverrides)) {
+      if (!(flag in featureFlags)) {
+        featureFlags[flag] = featureOverrides[flag];
+      }
+    }
   }
 
   return {

@@ -353,7 +353,7 @@
             v-for="flag in group.flags"
             :key="flag"
             v-model="store.cohortMethodSettings.covariateFeatures[flag]"
-            :label="flag"
+            :label="featureLabel(flag)"
             class="mr-2"
           />
         </div>
@@ -414,11 +414,18 @@ const covFeatureGroups = [
   },
   {
     label: 'Measurements',
-    flags: ['MeasurementLongTerm', 'MeasurementShortTerm', 'MeasurementRangeGroupLongTerm'],
+    flags: [
+      'MeasurementLongTerm', 'MeasurementShortTerm',
+      'MeasurementRangeGroupLongTerm', 'MeasurementRangeGroupShortTerm',
+      'MeasurementValueAsConceptLongTerm', 'MeasurementValueAsConceptShortTerm',
+    ],
   },
   {
     label: 'Observations',
-    flags: ['ObservationLongTerm', 'ObservationShortTerm'],
+    flags: [
+      'ObservationLongTerm', 'ObservationShortTerm',
+      'ObservationValueAsConceptLongTerm', 'ObservationValueAsConceptShortTerm',
+    ],
   },
   {
     label: 'Indices',
@@ -429,6 +436,21 @@ const covFeatureGroups = [
     flags: ['VisitCountLongTerm', 'VisitCountShortTerm', 'VisitConceptCountLongTerm', 'VisitConceptCountShortTerm'],
   },
 ];
+
+// Readable labels for the value-as-concept / range-group covariate groups.
+// Flags not listed here fall back to their raw key (existing behavior).
+const featureLabels: Record<string, string> = {
+  MeasurementRangeGroupLongTerm: 'Measurement range group (long term)',
+  MeasurementRangeGroupShortTerm: 'Measurement range group (short term)',
+  MeasurementValueAsConceptLongTerm: 'Measurement value as concept (long term)',
+  MeasurementValueAsConceptShortTerm: 'Measurement value as concept (short term)',
+  ObservationValueAsConceptLongTerm: 'Observation value as concept (long term)',
+  ObservationValueAsConceptShortTerm: 'Observation value as concept (short term)',
+};
+
+function featureLabel(flag: string): string {
+  return featureLabels[flag] ?? flag;
+}
 
 const psMethodItems = [
   { title: 'PS Matching', value: 'matching' },

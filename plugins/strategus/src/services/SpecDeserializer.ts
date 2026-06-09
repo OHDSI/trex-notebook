@@ -785,10 +785,19 @@ function parseCohortMethodSettings(
   if (getDbArgs) {
     const covSettings = getDbArgs['covariateSettings'] as Record<string, boolean & unknown> | undefined;
     if (covSettings && typeof covSettings === 'object') {
-      // Feature flags are boolean keys in the covariateSettings object
-      const featureKeys = Object.keys(cms.covariateFeatures);
-      for (const flag of featureKeys) {
-        if (flag in covSettings && typeof covSettings[flag] === 'boolean') {
+      // Feature flags are boolean keys in the covariateSettings object. Copy
+      // every boolean key (including value-as-concept / range-group groups that
+      // are not in the default feature set) EXCEPT the reserved config booleans,
+      // which control covariate-data extraction rather than a feature group.
+      const RESERVED_BOOLEAN_KEYS = new Set([
+        'temporal',
+        'temporalSequence',
+        'addDescendantsToInclude',
+        'addDescendantsToExclude',
+      ]);
+      for (const flag of Object.keys(covSettings)) {
+        if (RESERVED_BOOLEAN_KEYS.has(flag)) continue;
+        if (typeof covSettings[flag] === 'boolean') {
           cms.covariateFeatures[flag] = covSettings[flag] as boolean;
         }
       }
