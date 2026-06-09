@@ -124,6 +124,12 @@ export function createDefaultCohortMethodAnalysis(analysisId = 1): CohortMethodA
     iptwTruncationFraction: 0.99,
     outcomeModelType: 'cox',
     useCleanWindowForPriorOutcomeLookback: false,
+    riskWindowStart: 0,
+    startAnchor: 'cohort start',
+    riskWindowEnd: 0,
+    endAnchor: 'cohort end',
+    minDaysAtRisk: 1,
+    priorOutcomeLookback: 99999,
   };
 }
 

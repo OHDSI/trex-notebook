@@ -241,7 +241,55 @@
           v-model="editingAnalysis.useCleanWindowForPriorOutcomeLookback"
           label="Prior outcome lookback"
           :items="[{ title: 'All time prior (recommended)', value: false }, { title: 'Use clean window', value: true }]"
+          class="mb-4"
         />
+
+        <!-- Study population window -->
+        <div class="text-subtitle-2 mb-2">
+          Study population window
+        </div>
+        <div class="d-flex ga-3 mb-3">
+          <AtlasTextField
+            v-model.number="editingAnalysis.riskWindowStart"
+            label="Risk window start"
+            type="number"
+            style="max-width: 160px"
+          />
+          <AtlasSelect
+            v-model="editingAnalysis.startAnchor"
+            :items="anchorItems"
+            label="Start anchor"
+            style="max-width: 200px"
+          />
+        </div>
+        <div class="d-flex ga-3 mb-3">
+          <AtlasTextField
+            v-model.number="editingAnalysis.riskWindowEnd"
+            label="Risk window end"
+            type="number"
+            style="max-width: 160px"
+          />
+          <AtlasSelect
+            v-model="editingAnalysis.endAnchor"
+            :items="anchorItems"
+            label="End anchor"
+            style="max-width: 200px"
+          />
+        </div>
+        <div class="d-flex ga-3">
+          <AtlasTextField
+            v-model.number="editingAnalysis.minDaysAtRisk"
+            label="Min days at risk"
+            type="number"
+            style="max-width: 160px"
+          />
+          <AtlasTextField
+            v-model.number="editingAnalysis.priorOutcomeLookback"
+            label="Prior outcome lookback (days)"
+            type="number"
+            style="max-width: 220px"
+          />
+        </div>
       </template>
       <template #actions>
         <AtlasButton
@@ -394,6 +442,11 @@ const modelTypeItems = [
   { title: 'Cox proportional hazards (time-to-event)', value: 'cox' },
   { title: 'Logistic regression', value: 'logistic' },
   { title: 'Poisson regression', value: 'poisson' },
+];
+
+const anchorItems = [
+  { title: 'Cohort start', value: 'cohort start' },
+  { title: 'Cohort end', value: 'cohort end' },
 ];
 
 function psMethodLabel(method: CohortMethodAnalysis['psAdjustmentMethod']): string {

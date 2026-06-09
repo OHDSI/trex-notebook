@@ -76,6 +76,12 @@ interface StrategusStoreSnapshot {
       iptwTruncationFraction: number;
       outcomeModelType: 'cox' | 'logistic' | 'poisson';
       useCleanWindowForPriorOutcomeLookback: boolean;
+      riskWindowStart: number;
+      startAnchor: 'cohort start' | 'cohort end';
+      riskWindowEnd: number;
+      endAnchor: 'cohort start' | 'cohort end';
+      minDaysAtRisk: number;
+      priorOutcomeLookback: number;
     }>;
     maxCohortSizeForFitting: number;
     maxCovBalanceCohortSize: number;
@@ -894,9 +900,13 @@ function buildCohortMethodModule(store: StrategusStoreSnapshot): ModuleSpecifica
           washoutPeriod: 0,
           removeDuplicateSubjects: 'keep all',
           removeSubjectsWithPriorOutcome: true,
-          priorOutcomeLookback: 99999,
-          minDaysAtRisk: 1,
+          priorOutcomeLookback: analysis.priorOutcomeLookback,
+          minDaysAtRisk: analysis.minDaysAtRisk,
           maxDaysAtRisk: 99999,
+          riskWindowStart: analysis.riskWindowStart,
+          startAnchor: analysis.startAnchor,
+          riskWindowEnd: analysis.riskWindowEnd,
+          endAnchor: analysis.endAnchor,
           censorAtNewRiskWindow: false,
           attr_fun: 'createStudyPopulation',
         },

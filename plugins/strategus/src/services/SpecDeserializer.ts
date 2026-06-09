@@ -754,6 +754,12 @@ function parseCohortMethodSettings(
       const entryDbArgs = entry['getDbCohortMethodDataArgs'] as Record<string, unknown> | undefined;
       const useCleanWindow = entryDbArgs ? (typeof entryDbArgs['useCleanWindowForPriorOutcomeLookback'] === 'boolean' ? entryDbArgs['useCleanWindowForPriorOutcomeLookback'] : false) : false;
 
+      // Read per-analysis study-population window from createStudyPopArgs
+      const studyPopArgs = entry['createStudyPopArgs'] as Record<string, unknown> | undefined;
+      const num = (v: unknown, d: number) => (typeof v === 'number' ? v : d);
+      const anchor = (v: unknown, d: 'cohort start' | 'cohort end') =>
+        v === 'cohort start' || v === 'cohort end' ? v : d;
+
       seen.set(key, {
         analysisId: nextAnalysisId++,
         description: desc,
@@ -763,6 +769,12 @@ function parseCohortMethodSettings(
         iptwTruncationFraction: psInfo.iptwTruncationFraction,
         outcomeModelType: modelType,
         useCleanWindowForPriorOutcomeLookback: useCleanWindow,
+        riskWindowStart: num(studyPopArgs?.['riskWindowStart'], 0),
+        startAnchor: anchor(studyPopArgs?.['startAnchor'], 'cohort start'),
+        riskWindowEnd: num(studyPopArgs?.['riskWindowEnd'], 0),
+        endAnchor: anchor(studyPopArgs?.['endAnchor'], 'cohort end'),
+        minDaysAtRisk: num(studyPopArgs?.['minDaysAtRisk'], 1),
+        priorOutcomeLookback: num(studyPopArgs?.['priorOutcomeLookback'], 99999),
       });
     }
   }
