@@ -142,6 +142,12 @@ interface StrategusStoreSnapshot {
     splitType: 'time' | 'subject' | 'stratified';
     runCalibration: boolean;
     calibrationBins: number;
+    runFeatureEngineering: boolean;
+    runSampleData: boolean;
+    runPreprocessData: boolean;
+    runModelDevelopment: boolean;
+    runCovariateSummary: boolean;
+    skipDiagnostics: boolean;
   };
   plpValidationSettings: {
     validationDesigns: Array<{
@@ -1263,11 +1269,11 @@ function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
           featureEngineeringSettings,
           executeSettings: {
             runSplitData: true,
-            runSampleData: false,
-            runfeatureEngineering: false,
-            runPreprocessData: true,
-            runModelDevelopment: true,
-            runCovariateSummary: true,
+            runSampleData: plp.runSampleData,
+            runFeatureEngineering: plp.runFeatureEngineering,
+            runPreprocessData: plp.runPreprocessData,
+            runModelDevelopment: plp.runModelDevelopment,
+            runCovariateSummary: plp.runCovariateSummary,
             runCalibration: plp.runCalibration,
             calibrationBins: plp.calibrationBins,
           },
@@ -1277,7 +1283,7 @@ function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
   }
   return {
     module: 'PatientLevelPredictionModule',
-    settings: { modelDesignList },
+    settings: { modelDesignList, skipDiagnostics: plp.skipDiagnostics },
     attr_class: ['PatientLevelPredictionModuleSpecifications', 'ModuleSpecifications'],
   };
 }

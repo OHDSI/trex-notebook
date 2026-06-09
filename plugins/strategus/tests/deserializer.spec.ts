@@ -352,6 +352,48 @@ describe('SpecDeserializer', () => {
     expect(store.plpSettings.useDemographicsGender).toBe(false);
   });
 
+  // 13b. round-trip PLP executeSettings booleans + skipDiagnostics (Task B3)
+  it('reads PLP executeSettings flags and skipDiagnostics from a spec', () => {
+    const store = useStrategusStore();
+    const spec: AnalysisSpecification = {
+      attr_class: 'AnalysisSpecifications',
+      sharedResources: [
+        { cohortDefinitions: [], attr_class: ['CohortDefinitionSharedResources', 'SharedResources'] },
+      ],
+      moduleSpecifications: [
+        {
+          module: 'PatientLevelPredictionModule',
+          settings: {
+            skipDiagnostics: true,
+            modelDesignList: [
+              {
+                modelSettings: { modelName: 'lassoLogisticRegression' },
+                executeSettings: {
+                  runFeatureEngineering: true,
+                  runSampleData: true,
+                  runPreprocessData: false,
+                  runModelDevelopment: false,
+                  runCovariateSummary: false,
+                },
+                attr_class: 'modelDesign',
+              },
+            ],
+          },
+          attr_class: ['PatientLevelPredictionModuleSpecifications', 'ModuleSpecifications'],
+        },
+      ],
+    };
+
+    deserializeSpec(spec, store);
+
+    expect(store.plpSettings.runFeatureEngineering).toBe(true);
+    expect(store.plpSettings.runSampleData).toBe(true);
+    expect(store.plpSettings.runPreprocessData).toBe(false);
+    expect(store.plpSettings.runModelDevelopment).toBe(false);
+    expect(store.plpSettings.runCovariateSummary).toBe(false);
+    expect(store.plpSettings.skipDiagnostics).toBe(true);
+  });
+
   // 14. round-trip TreatmentPatterns (cohortRoles)
   it('round-trips TreatmentPatterns cohortRoles and numeric settings', () => {
     const store = useStrategusStore();

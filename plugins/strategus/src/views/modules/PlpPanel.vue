@@ -238,6 +238,37 @@
                 :disabled="!store.plpSettings.runCalibration"
               />
             </div>
+
+            <div class="text-subtitle-2 text-medium-emphasis mt-4 mb-2">
+              Execution
+            </div>
+
+            <div class="d-flex flex-wrap ga-6">
+              <AtlasCheckbox
+                v-model="store.plpSettings.runFeatureEngineering"
+                label="Run feature engineering"
+              />
+              <AtlasCheckbox
+                v-model="store.plpSettings.runSampleData"
+                label="Run sample data"
+              />
+              <AtlasCheckbox
+                v-model="store.plpSettings.runPreprocessData"
+                label="Run preprocess data"
+              />
+              <AtlasCheckbox
+                v-model="store.plpSettings.runModelDevelopment"
+                label="Run model development"
+              />
+              <AtlasCheckbox
+                v-model="store.plpSettings.runCovariateSummary"
+                label="Run covariate summary"
+              />
+              <AtlasCheckbox
+                v-model="store.plpSettings.skipDiagnostics"
+                label="Skip diagnostics"
+              />
+            </div>
           </div>
         </AtlasCard>
       </AdvancedSection>

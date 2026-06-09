@@ -1081,6 +1081,37 @@ describe('SpecSerializer', () => {
     expect(executeSettings['calibrationBins']).toBe(15);
   });
 
+  // Task B3: executeSettings flags + skipDiagnostics serialize from store
+  it('PLP: serializes executeSettings flags and skipDiagnostics from store', () => {
+    const store = useStrategusStore();
+    store.cohorts = [{ cohortId: 1, cohortName: 'Target', role: 'Target', subjectCount: null, cohortDefinition: '' }];
+    store.outcomes = [{ cohortId: 10, cleanWindow: 30 }];
+    store.plpSettings.runFeatureEngineering = true;
+    store.plpSettings.runSampleData = true;
+    store.plpSettings.runPreprocessData = false;
+    store.plpSettings.runModelDevelopment = false;
+    store.plpSettings.runCovariateSummary = false;
+    store.plpSettings.skipDiagnostics = true;
+    store.enabledModules.PLP = true;
+    store.enabledModules.CohortDiagnostics = false;
+    store.enabledModules.Characterization = false;
+    store.enabledModules.CohortIncidence = false;
+    store.enabledModules.CohortMethod = false;
+    store.enabledModules.SCCS = false;
+
+    const spec = serializeSpec(store);
+    const mod = spec.moduleSpecifications.find((m) => m.module === 'PatientLevelPredictionModule');
+    const settings = mod!.settings as Record<string, unknown>;
+    expect(settings['skipDiagnostics']).toBe(true);
+    const modelDesignList = settings['modelDesignList'] as Array<Record<string, unknown>>;
+    const executeSettings = modelDesignList[0]['executeSettings'] as Record<string, unknown>;
+    expect(executeSettings['runFeatureEngineering']).toBe(true);
+    expect(executeSettings['runSampleData']).toBe(true);
+    expect(executeSettings['runPreprocessData']).toBe(false);
+    expect(executeSettings['runModelDevelopment']).toBe(false);
+    expect(executeSettings['runCovariateSummary']).toBe(false);
+  });
+
   // Task 8: User-defined subset definition produces correct subsetDefs entry
   it('user-defined subset definition produces subsetDefs entry with correct format', () => {
     const store = useStrategusStore();

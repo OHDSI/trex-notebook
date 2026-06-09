@@ -950,6 +950,8 @@ function parsePlpSettings(
   const s = modSpec.settings as Record<string, unknown>;
   const plp = store.plpSettings;
 
+  if (typeof s['skipDiagnostics'] === 'boolean') plp.skipDiagnostics = s['skipDiagnostics'];
+
   const modelDesignList = s['modelDesignList'] as Array<Record<string, unknown>> | undefined;
   if (!Array.isArray(modelDesignList) || modelDesignList.length === 0) return;
   const design = modelDesignList[0];
@@ -1050,6 +1052,11 @@ function parsePlpSettings(
   if (executeSettings) {
     if (typeof executeSettings['runCalibration'] === 'boolean') plp.runCalibration = executeSettings['runCalibration'];
     if (typeof executeSettings['calibrationBins'] === 'number') plp.calibrationBins = executeSettings['calibrationBins'];
+    if (typeof executeSettings['runFeatureEngineering'] === 'boolean') plp.runFeatureEngineering = executeSettings['runFeatureEngineering'];
+    if (typeof executeSettings['runSampleData'] === 'boolean') plp.runSampleData = executeSettings['runSampleData'];
+    if (typeof executeSettings['runPreprocessData'] === 'boolean') plp.runPreprocessData = executeSettings['runPreprocessData'];
+    if (typeof executeSettings['runModelDevelopment'] === 'boolean') plp.runModelDevelopment = executeSettings['runModelDevelopment'];
+    if (typeof executeSettings['runCovariateSummary'] === 'boolean') plp.runCovariateSummary = executeSettings['runCovariateSummary'];
   }
 }
 

@@ -134,6 +134,12 @@ export interface PlpSettings {
   splitType: 'time' | 'subject' | 'stratified';
   runCalibration: boolean;
   calibrationBins: number;
+  runFeatureEngineering: boolean;
+  runSampleData: boolean;
+  runPreprocessData: boolean;
+  runModelDevelopment: boolean;
+  runCovariateSummary: boolean;
+  skipDiagnostics: boolean;
 }
 
 export interface PlpValidationDesign {

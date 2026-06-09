@@ -267,6 +267,12 @@ export function createDefaultPlp(): PlpSettings {
     splitType: 'subject',
     runCalibration: true,
     calibrationBins: 10,
+    runFeatureEngineering: false,
+    runSampleData: false,
+    runPreprocessData: true,
+    runModelDevelopment: true,
+    runCovariateSummary: true,
+    skipDiagnostics: false,
   };
 }
 
