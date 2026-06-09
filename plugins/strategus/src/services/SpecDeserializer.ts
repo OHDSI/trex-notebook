@@ -90,6 +90,7 @@ interface StrategusStore {
     subsetIds: number[];
   }>;
   activePanel: string;
+  moduleRawSettings: Record<string, Record<string, unknown>>;
 }
 
 function isCohortDefinitionSharedResources(sr: SharedResource): sr is Extract<SharedResource, { cohortDefinitions: unknown[] }> {
@@ -258,6 +259,10 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
 
   // Step 5: Parse module-specific settings
   for (const modSpec of spec.moduleSpecifications) {
+    // Capture raw settings verbatim before any structured parsing
+    store.moduleRawSettings[modSpec.module] =
+      JSON.parse(JSON.stringify(modSpec.settings ?? {}));
+
     switch (modSpec.module) {
       case 'CohortDiagnosticsModule':
         parseCohortDiagnosticsSettings(modSpec, store);
