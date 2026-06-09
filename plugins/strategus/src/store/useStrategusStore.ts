@@ -171,6 +171,7 @@ export const useStrategusStore = defineStore('strategus', () => {
   const plpValidationSettings = ref<PlpValidationSettings>(createDefaultPlpValidation());
   const treatmentPatternsSettings = ref<TreatmentPatternsSettings>(createDefaultTreatmentPatterns());
   const evidenceSynthesisSettings = ref<EvidenceSynthesisSettings>(createDefaultEvidenceSynthesis());
+  const moduleRawSettings = ref<Record<string, Record<string, unknown>>>({});
 
   // ── Computed ──────────────────────────────────────────────────────────────
   const cohortsByRole = computed(() => (role: CohortRole) =>
@@ -230,6 +231,7 @@ export const useStrategusStore = defineStore('strategus', () => {
     plpValidationSettings.value = createDefaultPlpValidation();
     treatmentPatternsSettings.value = createDefaultTreatmentPatterns();
     evidenceSynthesisSettings.value = createDefaultEvidenceSynthesis();
+    moduleRawSettings.value = {};
   }
 
   return {
@@ -263,6 +265,7 @@ export const useStrategusStore = defineStore('strategus', () => {
     plpValidationSettings,
     treatmentPatternsSettings,
     evidenceSynthesisSettings,
+    moduleRawSettings,
     // Computed
     cohortsByRole,
     // Methods
@@ -307,6 +310,7 @@ export const useStrategusStore = defineStore('strategus', () => {
       plpValidationSettings: plpValidationSettings.value,
       treatmentPatternsSettings: treatmentPatternsSettings.value,
       evidenceSynthesisSettings: evidenceSynthesisSettings.value,
+      moduleRawSettings: moduleRawSettings.value,
     }));
   }
 
