@@ -699,49 +699,51 @@ ui <- tagList(
     }
   "))),
   tags$script(HTML("
-    if (window.top && window.top !== window) {
-      window.top.postMessage({type: 'SHINYLIVE_READY'}, '*');
-    }
+    // This inline script runs at HTML parse time, BEFORE Shiny's JS API exists.
+    // So we must NOT touch Shiny.* here: at parse time `typeof Shiny` is
+    // undefined, which previously meant (a) Shiny.setInputValue threw and
+    // (b) the APP_READY handler was never registered, so the host overlay never
+    // cleared. Instead we buffer incoming data and defer all Shiny work until
+    // shiny:connected (with a poll fallback), then flush + signal readiness.
     var __resultFiles = {};
     var __resultDb = '';
+    var __pending = null;
+    function __rvFlush() {
+      if (typeof Shiny === 'undefined' || typeof Shiny.setInputValue !== 'function' || !__pending) return;
+      if (__pending.k === 'db') Shiny.setInputValue('result_db', __pending.v, {priority: 'event'});
+      else Shiny.setInputValue('result_files', __pending.v, {priority: 'event'});
+      __pending = null;
+    }
+    function __rvAck() { if (window.top !== window) window.top.postMessage({type: 'DATA_RECEIVED'}, '*'); }
     window.addEventListener('message', function(event) {
       var d = event.data;
       if (!d) return;
       if (d.type === 'RESULT_DB_BEGIN') { __resultDb = ''; return; }
       if (d.type === 'RESULT_DB_CHUNK') { __resultDb += d.content; return; }
-      if (d.type === 'RESULT_DB_END') {
-        Shiny.setInputValue('result_db', __resultDb, {priority: 'event'});
-        if (window.top !== window) window.top.postMessage({type: 'DATA_RECEIVED'}, '*');
-        return;
-      }
-      if (d.type === 'RESULT_FILES') {
-        Shiny.setInputValue('result_files', d.files, {priority: 'event'});
-        if (window.top !== window) window.top.postMessage({type: 'DATA_RECEIVED'}, '*');
-        return;
-      }
-      if (d.type === 'RESULT_FILES_BEGIN') {
-        __resultFiles = {};
-        return;
-      }
-      if (d.type === 'RESULT_FILES_CHUNK') {
-        __resultFiles[d.name] = d.content;
-        return;
-      }
-      if (d.type === 'RESULT_FILES_END') {
-        Shiny.setInputValue('result_files', __resultFiles, {priority: 'event'});
-        if (window.top !== window) window.top.postMessage({type: 'DATA_RECEIVED'}, '*');
-        return;
-      }
+      if (d.type === 'RESULT_DB_END') { __pending = {k: 'db', v: __resultDb}; __rvFlush(); __rvAck(); return; }
+      if (d.type === 'RESULT_FILES') { __pending = {k: 'files', v: d.files}; __rvFlush(); __rvAck(); return; }
+      if (d.type === 'RESULT_FILES_BEGIN') { __resultFiles = {}; return; }
+      if (d.type === 'RESULT_FILES_CHUNK') { __resultFiles[d.name] = d.content; return; }
+      if (d.type === 'RESULT_FILES_END') { __pending = {k: 'files', v: __resultFiles}; __rvFlush(); __rvAck(); return; }
     });
-    // Relay R's APP_READY custom message to the parent Vue host so it can
-    // hide its loading overlay once tables are in DuckDB.
-    if (typeof Shiny !== 'undefined') {
-      Shiny.addCustomMessageHandler('APP_READY', function(payload) {
-        if (window.top && window.top !== window) {
-          window.top.postMessage({type: 'APP_READY', tables: payload && payload.tables}, '*');
-        }
-      });
+    function __rvReady() {
+      if (window.__rvReadyDone) return; window.__rvReadyDone = true;
+      try {
+        Shiny.addCustomMessageHandler('APP_READY', function(payload) {
+          if (window.top && window.top !== window) {
+            window.top.postMessage({type: 'APP_READY', tables: payload && payload.tables}, '*');
+          }
+        });
+      } catch (e) {}
+      __rvFlush();
+      if (window.top && window.top !== window) window.top.postMessage({type: 'SHINYLIVE_READY'}, '*');
     }
+    document.addEventListener('shiny:connected', __rvReady);
+    var __rvTries = 0;
+    var __rvPoll = setInterval(function() {
+      if (typeof Shiny !== 'undefined' && typeof Shiny.setInputValue === 'function') { clearInterval(__rvPoll); __rvReady(); }
+      else if (++__rvTries > 1200) { clearInterval(__rvPoll); }
+    }, 500);
   "))
 )
 

@@ -170,6 +170,49 @@ describe('SpecDeserializer', () => {
     expect(store.characterizationSettings.dechallengeEvaluationWindow).toBe(60);
   });
 
+  // 5b. reads aggregate-covariate scalars (minPriorObservation, case durations) from nested analysis
+  it('reads aggregateCovariateSettings scalars from nested analysis', () => {
+    const store = useStrategusStore();
+    const spec = {
+      sharedResources: [],
+      moduleSpecifications: [
+        {
+          module: 'CharacterizationModule',
+          settings: {
+            analysis: {
+              aggregateCovariateSettings: [
+                {
+                  targetIds: [1],
+                  outcomeIds: [],
+                  minPriorObservation: 730,
+                  casePreTargetDuration: 180,
+                  casePostOutcomeDuration: 90,
+                  attr_class: 'aggregateCovariateSettings',
+                },
+              ],
+              dechallengeRechallengeSettings: [
+                {
+                  targetCohortDefinitionIds: [1],
+                  outcomeCohortDefinitionIds: [10],
+                  dechallengeStopInterval: 30,
+                  dechallengeEvaluationWindow: 30,
+                  attr_class: 'dechallengeRechallengeSettings',
+                },
+              ],
+            },
+            minCharacterizationMean: 0.01,
+          },
+        },
+      ],
+    } as unknown as Parameters<typeof deserializeSpec>[0];
+
+    deserializeSpec(spec, store);
+
+    expect(store.characterizationSettings.minPriorObservation).toBe(730);
+    expect(store.characterizationSettings.casePreTargetDuration).toBe(180);
+    expect(store.characterizationSettings.casePostOutcomeDuration).toBe(90);
+  });
+
   // 6. sets activePanel to 'overview' after import
   it("sets activePanel to 'overview' after import", () => {
     const store = useStrategusStore();
@@ -350,6 +393,48 @@ describe('SpecDeserializer', () => {
     expect(store.plpSettings.testFraction).toBe(0.3);
     expect(store.plpSettings.nfold).toBe(5);
     expect(store.plpSettings.useDemographicsGender).toBe(false);
+  });
+
+  // 13b. round-trip PLP executeSettings booleans + skipDiagnostics (Task B3)
+  it('reads PLP executeSettings flags and skipDiagnostics from a spec', () => {
+    const store = useStrategusStore();
+    const spec: AnalysisSpecification = {
+      attr_class: 'AnalysisSpecifications',
+      sharedResources: [
+        { cohortDefinitions: [], attr_class: ['CohortDefinitionSharedResources', 'SharedResources'] },
+      ],
+      moduleSpecifications: [
+        {
+          module: 'PatientLevelPredictionModule',
+          settings: {
+            skipDiagnostics: true,
+            modelDesignList: [
+              {
+                modelSettings: { modelName: 'lassoLogisticRegression' },
+                executeSettings: {
+                  runFeatureEngineering: true,
+                  runSampleData: true,
+                  runPreprocessData: false,
+                  runModelDevelopment: false,
+                  runCovariateSummary: false,
+                },
+                attr_class: 'modelDesign',
+              },
+            ],
+          },
+          attr_class: ['PatientLevelPredictionModuleSpecifications', 'ModuleSpecifications'],
+        },
+      ],
+    };
+
+    deserializeSpec(spec, store);
+
+    expect(store.plpSettings.runFeatureEngineering).toBe(true);
+    expect(store.plpSettings.runSampleData).toBe(true);
+    expect(store.plpSettings.runPreprocessData).toBe(false);
+    expect(store.plpSettings.runModelDevelopment).toBe(false);
+    expect(store.plpSettings.runCovariateSummary).toBe(false);
+    expect(store.plpSettings.skipDiagnostics).toBe(true);
   });
 
   // 14. round-trip TreatmentPatterns (cohortRoles)

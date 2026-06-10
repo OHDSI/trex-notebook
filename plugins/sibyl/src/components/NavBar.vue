@@ -53,6 +53,28 @@
           data-test="nav-settings"
           @click="ui.toggleSettings()"
         />
+        <AtlasMenu v-if="auth.user">
+          <template #activator="{ props }">
+            <AtlasButton
+              variant="ghost"
+              v-bind="props"
+              icon="mdi-menu-down"
+              icon-position="end"
+              data-test="nav-user-menu"
+            >
+              <AtlasIcon left>mdi-account-circle</AtlasIcon>
+              {{ userDisplayName }}
+            </AtlasButton>
+          </template>
+          <AtlasList>
+            <AtlasListItem data-test="nav-logout" @click="handleLogout">
+              <template #prepend>
+                <AtlasIcon>mdi-logout</AtlasIcon>
+              </template>
+              <v-list-item-title>Sign out</v-list-item-title>
+            </AtlasListItem>
+          </AtlasList>
+        </AtlasMenu>
       </div>
     </div>
   </header>
@@ -60,19 +82,32 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   generatePluginMenuItems,
   filterTextNavItems,
   type PluginMenuItem,
 } from '@/plugins/navigation/PluginMenuIntegration'
 import { useUiStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 import { pluginRegistry } from '@/plugins/core/PluginRegistry'
 import ohdsiLogo from '@/assets/ohdsi-logo.png'
-import { AtlasIconButton } from '@ohdsi/atlas-ui'
+import { AtlasIconButton, AtlasButton, AtlasIcon, AtlasList, AtlasListItem, AtlasMenu } from '@ohdsi/atlas-ui'
 
 const route = useRoute()
+const router = useRouter()
 const ui = useUiStore()
+const auth = useAuthStore()
+
+// Prefer the profile name, fall back to email (mirrors trexAuth's username rule).
+const userDisplayName = computed(
+  () => auth.user?.user_metadata?.name || auth.user?.email || 'Account',
+)
+
+function handleLogout(): void {
+  auth.logout()
+  void router.push({ name: 'login' })
+}
 
 const menuItems = ref<PluginMenuItem[]>(filterTextNavItems(generatePluginMenuItems()))
 

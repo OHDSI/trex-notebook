@@ -1,50 +1,25 @@
 {
-  "totalRate": 0.8750269013130886,
+  "totalRate": 0.9343335337319889,
   "summaries": [
     {
       "fixture": "anti-vegf-kidney.json",
       "numModules": 7,
-      "preservedCount": 1377,
-      "modifiedCount": 348,
-      "droppedCount": 41,
-      "addedCount": 367,
-      "preservationRate": 0.7797281993204983,
-      "topGaps": [
-        "moduleSpecifications[1].version",
-        "moduleSpecifications[1].remoteRepo",
-        "moduleSpecifications[1].remoteUsername",
-        "moduleSpecifications[2].version",
-        "moduleSpecifications[2].remoteRepo",
-        "moduleSpecifications[2].remoteUsername",
-        "moduleSpecifications[2].settings.timeToEventSettings",
-        "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-        "moduleSpecifications[2].settings.aggregateCovariateSettings",
-        "moduleSpecifications[3].version",
-        "moduleSpecifications[3].remoteRepo",
-        "moduleSpecifications[3].remoteUsername",
-        "moduleSpecifications[4].version",
-        "moduleSpecifications[4].remoteRepo",
-        "moduleSpecifications[4].remoteUsername",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label"
-      ]
+      "preservedCount": 1550,
+      "modifiedCount": 341,
+      "droppedCount": 0,
+      "addedCount": 372,
+      "preservationRate": 0.819672131147541,
+      "topGaps": []
     },
     {
       "fixture": "breast-cancer-screen.json",
       "numModules": 2,
-      "preservedCount": 7,
+      "preservedCount": 10,
       "modifiedCount": 1,
-      "droppedCount": 3,
-      "addedCount": 1,
-      "preservationRate": 0.6363636363636364,
-      "topGaps": [
-        "moduleSpecifications[1].version",
-        "moduleSpecifications[1].remoteRepo",
-        "moduleSpecifications[1].remoteUsername"
-      ]
+      "droppedCount": 0,
+      "addedCount": 4,
+      "preservationRate": 0.9090909090909091,
+      "topGaps": []
     },
     {
       "fixture": "dr-screening.json",
@@ -59,96 +34,42 @@
     {
       "fixture": "endo-pcos.json",
       "numModules": 4,
-      "preservedCount": 123,
+      "preservedCount": 242,
       "modifiedCount": 6,
-      "droppedCount": 12,
-      "addedCount": 13,
-      "preservationRate": 0.8723404255319149,
-      "topGaps": [
-        "moduleSpecifications[1].version",
-        "moduleSpecifications[1].remoteRepo",
-        "moduleSpecifications[1].remoteUsername",
-        "moduleSpecifications[2].version",
-        "moduleSpecifications[2].remoteRepo",
-        "moduleSpecifications[2].remoteUsername",
-        "moduleSpecifications[2].settings.timeToEventSettings",
-        "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-        "moduleSpecifications[2].settings.aggregateCovariateSettings",
-        "moduleSpecifications[3].version",
-        "moduleSpecifications[3].remoteRepo",
-        "moduleSpecifications[3].remoteUsername"
-      ]
+      "droppedCount": 0,
+      "addedCount": 11,
+      "preservationRate": 0.9758064516129032,
+      "topGaps": []
     },
     {
       "fixture": "glp1-dili.json",
       "numModules": 4,
-      "preservedCount": 1557,
-      "modifiedCount": 148,
-      "droppedCount": 15,
-      "addedCount": 157,
-      "preservationRate": 0.9052325581395348,
-      "topGaps": [
-        "moduleSpecifications[1].settings.analysis.aggregateCovariateSettings",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementRangeGroupShortTerm",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptLongTerm",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptShortTerm",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptLongTerm",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptShortTerm",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.analysisId",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.covariateIds",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_row.names",
-        "moduleSpecifications[3].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_spec"
-      ]
+      "preservedCount": 1742,
+      "modifiedCount": 151,
+      "droppedCount": 0,
+      "addedCount": 151,
+      "preservationRate": 0.9202324352879028,
+      "topGaps": []
     },
     {
       "fixture": "howoften.json",
       "numModules": 2,
-      "preservedCount": 70,
-      "modifiedCount": 12,
-      "droppedCount": 3,
-      "addedCount": 11,
-      "preservationRate": 0.8235294117647058,
-      "topGaps": [
-        "moduleSpecifications[1].version",
-        "moduleSpecifications[1].remoteRepo",
-        "moduleSpecifications[1].remoteUsername"
-      ]
+      "preservedCount": 76,
+      "modifiedCount": 9,
+      "droppedCount": 0,
+      "addedCount": 10,
+      "preservationRate": 0.8941176470588236,
+      "topGaps": []
     },
     {
       "fixture": "mtx-sample.json",
       "numModules": 7,
-      "preservedCount": 848,
-      "modifiedCount": 217,
-      "droppedCount": 120,
-      "addedCount": 89,
-      "preservationRate": 0.7156118143459915,
-      "topGaps": [
-        "moduleSpecifications[2].settings.analysis.aggregateCovariateSettings",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementRangeGroupShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.analysisId",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.covariateIds",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_row.names",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_spec",
-        "moduleSpecifications[5].settings.sccsAnalysisList[0].createStudyPopulationArgs.minAge",
-        "moduleSpecifications[5].settings.sccsDiagnosticThresholds.timeTrendPThreshold",
-        "moduleSpecifications[5].settings.sccsDiagnosticThresholds.preExposurePThreshold",
-        "moduleSpecifications[6].settings.modelDesignList[1].modelSettings.param.1",
-        "moduleSpecifications[6].settings.modelDesignList[1].modelSettings.param.2"
-      ]
+      "preservedCount": 3956,
+      "modifiedCount": 207,
+      "droppedCount": 0,
+      "addedCount": 68,
+      "preservationRate": 0.9502762430939227,
+      "topGaps": []
     },
     {
       "fixture": "semaglutide-naion-cd.json",
@@ -183,116 +104,42 @@
     {
       "fixture": "strategus-template-full.json",
       "numModules": 7,
-      "preservedCount": 1065,
-      "modifiedCount": 13,
-      "droppedCount": 10,
-      "addedCount": 28,
-      "preservationRate": 0.9788602941176471,
-      "topGaps": [
-        "moduleSpecifications[2].settings.analysis.targetBaselineSettings",
-        "moduleSpecifications[2].settings.analysis.riskFactorSettings",
-        "moduleSpecifications[2].settings.analysis.caseSeriesSettings",
-        "moduleSpecifications[3].settings.irDesign.studyWindow",
-        "moduleSpecifications[4].settings.cmAnalysesSpecifications",
-        "moduleSpecifications[5].settings.sccsAnalysesSpecifications",
-        "moduleSpecifications[6].settings.modelDesignList[0].modelSettings.settings",
-        "moduleSpecifications[6].settings.modelDesignList[0].hyperparameterSettings",
-        "moduleSpecifications[6].settings.modelDesignList[0].executeSettings.runFeatureEngineering",
-        "moduleSpecifications[6].settings.skipDiagnostics"
-      ]
+      "preservedCount": 31396,
+      "modifiedCount": 12,
+      "droppedCount": 0,
+      "addedCount": 21,
+      "preservationRate": 0.9996179317371371,
+      "topGaps": []
     },
     {
       "fixture": "testing-nc-legend.json",
       "numModules": 5,
-      "preservedCount": 1440,
-      "modifiedCount": 91,
-      "droppedCount": 26,
-      "addedCount": 111,
-      "preservationRate": 0.9248554913294798,
-      "topGaps": [
-        "moduleSpecifications[1].version",
-        "moduleSpecifications[1].remoteRepo",
-        "moduleSpecifications[1].remoteUsername",
-        "moduleSpecifications[2].version",
-        "moduleSpecifications[2].remoteRepo",
-        "moduleSpecifications[2].remoteUsername",
-        "moduleSpecifications[2].settings.timeToEventSettings",
-        "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-        "moduleSpecifications[2].settings.aggregateCovariateSettings",
-        "moduleSpecifications[3].version",
-        "moduleSpecifications[3].remoteRepo",
-        "moduleSpecifications[3].remoteUsername",
-        "moduleSpecifications[4].version",
-        "moduleSpecifications[4].remoteRepo",
-        "moduleSpecifications[4].remoteUsername",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label"
-      ]
+      "preservedCount": 1566,
+      "modifiedCount": 88,
+      "droppedCount": 0,
+      "addedCount": 112,
+      "preservationRate": 0.9467956469165659,
+      "topGaps": []
     },
     {
       "fixture": "tutorial-demo-2024.json",
       "numModules": 6,
-      "preservedCount": 812,
-      "modifiedCount": 189,
-      "droppedCount": 27,
-      "addedCount": 61,
-      "preservationRate": 0.7898832684824902,
-      "topGaps": [
-        "moduleSpecifications[2].settings.generateStats",
-        "moduleSpecifications[3].settings.irDesign.targetDefs[4]",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementRangeGroupShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].getDbCohortMethodDataArgs.covariateSettings.MeasurementRangeGroupShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[4].settings.cmAnalysisList[1].createStudyPopArgs.endAnchor"
-      ]
+      "preservedCount": 884,
+      "modifiedCount": 184,
+      "droppedCount": 0,
+      "addedCount": 60,
+      "preservationRate": 0.8277153558052435,
+      "topGaps": []
     },
     {
       "fixture": "tutorial-strategus-study.json",
       "numModules": 7,
-      "preservedCount": 2083,
-      "modifiedCount": 425,
-      "droppedCount": 20,
-      "addedCount": 307,
-      "preservationRate": 0.8239715189873418,
-      "topGaps": [
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementRangeGroupShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptLongTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptShortTerm",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.analysisId",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.covariateIds",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_row.names",
-        "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_spec",
-        "moduleSpecifications[5].settings.analysesToExclude.exposureId",
-        "moduleSpecifications[5].settings.analysesToExclude.analysisId",
-        "moduleSpecifications[5].settings.analysesToExclude.attr_out.attrs",
-        "moduleSpecifications[5].settings.analysesToExclude.attr_row.names",
-        "moduleSpecifications[5].settings.sccsDiagnosticThresholds.timeTrendPThreshold",
-        "moduleSpecifications[5].settings.sccsDiagnosticThresholds.preExposurePThreshold"
-      ]
+      "preservedCount": 2157,
+      "modifiedCount": 419,
+      "droppedCount": 0,
+      "addedCount": 285,
+      "preservationRate": 0.8373447204968945,
+      "topGaps": []
     }
   ],
   "topGaps": [
@@ -330,71 +177,27 @@
     },
     {
       "key": "MOD CohortIncidenceModule:moduleSpecifications[*].settings.irDesign.targetDefs[*].name",
-      "count": 22,
+      "count": 10,
       "sample": {
         "from": "[SOS Phenotype Devt] aflibercept exposures after new use with 3 exposures in 21-70d windows -  in cohorts: (1782480) starts within D: -99999 - D: 0 of cohort start and ends D: -99999 - D: 99999 of cohort start, first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females aged 18+",
-        "to": "[SOS] End-stage renal disease"
+        "to": "[SOS Phenotype Devt] aflibercept exposures after new use with 3 exposures in 21-70d windows"
       }
     },
     {
-      "key": "MOD CohortIncidenceModule:moduleSpecifications[*].settings.irDesign.targetDefs[*].id",
-      "count": 18,
-      "sample": {
-        "from": 1782483001,
-        "to": 1782164
-      }
-    },
-    {
-      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].targetId",
-      "count": 9,
-      "sample": {
-        "from": 1001,
-        "to": 1
-      }
-    },
-    {
-      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].populationSettings.minTimeAtRisk",
-      "count": 9,
-      "sample": {
-        "from": 364,
-        "to": 363
-      }
-    },
-    {
-      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].splitSettings.seed",
-      "count": 9,
-      "sample": {
-        "from": 123,
-        "to": 1234
-      }
-    },
-    {
-      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].modelSettings.param.attr_settings.seed",
+      "key": "MOD CharacterizationModule:moduleSpecifications[*].settings.analysis.timeToEventSettings[*].targetIds[*]",
       "count": 8,
       "sample": {
-        "from": 82617313,
-        "to": 1
+        "from": 19019,
+        "to": 19018001
       }
     },
     {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].createStudyPopArgs.riskWindowStart",
-      "count": 7,
-      "sample": 1
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].createStudyPopArgs.startAnchor",
-      "count": 7,
-      "sample": "cohort start"
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].createStudyPopArgs.riskWindowEnd",
-      "count": 7,
-      "sample": 0
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].createStudyPopArgs.endAnchor",
-      "count": 7,
-      "sample": "cohort end"
+      "key": "MOD CharacterizationModule:moduleSpecifications[*].settings.analysis.dechallengeRechallengeSettings[*].targetCohortDefinitionIds[*]",
+      "count": 8,
+      "sample": {
+        "from": 19019,
+        "to": 19018001
+      }
     },
     {
       "key": "MOD CohortIncidenceModule:moduleSpecifications[*].settings.irDesign.analysisList[*].tars",
@@ -415,84 +218,27 @@
       }
     },
     {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].computeCovariateBalanceArgs.covariateFilter.label",
-      "count": 6,
-      "sample": [
-        "Age group",
-        "Gender: female",
-        "Race",
-        "Ethnicity",
-        "Medical history: General",
-        "Medical history: Cardiovascular disease",
-        "Medical history: Neoplasms",
-        "Medication use",
-        "Charlson comorbidity index",
-        "CHADS2Vasc",
-        "DCSI"
-      ]
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].computeCovariateBalanceArgs.covariateFilter.analysisId",
-      "count": 6,
-      "sample": [
-        3,
-        1,
-        4,
-        5,
-        210,
-        210,
-        210,
-        410,
-        901,
-        904,
-        902
-      ]
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].computeCovariateBalanceArgs.covariateFilter.covariateIds",
-      "count": 6,
-      "sample": [
-        null,
-        "8532001",
-        null,
-        null,
-        "4006969210,438409210,4212540210,255573210,201606210,4182210210,440383210,201820210,318800210,192671210,439727210,432867210,316866210,4104000210,433736210,80180210,255848210,140168210,4030518210,80809210,435783210,4279309210,81893210,81902210,197494210,4134440210",
-        "313217210,381591210,317576210,321588210,316139210,4185932210,321052210,440417210,444247210",
-        "4044013210,432571210,40481902210,443392210,4112853210,4180790210,443388210,197508210,200962210",
-        "21601782410,21602796410,21604686410,21604389410,21603932410,21601387410,21602028410,21600960410,21601664410,21601744410,21601461410,21600046410,21603248410,21600712410,21603890410,21601853410,21604254410,21604489410,21604752410",
-        "1901",
-        "1904",
-        "1902"
-      ]
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].computeCovariateBalanceArgs.covariateFilter.attr_row.names",
-      "count": 6,
-      "sample": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ]
-    },
-    {
-      "key": "CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].computeCovariateBalanceArgs.covariateFilter.attr_spec",
-      "count": 6,
+      "key": "MOD CohortIncidenceModule:moduleSpecifications[*].settings.irDesign.targetDefs[*].id",
+      "count": 7,
       "sample": {
-        "cols": {
-          "label": [],
-          "analysisId": [],
-          "covariateIds": []
-        },
-        "default": [],
-        "delim": ","
+        "from": 15426001,
+        "to": 15426
+      }
+    },
+    {
+      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].populationSettings.minTimeAtRisk",
+      "count": 7,
+      "sample": {
+        "from": 364,
+        "to": 363
+      }
+    },
+    {
+      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].splitSettings.seed",
+      "count": 7,
+      "sample": {
+        "from": 123,
+        "to": 1234
       }
     },
     {
@@ -538,6 +284,22 @@
       }
     },
     {
+      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].targetId",
+      "count": 6,
+      "sample": {
+        "from": 1001,
+        "to": 1
+      }
+    },
+    {
+      "key": "MOD PatientLevelPredictionModule:moduleSpecifications[*].settings.modelDesignList[*].modelSettings.param.attr_settings.seed",
+      "count": 6,
+      "sample": {
+        "from": 82617313,
+        "to": 1
+      }
+    },
+    {
       "key": "MOD CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].createStudyPopArgs.restrictToCommonPeriod",
       "count": 5,
       "sample": {
@@ -567,6 +329,66 @@
       "sample": {
         "from": false,
         "to": true
+      }
+    },
+    {
+      "key": "MOD CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].fitOutcomeModelArgs.control.cvRepetitions",
+      "count": 4,
+      "sample": {
+        "from": 10,
+        "to": 1
+      }
+    },
+    {
+      "key": "MOD CohortMethodModule:moduleSpecifications[*].settings.cmDiagnosticThresholds.mdrrThreshold",
+      "count": 4,
+      "sample": {
+        "from": "Inf",
+        "to": 10
+      }
+    },
+    {
+      "key": "MOD CohortMethodModule:moduleSpecifications[*].settings.cmDiagnosticThresholds.generalizabilitySdmThreshold",
+      "count": 4,
+      "sample": {
+        "from": 1,
+        "to": 999
+      }
+    },
+    {
+      "key": "MOD CohortMethodModule:moduleSpecifications[*].settings.cmAnalysisList[*].getDbCohortMethodDataArgs.removeDuplicateSubjects",
+      "count": 3,
+      "sample": {
+        "from": false,
+        "to": "keep all"
+      }
+    },
+    {
+      "key": "MOD CharacterizationModule:moduleSpecifications[*].settings.analysis.timeToEventSettings[*].outcomeIds",
+      "count": 3,
+      "sample": {
+        "from": 16968,
+        "to": [
+          16968
+        ]
+      }
+    },
+    {
+      "key": "MOD CharacterizationModule:moduleSpecifications[*].settings.analysis.dechallengeRechallengeSettings[*].outcomeCohortDefinitionIds",
+      "count": 3,
+      "sample": {
+        "from": 16968,
+        "to": [
+          16968
+        ]
+      }
+    },
+    {
+      "key": "MOD CohortIncidenceModule:moduleSpecifications[*].settings.irDesign.studyWindow.startDate",
+      "count": 3,
+      "sample": {
+        "from": "2017-12-01",
+        "to": "20171201"
       }
     }
   ]

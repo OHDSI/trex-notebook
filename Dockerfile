@@ -155,7 +155,7 @@ RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
 # ---------------------------------------------------------------------------
 # Stage 3: bake the finished sibyl dist into the trex backend.
 # ---------------------------------------------------------------------------
-FROM ghcr.io/ohdsi/trexsql:latest@sha256:bdeea44d964b2eddf9346aacfc8090311a9cba1b2f1be5a59742445c9bd5cf64
+FROM ghcr.io/ohdsi/trexsql:latest@sha256:6c3ec02c884766fd52b27c34b3dcd1a12cd385efa74edbfba03d620018794733
 
 # --- R runtime for hades / Strategus ---------------------------------------
 # The trexsql base ships the hades DuckDB extension but NOT R, so hades_execute

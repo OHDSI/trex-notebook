@@ -46,6 +46,13 @@ export interface CohortMethodAnalysis {
   iptwTruncationFraction: number;
   outcomeModelType: 'cox' | 'logistic' | 'poisson';
   useCleanWindowForPriorOutcomeLookback: boolean;
+  // Per-analysis study-population window (createStudyPopArgs)
+  riskWindowStart: number;
+  startAnchor: 'cohort start' | 'cohort end';
+  riskWindowEnd: number;
+  endAnchor: 'cohort start' | 'cohort end';
+  minDaysAtRisk: number;
+  priorOutcomeLookback: number;
 }
 
 export interface CohortMethodSettings {
@@ -127,6 +134,12 @@ export interface PlpSettings {
   splitType: 'time' | 'subject' | 'stratified';
   runCalibration: boolean;
   calibrationBins: number;
+  runFeatureEngineering: boolean;
+  runSampleData: boolean;
+  runPreprocessData: boolean;
+  runModelDevelopment: boolean;
+  runCovariateSummary: boolean;
+  skipDiagnostics: boolean;
 }
 
 export interface PlpValidationDesign {

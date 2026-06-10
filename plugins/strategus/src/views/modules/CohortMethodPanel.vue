@@ -241,7 +241,55 @@
           v-model="editingAnalysis.useCleanWindowForPriorOutcomeLookback"
           label="Prior outcome lookback"
           :items="[{ title: 'All time prior (recommended)', value: false }, { title: 'Use clean window', value: true }]"
+          class="mb-4"
         />
+
+        <!-- Study population window -->
+        <div class="text-subtitle-2 mb-2">
+          Study population window
+        </div>
+        <div class="d-flex ga-3 mb-3">
+          <AtlasTextField
+            v-model.number="editingAnalysis.riskWindowStart"
+            label="Risk window start"
+            type="number"
+            style="max-width: 160px"
+          />
+          <AtlasSelect
+            v-model="editingAnalysis.startAnchor"
+            :items="anchorItems"
+            label="Start anchor"
+            style="max-width: 200px"
+          />
+        </div>
+        <div class="d-flex ga-3 mb-3">
+          <AtlasTextField
+            v-model.number="editingAnalysis.riskWindowEnd"
+            label="Risk window end"
+            type="number"
+            style="max-width: 160px"
+          />
+          <AtlasSelect
+            v-model="editingAnalysis.endAnchor"
+            :items="anchorItems"
+            label="End anchor"
+            style="max-width: 200px"
+          />
+        </div>
+        <div class="d-flex ga-3">
+          <AtlasTextField
+            v-model.number="editingAnalysis.minDaysAtRisk"
+            label="Min days at risk"
+            type="number"
+            style="max-width: 160px"
+          />
+          <AtlasTextField
+            v-model.number="editingAnalysis.priorOutcomeLookback"
+            label="Prior outcome lookback (days)"
+            type="number"
+            style="max-width: 220px"
+          />
+        </div>
       </template>
       <template #actions>
         <AtlasButton
@@ -305,7 +353,7 @@
             v-for="flag in group.flags"
             :key="flag"
             v-model="store.cohortMethodSettings.covariateFeatures[flag]"
-            :label="flag"
+            :label="featureLabel(flag)"
             class="mr-2"
           />
         </div>
@@ -366,11 +414,18 @@ const covFeatureGroups = [
   },
   {
     label: 'Measurements',
-    flags: ['MeasurementLongTerm', 'MeasurementShortTerm', 'MeasurementRangeGroupLongTerm'],
+    flags: [
+      'MeasurementLongTerm', 'MeasurementShortTerm',
+      'MeasurementRangeGroupLongTerm', 'MeasurementRangeGroupShortTerm',
+      'MeasurementValueAsConceptLongTerm', 'MeasurementValueAsConceptShortTerm',
+    ],
   },
   {
     label: 'Observations',
-    flags: ['ObservationLongTerm', 'ObservationShortTerm'],
+    flags: [
+      'ObservationLongTerm', 'ObservationShortTerm',
+      'ObservationValueAsConceptLongTerm', 'ObservationValueAsConceptShortTerm',
+    ],
   },
   {
     label: 'Indices',
@@ -381,6 +436,21 @@ const covFeatureGroups = [
     flags: ['VisitCountLongTerm', 'VisitCountShortTerm', 'VisitConceptCountLongTerm', 'VisitConceptCountShortTerm'],
   },
 ];
+
+// Readable labels for the value-as-concept / range-group covariate groups.
+// Flags not listed here fall back to their raw key (existing behavior).
+const featureLabels: Record<string, string> = {
+  MeasurementRangeGroupLongTerm: 'Measurement range group (long term)',
+  MeasurementRangeGroupShortTerm: 'Measurement range group (short term)',
+  MeasurementValueAsConceptLongTerm: 'Measurement value as concept (long term)',
+  MeasurementValueAsConceptShortTerm: 'Measurement value as concept (short term)',
+  ObservationValueAsConceptLongTerm: 'Observation value as concept (long term)',
+  ObservationValueAsConceptShortTerm: 'Observation value as concept (short term)',
+};
+
+function featureLabel(flag: string): string {
+  return featureLabels[flag] ?? flag;
+}
 
 const psMethodItems = [
   { title: 'PS Matching', value: 'matching' },
@@ -394,6 +464,11 @@ const modelTypeItems = [
   { title: 'Cox proportional hazards (time-to-event)', value: 'cox' },
   { title: 'Logistic regression', value: 'logistic' },
   { title: 'Poisson regression', value: 'poisson' },
+];
+
+const anchorItems = [
+  { title: 'Cohort start', value: 'cohort start' },
+  { title: 'Cohort end', value: 'cohort end' },
 ];
 
 function psMethodLabel(method: CohortMethodAnalysis['psAdjustmentMethod']): string {

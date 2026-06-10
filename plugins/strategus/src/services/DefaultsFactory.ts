@@ -124,6 +124,12 @@ export function createDefaultCohortMethodAnalysis(analysisId = 1): CohortMethodA
     iptwTruncationFraction: 0.99,
     outcomeModelType: 'cox',
     useCleanWindowForPriorOutcomeLookback: false,
+    riskWindowStart: 0,
+    startAnchor: 'cohort start',
+    riskWindowEnd: 0,
+    endAnchor: 'cohort end',
+    minDaysAtRisk: 1,
+    priorOutcomeLookback: 99999,
   };
 }
 
@@ -152,8 +158,13 @@ export function createDefaultCovariateFeatures(): Record<string, boolean> {
     MeasurementLongTerm: true,
     MeasurementShortTerm: true,
     MeasurementRangeGroupLongTerm: true,
+    MeasurementRangeGroupShortTerm: true,
+    MeasurementValueAsConceptLongTerm: true,
+    MeasurementValueAsConceptShortTerm: true,
     ObservationLongTerm: true,
     ObservationShortTerm: true,
+    ObservationValueAsConceptLongTerm: true,
+    ObservationValueAsConceptShortTerm: true,
     CharlsonIndex: true,
     Dcsi: true,
     Chads2: true,
@@ -256,6 +267,12 @@ export function createDefaultPlp(): PlpSettings {
     splitType: 'subject',
     runCalibration: true,
     calibrationBins: 10,
+    runFeatureEngineering: false,
+    runSampleData: false,
+    runPreprocessData: true,
+    runModelDevelopment: true,
+    runCovariateSummary: true,
+    skipDiagnostics: false,
   };
 }
 

@@ -2,307 +2,19 @@
   "summary": {
     "fixture": "testing-nc-legend.json",
     "numModules": 5,
-    "preservedCount": 1440,
-    "modifiedCount": 91,
-    "droppedCount": 26,
-    "addedCount": 111,
-    "preservationRate": 0.9248554913294798,
-    "topGaps": [
-      "moduleSpecifications[1].version",
-      "moduleSpecifications[1].remoteRepo",
-      "moduleSpecifications[1].remoteUsername",
-      "moduleSpecifications[2].version",
-      "moduleSpecifications[2].remoteRepo",
-      "moduleSpecifications[2].remoteUsername",
-      "moduleSpecifications[2].settings.timeToEventSettings",
-      "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-      "moduleSpecifications[2].settings.aggregateCovariateSettings",
-      "moduleSpecifications[3].version",
-      "moduleSpecifications[3].remoteRepo",
-      "moduleSpecifications[3].remoteUsername",
-      "moduleSpecifications[4].version",
-      "moduleSpecifications[4].remoteRepo",
-      "moduleSpecifications[4].remoteUsername",
-      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-      "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-      "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label"
-    ]
+    "preservedCount": 1566,
+    "modifiedCount": 88,
+    "droppedCount": 0,
+    "addedCount": 112,
+    "preservationRate": 0.9467956469165659,
+    "topGaps": []
   },
-  "droppedDetail": [
-    {
-      "path": "moduleSpecifications[1].version",
-      "orig": "0.0.7"
-    },
-    {
-      "path": "moduleSpecifications[1].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[1].remoteUsername",
-      "orig": "ohdsi"
-    },
-    {
-      "path": "moduleSpecifications[2].version",
-      "orig": "0.3.2"
-    },
-    {
-      "path": "moduleSpecifications[2].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[2].remoteUsername",
-      "orig": "ohdsi"
-    },
-    {
-      "path": "moduleSpecifications[2].settings.timeToEventSettings",
-      "orig": [
-        {
-          "targetIds": [
-            12676,
-            12672,
-            12676001,
-            12672001
-          ],
-          "outcomeIds": [
-            12677,
-            12678,
-            12679
-          ],
-          "attr_class": "timeToEventSettings"
-        }
-      ]
-    },
-    {
-      "path": "moduleSpecifications[2].settings.dechallengeRechallengeSettings",
-      "orig": [
-        {
-          "targetCohortDefinitionIds": [
-            12676,
-            12672,
-            12676001,
-            12672001
-          ],
-          "outcomeCohortDefinitionIds": [
-            12677,
-            12678,
-            12679
-          ],
-          "dechallengeStopInterval": 30,
-          "dechallengeEvaluationWindow": 30,
-          "attr_class": "dechallengeRechallengeSettings"
-        }
-      ]
-    },
-    {
-      "path": "moduleSpecifications[2].settings.aggregateCovariateSettings",
-      "orig": [
-        {
-          "targetIds": [
-            12676,
-            12672,
-            12676001,
-            12672001
-          ],
-          "outcomeIds": [
-            12677,
-            12678,
-            12679
-          ],
-          "minPriorObservation": 365,
-          "riskWindowStart": 1,
-          "startAnchor": "cohort start",
-          "riskWindowEnd": 0,
-          "endAnchor": "cohort end",
-          "covariateSettings": {
-            "temporal": false,
-            "temporalSequence": false,
-            "DemographicsGender": true,
-            "DemographicsAgeGroup": true,
-            "DemographicsRace": true,
-            "DemographicsEthnicity": true,
-            "DemographicsIndexYear": true,
-            "DemographicsIndexMonth": true,
-            "ConditionGroupEraLongTerm": true,
-            "ConditionGroupEraShortTerm": true,
-            "DrugGroupEraLongTerm": true,
-            "DrugGroupEraShortTerm": true,
-            "DrugGroupEraOverlapping": true,
-            "ProcedureOccurrenceLongTerm": true,
-            "ProcedureOccurrenceShortTerm": true,
-            "DeviceExposureLongTerm": true,
-            "DeviceExposureShortTerm": true,
-            "MeasurementLongTerm": true,
-            "MeasurementShortTerm": true,
-            "MeasurementRangeGroupLongTerm": true,
-            "ObservationLongTerm": true,
-            "ObservationShortTerm": true,
-            "CharlsonIndex": true,
-            "Dcsi": true,
-            "Chads2": true,
-            "Chads2Vasc": true,
-            "includedCovariateConceptIds": [],
-            "includedCovariateIds": [],
-            "addDescendantsToInclude": false,
-            "excludedCovariateConceptIds": [],
-            "addDescendantsToExclude": false,
-            "shortTermStartDays": -30,
-            "mediumTermStartDays": -180,
-            "endDays": 0,
-            "longTermStartDays": -365,
-            "attr_class": "covariateSettings",
-            "attr_fun": "getDbDefaultCovariateData"
-          },
-          "attr_class": "aggregateCovariateSettings"
-        }
-      ]
-    },
-    {
-      "path": "moduleSpecifications[3].version",
-      "orig": "0.0.6"
-    },
-    {
-      "path": "moduleSpecifications[3].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[3].remoteUsername",
-      "orig": "ohdsi"
-    },
-    {
-      "path": "moduleSpecifications[4].version",
-      "orig": "0.1.0"
-    },
-    {
-      "path": "moduleSpecifications[4].remoteRepo",
-      "orig": "github.com"
-    },
-    {
-      "path": "moduleSpecifications[4].remoteUsername",
-      "orig": "ohdsi"
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowStart",
-      "orig": 1
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.startAnchor",
-      "orig": "cohort start"
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.riskWindowEnd",
-      "orig": 0
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.endAnchor",
-      "orig": "cohort end"
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.label",
-      "orig": [
-        "Age group",
-        "Gender: female",
-        "Race",
-        "Ethnicity",
-        "Medical history: General",
-        "Medical history: Cardiovascular disease",
-        "Medical history: Neoplasms",
-        "Medication use",
-        "Charlson comorbidity index",
-        "CHADS2Vasc",
-        "DCSI"
-      ]
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.analysisId",
-      "orig": [
-        3,
-        1,
-        4,
-        5,
-        210,
-        210,
-        210,
-        410,
-        901,
-        904,
-        902
-      ]
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.covariateIds",
-      "orig": [
-        null,
-        "8532001",
-        null,
-        null,
-        "4006969210,438409210,4212540210,255573210,201606210,4182210210,440383210,201820210,318800210,192671210,439727210,432867210,316866210,4104000210,433736210,80180210,255848210,140168210,4030518210,80809210,435783210,4279309210,81893210,81902210,197494210,4134440210",
-        "313217210,381591210,317576210,321588210,316139210,4185932210,321052210,440417210,444247210",
-        "4044013210,432571210,40481902210,443392210,4112853210,4180790210,443388210,197508210,200962210",
-        "21601782410,21602796410,21604686410,21604389410,21603932410,21601387410,21602028410,21600960410,21601664410,21601744410,21601461410,21600046410,21603248410,21600712410,21603890410,21601853410,21604254410,21604489410,21604752410",
-        "1901",
-        "1904",
-        "1902"
-      ]
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_row.names",
-      "orig": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ]
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_spec",
-      "orig": {
-        "cols": {
-          "label": [],
-          "analysisId": [],
-          "covariateIds": []
-        },
-        "default": [],
-        "delim": ","
-      }
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].computeCovariateBalanceArgs.covariateFilter.attr_problems",
-      "orig": {}
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmDiagnosticThresholds.attritionFractionThreshold",
-      "orig": 1
-    }
-  ],
+  "droppedDetail": [],
   "modifiedDetail": [
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].id",
-      "orig": 12676001,
-      "rs": 12677
-    },
     {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].name",
       "orig": "[EPI_555] New-Users of a First-Line Thiazide or Thiazide-like Diuretics (THZ) -  first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females",
-      "rs": "[EPI_555] Acute myocardial infarction"
-    },
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].id",
-      "orig": 12672001,
-      "rs": 12678
-    },
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].name",
-      "orig": "[EPI_555] New-Users of a First-Line Angiotensin Converting Enzyme Inhibitors (ACEi) -  first ever occurence with at least 365 days prior observation and 1 days follow up observation, males, females",
-      "rs": "[EPI_555] Hospitalization with heart failure"
+      "rs": "[EPI_555] New-Users of a First-Line Thiazide or Thiazide-like Diuretics (THZ)"
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.analysisList[0].tars",
@@ -535,6 +247,21 @@
       "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[41].outcomeId",
       "orig": 1039,
       "rs": "1039"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[42].outcomeId",
+      "orig": 1040,
+      "rs": "1040"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[43].outcomeId",
+      "orig": 1041,
+      "rs": "1041"
+    },
+    {
+      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[44].outcomeId",
+      "orig": 1042,
+      "rs": "1042"
     }
   ],
   "addedDetail": [
@@ -548,11 +275,7 @@
         "aggregateCovariateSettings": [
           {
             "targetIds": [
-              12677,
-              12678,
-              12679,
               12676,
-              12672,
               12676001,
               12672001
             ],
@@ -611,11 +334,7 @@
           },
           {
             "targetIds": [
-              12677,
-              12678,
-              12679,
               12676,
-              12672,
               12676001,
               12672001
             ],
@@ -678,11 +397,7 @@
           },
           {
             "targetIds": [
-              12677,
-              12678,
-              12679,
               12676,
-              12672,
               12676001,
               12672001
             ],
@@ -747,11 +462,7 @@
         "timeToEventSettings": [
           {
             "targetIds": [
-              12677,
-              12678,
-              12679,
               12676,
-              12672,
               12676001,
               12672001
             ],
@@ -769,11 +480,7 @@
         "dechallengeRechallengeSettings": [
           {
             "targetCohortDefinitionIds": [
-              12677,
-              12678,
-              12679,
               12676,
-              12672,
               12676001,
               12672001
             ],
@@ -813,36 +520,8 @@
       "rs": "characterization_cohorts"
     },
     {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[2]",
-      "rs": {
-        "id": 12679,
-        "name": "[EPI_555] Stroke",
-        "cohortId": 12679
-      }
-    },
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[3]",
-      "rs": {
-        "id": 12676001,
-        "name": "[EPI_555] New-Users of a First-Line Thiazide or Thiazide-like Diuretics (THZ)",
-        "cohortId": 12676001
-      }
-    },
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[4]",
-      "rs": {
-        "id": 12672001,
-        "name": "[EPI_555] New-Users of a First-Line Angiotensin Converting Enzyme Inhibitors (ACEi)",
-        "cohortId": 12672001
-      }
-    },
-    {
       "path": "moduleSpecifications[3].settings.irDesign.targetDefs[0].cohortId",
-      "rs": 12677
-    },
-    {
-      "path": "moduleSpecifications[3].settings.irDesign.targetDefs[1].cohortId",
-      "rs": 12678
+      "rs": 12676001
     },
     {
       "path": "moduleSpecifications[3].settings.irDesign.timeAtRiskDefs[0].label",
@@ -869,6 +548,26 @@
       "rs": true
     },
     {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementRangeGroupShortTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptLongTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.MeasurementValueAsConceptShortTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptLongTerm",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.ObservationValueAsConceptShortTerm",
+      "rs": true
+    },
+    {
       "path": "moduleSpecifications[4].settings.cmAnalysisList[0].getDbCohortMethodDataArgs.covariateSettings.VisitCountLongTerm",
       "rs": true
     },
@@ -885,15 +584,6 @@
       "rs": true
     },
     {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopulationArgs",
-      "rs": {
-        "riskWindowStart": 1,
-        "startAnchor": "cohort start",
-        "riskWindowEnd": 0,
-        "endAnchor": "cohort end"
-      }
-    },
-    {
       "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopArgs.attr_fun",
       "rs": "createStudyPopulation"
     },
@@ -906,6 +596,23 @@
       "rs": false
     },
     {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.doItAll",
+      "rs": true
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.syncCV",
+      "rs": false
+    },
+    {
+      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].createStudyPopulationArgs",
+      "rs": {
+        "riskWindowStart": 1,
+        "startAnchor": "cohort start",
+        "riskWindowEnd": 0,
+        "endAnchor": "cohort end"
+      }
+    },
+    {
       "path": "moduleSpecifications[4].settings.cmAnalysisList[0].stratifyByPsArgs",
       "rs": null
     },
@@ -916,14 +623,6 @@
     {
       "path": "moduleSpecifications[4].settings.cmAnalysisList[0].trimByPsArgs",
       "rs": null
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.doItAll",
-      "rs": true
-    },
-    {
-      "path": "moduleSpecifications[4].settings.cmAnalysisList[0].fitOutcomeModelArgs.control.syncCV",
-      "rs": false
     },
     {
       "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[3].priorOutcomeLookback",
@@ -995,10 +694,6 @@
     },
     {
       "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[20].priorOutcomeLookback",
-      "rs": null
-    },
-    {
-      "path": "moduleSpecifications[4].settings.targetComparatorOutcomesList[0].outcomes[21].priorOutcomeLookback",
       "rs": null
     }
   ]

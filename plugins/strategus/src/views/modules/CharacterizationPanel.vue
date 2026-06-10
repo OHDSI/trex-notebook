@@ -57,6 +57,56 @@
         </div>
       </AtlasCard>
 
+      <!-- Sub-analysis settings -->
+      <AtlasCard
+        flat
+        rounded="lg"
+        class="mb-4"
+        padding="none"
+      >
+        <h3 class="card-title text-subtitle-1">
+          Sub-analysis settings
+        </h3>
+        <AtlasDivider />
+        <div class="card-body">
+          <p class="text-caption text-medium-emphasis mb-3">
+            Scalars applied to the aggregate-covariate and dechallenge-rechallenge sub-analyses.
+            Per-analysis target/outcome cohort lists are derived from cohort roles.
+          </p>
+          <div class="d-flex ga-3 mb-3">
+            <AtlasTextField
+              v-model.number="store.characterizationSettings.minPriorObservation"
+              label="Min prior observation (days)"
+              type="number"
+            />
+          </div>
+          <div class="d-flex ga-3 mb-3">
+            <AtlasTextField
+              v-model.number="store.characterizationSettings.dechallengeStopInterval"
+              label="Dechallenge stop interval"
+              type="number"
+            />
+            <AtlasTextField
+              v-model.number="store.characterizationSettings.dechallengeEvaluationWindow"
+              label="Dechallenge eval window"
+              type="number"
+            />
+          </div>
+          <div class="d-flex ga-3 mb-3">
+            <AtlasTextField
+              v-model.number="store.characterizationSettings.casePreTargetDuration"
+              label="Case pre-target duration"
+              type="number"
+            />
+            <AtlasTextField
+              v-model.number="store.characterizationSettings.casePostOutcomeDuration"
+              label="Case post-outcome duration"
+              type="number"
+            />
+          </div>
+        </div>
+      </AtlasCard>
+
       <!-- Advanced -->
       <AdvancedSection>
         <AtlasCard
@@ -72,35 +122,6 @@
                 label="Min characterization mean"
                 type="number"
                 step="0.01"
-              />
-              <AtlasTextField
-                v-model.number="store.characterizationSettings.minPriorObservation"
-                label="Min prior observation (days)"
-                type="number"
-              />
-            </div>
-            <div class="d-flex ga-3 mb-3">
-              <AtlasTextField
-                v-model.number="store.characterizationSettings.dechallengeStopInterval"
-                label="Dechallenge stop interval"
-                type="number"
-              />
-              <AtlasTextField
-                v-model.number="store.characterizationSettings.dechallengeEvaluationWindow"
-                label="Dechallenge eval window"
-                type="number"
-              />
-            </div>
-            <div class="d-flex ga-3 mb-3">
-              <AtlasTextField
-                v-model.number="store.characterizationSettings.casePreTargetDuration"
-                label="Case pre-target duration"
-                type="number"
-              />
-              <AtlasTextField
-                v-model.number="store.characterizationSettings.casePostOutcomeDuration"
-                label="Case post-outcome duration"
-                type="number"
               />
             </div>
           </div>

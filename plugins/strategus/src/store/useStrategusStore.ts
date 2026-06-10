@@ -171,6 +171,11 @@ export const useStrategusStore = defineStore('strategus', () => {
   const plpValidationSettings = ref<PlpValidationSettings>(createDefaultPlpValidation());
   const treatmentPatternsSettings = ref<TreatmentPatternsSettings>(createDefaultTreatmentPatterns());
   const evidenceSynthesisSettings = ref<EvidenceSynthesisSettings>(createDefaultEvidenceSynthesis());
+  const moduleRawSettings = ref<Record<string, Record<string, unknown>>>({});
+  // Module-level provenance captured at import time (version/remoteRepo/remoteUsername),
+  // keyed by LONG module name. These live alongside `settings` in the module spec,
+  // not inside it, and are re-emitted by the serializer so they survive round-trip.
+  const moduleRawProvenance = ref<Record<string, Record<string, unknown>>>({});
 
   // ── Computed ──────────────────────────────────────────────────────────────
   const cohortsByRole = computed(() => (role: CohortRole) =>
@@ -230,6 +235,8 @@ export const useStrategusStore = defineStore('strategus', () => {
     plpValidationSettings.value = createDefaultPlpValidation();
     treatmentPatternsSettings.value = createDefaultTreatmentPatterns();
     evidenceSynthesisSettings.value = createDefaultEvidenceSynthesis();
+    moduleRawSettings.value = {};
+    moduleRawProvenance.value = {};
   }
 
   return {
@@ -263,6 +270,8 @@ export const useStrategusStore = defineStore('strategus', () => {
     plpValidationSettings,
     treatmentPatternsSettings,
     evidenceSynthesisSettings,
+    moduleRawSettings,
+    moduleRawProvenance,
     // Computed
     cohortsByRole,
     // Methods
@@ -307,6 +316,8 @@ export const useStrategusStore = defineStore('strategus', () => {
       plpValidationSettings: plpValidationSettings.value,
       treatmentPatternsSettings: treatmentPatternsSettings.value,
       evidenceSynthesisSettings: evidenceSynthesisSettings.value,
+      moduleRawSettings: moduleRawSettings.value,
+      moduleRawProvenance: moduleRawProvenance.value,
     }));
   }
 
@@ -371,5 +382,7 @@ export const useStrategusStore = defineStore('strategus', () => {
     if (snap.plpValidationSettings) plpValidationSettings.value = { ...plpValidationSettings.value, ...(snap.plpValidationSettings as object) };
     if (snap.treatmentPatternsSettings) treatmentPatternsSettings.value = { ...treatmentPatternsSettings.value, ...(snap.treatmentPatternsSettings as object) };
     if (snap.evidenceSynthesisSettings) evidenceSynthesisSettings.value = { ...evidenceSynthesisSettings.value, ...(snap.evidenceSynthesisSettings as object) };
+    if (snap.moduleRawSettings && typeof snap.moduleRawSettings === 'object') moduleRawSettings.value = snap.moduleRawSettings as never;
+    if (snap.moduleRawProvenance && typeof snap.moduleRawProvenance === 'object') moduleRawProvenance.value = snap.moduleRawProvenance as never;
   }
 });

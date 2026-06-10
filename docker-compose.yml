@@ -64,7 +64,7 @@ services:
     container_name: sibyl-trex-init
     # Pinned to the same multi-arch index digest as the Dockerfile FROM (=
     # trexsql:latest); each host pulls its native variant (amd64 or arm64).
-    image: ghcr.io/ohdsi/trexsql:latest@sha256:a57e5d3eadcb73b6f0b70cef28c0e42d2a0a7e0256310bb1eabc2a8ccd4375ae
+    image: ghcr.io/ohdsi/trexsql:latest@sha256:6c3ec02c884766fd52b27c34b3dcd1a12cd385efa74edbfba03d620018794733
     entrypoint: /usr/local/bin/trex-init
     environment:
       TREX_SECRETS_DIR: /shared

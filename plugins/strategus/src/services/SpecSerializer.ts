@@ -9,6 +9,7 @@ import type {
 import type { TimeAtRiskWindow } from './DefaultsFactory';
 import { createDefaultCovariateSettings } from './CovariateDefaults';
 import { createPlpModelSettings } from './PlpModelDefaults';
+import { overlay, overlayArrayByIndex, overlayScalarArrayKeepTail, isPlainObject } from './mergeSettings';
 
 // The store type — we use a duck-typed interface so we don't create a circular dep
 interface StrategusStoreSnapshot {
@@ -75,6 +76,12 @@ interface StrategusStoreSnapshot {
       iptwTruncationFraction: number;
       outcomeModelType: 'cox' | 'logistic' | 'poisson';
       useCleanWindowForPriorOutcomeLookback: boolean;
+      riskWindowStart: number;
+      startAnchor: 'cohort start' | 'cohort end';
+      riskWindowEnd: number;
+      endAnchor: 'cohort start' | 'cohort end';
+      minDaysAtRisk: number;
+      priorOutcomeLookback: number;
     }>;
     maxCohortSizeForFitting: number;
     maxCovBalanceCohortSize: number;
@@ -135,6 +142,12 @@ interface StrategusStoreSnapshot {
     splitType: 'time' | 'subject' | 'stratified';
     runCalibration: boolean;
     calibrationBins: number;
+    runFeatureEngineering: boolean;
+    runSampleData: boolean;
+    runPreprocessData: boolean;
+    runModelDevelopment: boolean;
+    runCovariateSummary: boolean;
+    skipDiagnostics: boolean;
   };
   plpValidationSettings: {
     validationDesigns: Array<{
@@ -205,6 +218,8 @@ interface StrategusStoreSnapshot {
     cohortId: number;
     subsetIds: number[];
   }>;
+  moduleRawSettings: Record<string, Record<string, unknown>>;
+  moduleRawProvenance: Record<string, Record<string, unknown>>;
   cohortsByRole: (role: string) => Array<{ cohortId: number; cohortName: string }>;
 }
 
@@ -891,9 +906,13 @@ function buildCohortMethodModule(store: StrategusStoreSnapshot): ModuleSpecifica
           washoutPeriod: 0,
           removeDuplicateSubjects: 'keep all',
           removeSubjectsWithPriorOutcome: true,
-          priorOutcomeLookback: 99999,
-          minDaysAtRisk: 1,
+          priorOutcomeLookback: analysis.priorOutcomeLookback,
+          minDaysAtRisk: analysis.minDaysAtRisk,
           maxDaysAtRisk: 99999,
+          riskWindowStart: analysis.riskWindowStart,
+          startAnchor: analysis.startAnchor,
+          riskWindowEnd: analysis.riskWindowEnd,
+          endAnchor: analysis.endAnchor,
           censorAtNewRiskWindow: false,
           attr_fun: 'createStudyPopulation',
         },
@@ -1187,10 +1206,36 @@ function buildSccsModule(store: StrategusStoreSnapshot): ModuleSpecification {
   };
 }
 
+// Real OHDSI specs carry the upstream R typo key `runfeatureEngineering`
+// (lowercase f) in PLP executeSettings; some fixtures use the correct
+// `runFeatureEngineering`. The raw module settings are overlaid onto the built
+// settings on serialize, so if the built design emits the OTHER casing both keys
+// would end up in the output and conflict. Detect which key the raw module used
+// (across both PLP shapes — wrapper object vs bare array of designs) and emit
+// under that same key so they never coexist.
+function rawPlpUsesTypoFeatureEngineeringKey(store: StrategusStoreSnapshot): boolean {
+  const raw = store.moduleRawSettings['PatientLevelPredictionModule'];
+  if (!raw) return false;
+  const designs = Array.isArray(raw)
+    ? (raw as unknown as Array<Record<string, unknown>>)
+    : ((raw as Record<string, unknown>)['modelDesignList'] as Array<Record<string, unknown>> | undefined);
+  if (!Array.isArray(designs)) return false;
+  for (const d of designs) {
+    if (!isPlainObject(d)) continue;
+    const es = d['executeSettings'];
+    if (!isPlainObject(es)) continue;
+    // Prefer the correct casing if present; otherwise honour the typo key.
+    if ('runFeatureEngineering' in es) return false;
+    if ('runfeatureEngineering' in es) return true;
+  }
+  return false;
+}
+
 function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
   const plp = store.plpSettings;
   const targets = store.cohortsByRole('Target');
   const plpTars = store.plpTimeAtRiskOverride;
+  const useTypoFeKey = rawPlpUsesTypoFeatureEngineeringKey(store);
   const modelDesignList = [];
   for (const target of targets) {
     for (const outcome of store.outcomes) {
@@ -1250,11 +1295,13 @@ function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
           featureEngineeringSettings,
           executeSettings: {
             runSplitData: true,
-            runSampleData: false,
-            runfeatureEngineering: false,
-            runPreprocessData: true,
-            runModelDevelopment: true,
-            runCovariateSummary: true,
+            runSampleData: plp.runSampleData,
+            // Emit under the same casing the raw module used so the two casings
+            // never coexist (see rawPlpUsesTypoFeatureEngineeringKey).
+            [useTypoFeKey ? 'runfeatureEngineering' : 'runFeatureEngineering']: plp.runFeatureEngineering,
+            runPreprocessData: plp.runPreprocessData,
+            runModelDevelopment: plp.runModelDevelopment,
+            runCovariateSummary: plp.runCovariateSummary,
             runCalibration: plp.runCalibration,
             calibrationBins: plp.calibrationBins,
           },
@@ -1264,7 +1311,7 @@ function buildPlpModule(store: StrategusStoreSnapshot): ModuleSpecification {
   }
   return {
     module: 'PatientLevelPredictionModule',
-    settings: { modelDesignList },
+    settings: { modelDesignList, skipDiagnostics: plp.skipDiagnostics },
     attr_class: ['PatientLevelPredictionModuleSpecifications', 'ModuleSpecifications'],
   };
 }
@@ -1340,6 +1387,131 @@ function buildEvidenceSynthesisModule(store: StrategusStoreSnapshot): ModuleSpec
   };
 }
 
+// For each module, the settings keys whose VALUE is an array the editor
+// rebuilds element-by-element. These need index-wise overlay against the raw
+// array so unmodeled fields nested INSIDE each element survive (the top-level
+// overlay replaces arrays wholesale, which would drop them).
+//
+// `keepRawTail` arrays are DERIVED from the model (the editor re-emits a subset
+// of what was imported), so we preserve raw tail elements beyond the built
+// length. Arrays without it are count-owned by the editor (removing an analysis
+// must not resurrect it from the raw).
+const ARRAY_OVERLAY_KEYS: Record<string, Array<{ key: string; keepRawTail?: boolean }>> = {
+  CohortMethodModule: [{ key: 'cmAnalysisList' }, { key: 'targetComparatorOutcomesList' }],
+  SelfControlledCaseSeriesModule: [{ key: 'sccsAnalysisList' }, { key: 'exposuresOutcomeList' }],
+  PatientLevelPredictionModule: [{ key: 'modelDesignList', keepRawTail: true }],
+};
+
+// Characterization analysis.* sub-arrays carry derived cohort-id lists
+// (targetIds / outcomeIds / targetCohortDefinitionIds / outcomeCohortDefinitionIds)
+// the editor re-derives as a subset of the import. Preserve raw tail ids so
+// imported targets/outcomes are not dropped.
+const CHAR_ANALYSIS_ID_KEYS = [
+  'targetIds',
+  'outcomeIds',
+  'targetCohortDefinitionIds',
+  'outcomeCohortDefinitionIds',
+];
+
+/**
+ * Overlay nested derived arrays inside a built settings object against the raw
+ * captured settings, preserving raw-only elements/ids the editor re-derives as
+ * a subset (CohortIncidence irDesign.targetDefs, Characterization analysis.*
+ * cohort-id lists). Editor values win at shared indices; raw tail is kept.
+ */
+function overlayDerivedNestedArrays(
+  longName: string,
+  settings: Record<string, unknown>,
+  raw: Record<string, unknown>,
+): void {
+  if (longName === 'CohortIncidenceModule') {
+    const builtDesign = settings['irDesign'];
+    const rawDesign = raw['irDesign'];
+    if (isPlainObject(builtDesign) && isPlainObject(rawDesign)) {
+      const builtTd = builtDesign['targetDefs'];
+      const rawTd = rawDesign['targetDefs'];
+      if (Array.isArray(builtTd) && Array.isArray(rawTd)) {
+        builtDesign['targetDefs'] = overlayArrayByIndex(rawTd, builtTd, { keepRawTail: true });
+      }
+    }
+  }
+
+  if (longName === 'CharacterizationModule') {
+    const builtAnalysis = settings['analysis'];
+    const rawAnalysis = raw['analysis'];
+    if (isPlainObject(builtAnalysis) && isPlainObject(rawAnalysis)) {
+      for (const [groupKey, builtGroup] of Object.entries(builtAnalysis)) {
+        const rawGroup = rawAnalysis[groupKey];
+        if (!Array.isArray(builtGroup) || !Array.isArray(rawGroup)) continue;
+        builtAnalysis[groupKey] = builtGroup.map((builtEl, i) => {
+          const rawEl = rawGroup[i];
+          if (!isPlainObject(builtEl) || !isPlainObject(rawEl)) return builtEl;
+          const merged = overlay(rawEl, builtEl);
+          for (const idKey of CHAR_ANALYSIS_ID_KEYS) {
+            if (Array.isArray(builtEl[idKey]) && Array.isArray(rawEl[idKey])) {
+              merged[idKey] = overlayScalarArrayKeepTail(rawEl[idKey], builtEl[idKey] as unknown[]);
+            }
+          }
+          return merged;
+        });
+        // keep raw tail entries (extra analysis settings entries) too
+        if (rawGroup.length > builtGroup.length) {
+          for (let i = builtGroup.length; i < rawGroup.length; i++) {
+            (builtAnalysis[groupKey] as unknown[]).push(rawGroup[i]);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Finalize a built module spec by overlaying its editor-managed settings onto
+ * the RAW captured settings (so no imported option is dropped), re-emitting any
+ * module-level provenance (version/remoteRepo/remoteUsername), and handling
+ * array-nested unmodeled fields via per-element overlay.
+ */
+function finalizeModule(mod: ModuleSpecification, store: StrategusStoreSnapshot): ModuleSpecification {
+  const longName = mod.module;
+  const raw = store.moduleRawSettings[longName];
+  const provenance = store.moduleRawProvenance[longName];
+
+  let settings = mod.settings as Record<string, unknown>;
+
+  if (raw) {
+    // Overlay nested derived arrays in-place on the built settings BEFORE the
+    // top-level overlay (which replaces these arrays wholesale).
+    overlayDerivedNestedArrays(longName, settings, raw as Record<string, unknown>);
+
+    // Base = raw captured settings; managed (built) fields overlaid on top.
+    const merged = overlay(raw, settings);
+
+    // For array-valued keys the editor rebuilds, overlay each built element
+    // onto the corresponding raw element by index so nested unmodeled fields
+    // survive while editor values win.
+    for (const { key, keepRawTail } of ARRAY_OVERLAY_KEYS[longName] ?? []) {
+      const builtArr = settings[key];
+      const rawArr = (raw as Record<string, unknown>)[key];
+      if (Array.isArray(builtArr) && Array.isArray(rawArr)) {
+        merged[key] = overlayArrayByIndex(rawArr, builtArr, { keepRawTail });
+      }
+    }
+    settings = merged;
+  }
+
+  const result: ModuleSpecification = {
+    ...mod,
+    settings,
+  };
+
+  // Re-emit module-level provenance captured at import time.
+  if (provenance) {
+    Object.assign(result as unknown as Record<string, unknown>, provenance);
+  }
+
+  return result;
+}
+
 export function serializeSpec(store: StrategusStoreSnapshot): AnalysisSpecification {
   // Build shared resources
   const sharedResources: SharedResource[] = [buildCohortDefinitionSharedResources(store)];
@@ -1359,31 +1531,31 @@ export function serializeSpec(store: StrategusStoreSnapshot): AnalysisSpecificat
 
     switch (shortName) {
       case 'CohortDiagnostics':
-        moduleSpecifications.push(buildCohortDiagnosticsModule(store));
+        moduleSpecifications.push(finalizeModule(buildCohortDiagnosticsModule(store), store));
         break;
       case 'Characterization':
-        moduleSpecifications.push(buildCharacterizationModule(store));
+        moduleSpecifications.push(finalizeModule(buildCharacterizationModule(store), store));
         break;
       case 'CohortIncidence':
-        moduleSpecifications.push(buildCohortIncidenceModule(store));
+        moduleSpecifications.push(finalizeModule(buildCohortIncidenceModule(store), store));
         break;
       case 'CohortMethod':
-        moduleSpecifications.push(buildCohortMethodModule(store));
+        moduleSpecifications.push(finalizeModule(buildCohortMethodModule(store), store));
         break;
       case 'SCCS':
-        moduleSpecifications.push(buildSccsModule(store));
+        moduleSpecifications.push(finalizeModule(buildSccsModule(store), store));
         break;
       case 'PLP':
-        moduleSpecifications.push(buildPlpModule(store));
+        moduleSpecifications.push(finalizeModule(buildPlpModule(store), store));
         break;
       case 'PLPValidation':
-        moduleSpecifications.push(buildPlpValidationModule(store));
+        moduleSpecifications.push(finalizeModule(buildPlpValidationModule(store), store));
         break;
       case 'TreatmentPatterns':
-        moduleSpecifications.push(buildTreatmentPatternsModule(store));
+        moduleSpecifications.push(finalizeModule(buildTreatmentPatternsModule(store), store));
         break;
       case 'EvidenceSynthesis':
-        moduleSpecifications.push(buildEvidenceSynthesisModule(store));
+        moduleSpecifications.push(finalizeModule(buildEvidenceSynthesisModule(store), store));
         break;
       default:
         // Unknown module — skip (longName available for debugging)

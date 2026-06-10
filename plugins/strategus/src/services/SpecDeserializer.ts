@@ -90,6 +90,8 @@ interface StrategusStore {
     subsetIds: number[];
   }>;
   activePanel: string;
+  moduleRawSettings: Record<string, Record<string, unknown>>;
+  moduleRawProvenance: Record<string, Record<string, unknown>>;
 }
 
 function isCohortDefinitionSharedResources(sr: SharedResource): sr is Extract<SharedResource, { cohortDefinitions: unknown[] }> {
@@ -258,6 +260,21 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
 
   // Step 5: Parse module-specific settings
   for (const modSpec of spec.moduleSpecifications) {
+    // Capture raw settings verbatim before any structured parsing
+    store.moduleRawSettings[modSpec.module] =
+      JSON.parse(JSON.stringify(modSpec.settings ?? {}));
+
+    // Capture module-level provenance (everything alongside `settings` except
+    // the module name, attr_class, and settings itself) so it survives round-trip.
+    const provenance: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(modSpec as unknown as Record<string, unknown>)) {
+      if (k === 'module' || k === 'settings' || k === 'attr_class') continue;
+      provenance[k] = JSON.parse(JSON.stringify(v));
+    }
+    if (Object.keys(provenance).length > 0) {
+      store.moduleRawProvenance[modSpec.module] = provenance;
+    }
+
     switch (modSpec.module) {
       case 'CohortDiagnosticsModule':
         parseCohortDiagnosticsSettings(modSpec, store);
@@ -288,6 +305,31 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
         break;
     }
   }
+
+  // Step 6: Infer cohort roles from the derived design. The Strategus spec does
+  // not label cohorts by role, so they all default to 'Target' (set above). Now
+  // that outcomes and comparisons (TCIs) are parsed, assign Outcome / Comparator
+  // / Indication from how each cohort is actually used. Without this, every
+  // imported study has only Target-role cohorts, so the design validation
+  // spuriously flags "add a cohort with Outcome role" / "add a TCI" on studies
+  // that already define them.
+  const outcomeIds = new Set<number>(store.outcomes.map((o) => o.cohortId));
+  const comparatorIds = new Set<number>();
+  const indicationIds = new Set<number>();
+  const targetIds = new Set<number>();
+  for (const tci of store.comparisons) {
+    targetIds.add(tci.targetId);
+    comparatorIds.add(tci.comparatorId);
+    if (tci.indicationId != null) indicationIds.add(tci.indicationId);
+  }
+  store.cohorts = store.cohorts.map((c) => {
+    let role = c.role;
+    if (outcomeIds.has(c.cohortId)) role = 'Outcome';
+    else if (comparatorIds.has(c.cohortId)) role = 'Comparator';
+    else if (indicationIds.has(c.cohortId)) role = 'Indication';
+    else if (targetIds.has(c.cohortId)) role = 'Target';
+    return { ...c, role };
+  });
 
   // Step 7: Set active panel to overview
   store.activePanel = 'overview';
@@ -398,6 +440,15 @@ function parseCharacterizationSettings(
       const drEntry = dechallengeRechallengeSettings[0] as Record<string, unknown>;
       if (typeof drEntry['dechallengeStopInterval'] === 'number') settings['dechallengeStopInterval'] = drEntry['dechallengeStopInterval'];
       if (typeof drEntry['dechallengeEvaluationWindow'] === 'number') settings['dechallengeEvaluationWindow'] = drEntry['dechallengeEvaluationWindow'];
+    }
+
+    // Read aggregate-covariate numeric scalars from first entry (the editor re-derives
+    // the per-entry targetIds/outcomeIds & risk-windows, so only stable scalars are surfaced here)
+    if (Array.isArray(aggregateCovariateSettings) && aggregateCovariateSettings.length > 0) {
+      const aggEntry = aggregateCovariateSettings[0] as Record<string, unknown>;
+      if (typeof aggEntry['minPriorObservation'] === 'number') settings['minPriorObservation'] = aggEntry['minPriorObservation'];
+      if (typeof aggEntry['casePreTargetDuration'] === 'number') settings['casePreTargetDuration'] = aggEntry['casePreTargetDuration'];
+      if (typeof aggEntry['casePostOutcomeDuration'] === 'number') settings['casePostOutcomeDuration'] = aggEntry['casePostOutcomeDuration'];
     }
   } else {
     // Legacy flat schema fallback
@@ -712,6 +763,12 @@ function parseCohortMethodSettings(
       const entryDbArgs = entry['getDbCohortMethodDataArgs'] as Record<string, unknown> | undefined;
       const useCleanWindow = entryDbArgs ? (typeof entryDbArgs['useCleanWindowForPriorOutcomeLookback'] === 'boolean' ? entryDbArgs['useCleanWindowForPriorOutcomeLookback'] : false) : false;
 
+      // Read per-analysis study-population window from createStudyPopArgs
+      const studyPopArgs = entry['createStudyPopArgs'] as Record<string, unknown> | undefined;
+      const num = (v: unknown, d: number) => (typeof v === 'number' ? v : d);
+      const anchor = (v: unknown, d: 'cohort start' | 'cohort end') =>
+        v === 'cohort start' || v === 'cohort end' ? v : d;
+
       seen.set(key, {
         analysisId: nextAnalysisId++,
         description: desc,
@@ -721,6 +778,12 @@ function parseCohortMethodSettings(
         iptwTruncationFraction: psInfo.iptwTruncationFraction,
         outcomeModelType: modelType,
         useCleanWindowForPriorOutcomeLookback: useCleanWindow,
+        riskWindowStart: num(studyPopArgs?.['riskWindowStart'], 0),
+        startAnchor: anchor(studyPopArgs?.['startAnchor'], 'cohort start'),
+        riskWindowEnd: num(studyPopArgs?.['riskWindowEnd'], 0),
+        endAnchor: anchor(studyPopArgs?.['endAnchor'], 'cohort end'),
+        minDaysAtRisk: num(studyPopArgs?.['minDaysAtRisk'], 1),
+        priorOutcomeLookback: num(studyPopArgs?.['priorOutcomeLookback'], 99999),
       });
     }
   }
@@ -731,10 +794,19 @@ function parseCohortMethodSettings(
   if (getDbArgs) {
     const covSettings = getDbArgs['covariateSettings'] as Record<string, boolean & unknown> | undefined;
     if (covSettings && typeof covSettings === 'object') {
-      // Feature flags are boolean keys in the covariateSettings object
-      const featureKeys = Object.keys(cms.covariateFeatures);
-      for (const flag of featureKeys) {
-        if (flag in covSettings && typeof covSettings[flag] === 'boolean') {
+      // Feature flags are boolean keys in the covariateSettings object. Copy
+      // every boolean key (including value-as-concept / range-group groups that
+      // are not in the default feature set) EXCEPT the reserved config booleans,
+      // which control covariate-data extraction rather than a feature group.
+      const RESERVED_BOOLEAN_KEYS = new Set([
+        'temporal',
+        'temporalSequence',
+        'addDescendantsToInclude',
+        'addDescendantsToExclude',
+      ]);
+      for (const flag of Object.keys(covSettings)) {
+        if (RESERVED_BOOLEAN_KEYS.has(flag)) continue;
+        if (typeof covSettings[flag] === 'boolean') {
           cms.covariateFeatures[flag] = covSettings[flag] as boolean;
         }
       }
@@ -862,20 +934,18 @@ function parseSccsSettings(
     });
     sccs.useEmpiricalCalibration = hasNcEntries;
 
-    // Extract outcomes from exposuresOutcomeList entries that are NOT NCs (trueEffectSize !== 1)
-    if (store.outcomes.length === 0) {
-      const seen = new Set<number>();
-      const ooi: Array<{ cohortId: number; cleanWindow: number }> = [];
-      for (const eo of exposuresOutcomeList) {
-        const exposures = eo['exposures'] as Array<Record<string, unknown>> | undefined;
-        const isNc = Array.isArray(exposures) && exposures.some((exp) => exp['trueEffectSize'] === 1);
-        if (isNc) continue;
-        const id = eo['outcomeId'];
-        if (typeof id !== 'number' || seen.has(id)) continue;
-        seen.add(id);
-        ooi.push({ cohortId: id, cleanWindow: 9999 });
-      }
-      if (ooi.length > 0) store.outcomes = ooi;
+    // Extract outcomes from exposuresOutcomeList entries that are NOT NCs
+    // (trueEffectSize !== 1) so SCCS-only studies don't falsely appear to have
+    // "no outcome". Dedup by cohortId and only add ids not already present.
+    const seen = new Set<number>(store.outcomes.map((o) => o.cohortId));
+    for (const eo of exposuresOutcomeList) {
+      const exposures = eo['exposures'] as Array<Record<string, unknown>> | undefined;
+      const isNc = Array.isArray(exposures) && exposures.some((exp) => exp['trueEffectSize'] === 1);
+      if (isNc) continue;
+      const id = eo['outcomeId'];
+      if (typeof id !== 'number' || seen.has(id)) continue;
+      seen.add(id);
+      store.outcomes.push({ cohortId: id, cleanWindow: 9999 });
     }
   }
 }
@@ -887,9 +957,31 @@ function parsePlpSettings(
   const s = modSpec.settings as Record<string, unknown>;
   const plp = store.plpSettings;
 
-  const modelDesignList = s['modelDesignList'] as Array<Record<string, unknown>> | undefined;
+  if (typeof s['skipDiagnostics'] === 'boolean') plp.skipDiagnostics = s['skipDiagnostics'];
+
+  // PLP settings come in two shapes across fixtures: a wrapper object with a
+  // `modelDesignList` array, or a bare array of model designs (no wrapper).
+  const modelDesignList = (
+    Array.isArray(modSpec.settings)
+      ? (modSpec.settings as Array<Record<string, unknown>>)
+      : (s['modelDesignList'] as Array<Record<string, unknown>> | undefined)
+  );
   if (!Array.isArray(modelDesignList) || modelDesignList.length === 0) return;
   const design = modelDesignList[0];
+
+  // Derive outcomes from PLP model designs so PLP-only studies don't falsely
+  // appear to have "no outcome". Each design's outcomeId is an Outcome-role
+  // cohort (targetId stays Target via the default). Dedup by cohortId and only
+  // add ids not already present (e.g. from CohortIncidence/CohortMethod).
+  {
+    const seen = new Set<number>(store.outcomes.map((o) => o.cohortId));
+    for (const md of modelDesignList) {
+      const outcomeId = md['outcomeId'];
+      if (typeof outcomeId !== 'number' || seen.has(outcomeId)) continue;
+      seen.add(outcomeId);
+      store.outcomes.push({ cohortId: outcomeId, cleanWindow: 9999 });
+    }
+  }
 
   const modelSettings = design['modelSettings'] as Record<string, unknown> | undefined;
   if (modelSettings) {
@@ -987,6 +1079,15 @@ function parsePlpSettings(
   if (executeSettings) {
     if (typeof executeSettings['runCalibration'] === 'boolean') plp.runCalibration = executeSettings['runCalibration'];
     if (typeof executeSettings['calibrationBins'] === 'number') plp.calibrationBins = executeSettings['calibrationBins'];
+    // Real OHDSI specs carry the upstream R typo key `runfeatureEngineering`
+    // (lowercase f); some fixtures use the correct `runFeatureEngineering`.
+    // Accept either casing so the imported value is reflected.
+    const rfe = executeSettings['runFeatureEngineering'] ?? executeSettings['runfeatureEngineering'];
+    if (typeof rfe === 'boolean') plp.runFeatureEngineering = rfe;
+    if (typeof executeSettings['runSampleData'] === 'boolean') plp.runSampleData = executeSettings['runSampleData'];
+    if (typeof executeSettings['runPreprocessData'] === 'boolean') plp.runPreprocessData = executeSettings['runPreprocessData'];
+    if (typeof executeSettings['runModelDevelopment'] === 'boolean') plp.runModelDevelopment = executeSettings['runModelDevelopment'];
+    if (typeof executeSettings['runCovariateSummary'] === 'boolean') plp.runCovariateSummary = executeSettings['runCovariateSummary'];
   }
 }
 
