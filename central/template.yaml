@@ -210,7 +210,11 @@ Resources:
   PreTokenGenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: index.preTokenGen
+      # esbuild emits the bundle named after the entry point (preTokenGen.mjs),
+      # so the handler module must be `preTokenGen`, not `index`. Using
+      # `index.preTokenGen` makes the runtime fail with "Cannot find module 'index'",
+      # which Cognito surfaces as UserLambdaValidationException on token generation.
+      Handler: preTokenGen.preTokenGen
       CodeUri: api/
     Metadata:
       BuildMethod: esbuild

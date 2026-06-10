@@ -76,7 +76,14 @@ export async function handleCallback(search: string): Promise<void> {
   if (!code) throw new Error('missing authorization code');
   if (state !== localStorage.getItem(STATE_KEY)) throw new Error('state mismatch');
 
-  const verifier = localStorage.getItem(VERIFIER_KEY) ?? '';
+  // Consume the PKCE verifier up-front so a duplicate or reloaded callback can't
+  // re-submit the same single-use code (Cognito rejects reuse as invalid_grant,
+  // which previously surfaced as the opaque "token exchange failed").
+  const verifier = localStorage.getItem(VERIFIER_KEY);
+  if (!verifier) throw new Error('no pending sign-in — start login again');
+  localStorage.removeItem(VERIFIER_KEY);
+  localStorage.removeItem(STATE_KEY);
+
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     client_id: config.clientId,
@@ -89,8 +96,9 @@ export async function handleCallback(search: string): Promise<void> {
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body,
   });
-  if (!res.ok) throw new Error('token exchange failed');
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`token exchange failed (${res.status}): ${detail}`);
+  }
   storeTokens((await res.json()) as TokenResponse);
-  localStorage.removeItem(VERIFIER_KEY);
-  localStorage.removeItem(STATE_KEY);
 }
