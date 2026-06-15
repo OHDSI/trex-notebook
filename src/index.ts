@@ -74,6 +74,8 @@ export type { KernelStatusIndicatorProps } from './components/notebook/KernelSta
 export { PyodideKernel } from './kernels/pyodide/PyodideKernel'
 export { WebRKernel } from './kernels/webr/WebRKernel'
 export { JupyterKernel } from './kernels/jupyter/JupyterKernel'
+export { buildKernelAssetUrls } from './kernels/asset-urls'
+export type { KernelAssetUrls } from './kernels/asset-urls'
 
 export { MarkdownCell } from './components/notebook/MarkdownCell'
 export type { MarkdownCellProps } from './components/notebook/MarkdownCell'

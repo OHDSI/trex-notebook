@@ -40,7 +40,11 @@ export class WebRKernel implements KernelPlugin {
     try {
       const { WebR } = await import('webr')
 
-      this.webR = new WebR()
+      const webROptions: { baseUrl?: string; repoUrl?: string } = {}
+      if (config.baseUrl) webROptions.baseUrl = config.baseUrl
+      if (config.repoUrl) webROptions.repoUrl = config.repoUrl
+
+      this.webR = new WebR(webROptions)
 
       await (this.webR as { init: () => Promise<void> }).init()
 
