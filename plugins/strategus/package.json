@@ -1,11 +1,20 @@
 {
-  "name": "strategus-plugin",
+  "name": "@ohdsi/strategus-plugin",
   "version": "0.1.0",
   "description": "Strategus Analysis Specification Builder for Atlas3",
   "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": "./dist/index.system.js",
+    "./dist/*": "./dist/*"
+  },
+  "publishConfig": {
+    "@ohdsi:registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:sibyl": "STRATEGUS_OUT_DIR=../sibyl/public/plugins/strategus-plugin vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
