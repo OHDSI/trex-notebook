@@ -4,6 +4,11 @@ import vue from '@vitejs/plugin-vue';
 import vuetify from 'vite-plugin-vuetify';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = process.env.OUT_DIR
+  ? path.join(__dirname, process.env.OUT_DIR)
+  : path.join(__dirname, 'dist');
 
 export default defineConfig({
   plugins: [
@@ -37,7 +42,7 @@ export default defineConfig({
       external: ['vue'],
       output: { format: 'system', globals: { vue: 'vue' } },
     },
-    outDir: '../sibyl/public/plugins/notebook-plugin',
+    outDir: OUT_DIR,
     emptyOutDir: true,
   },
   define: {
@@ -46,6 +51,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: false,
-    include: ['src/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts', 'tests/**/*.spec.ts'],
+    exclude: ['tests/e2e/**'],
   },
 });
