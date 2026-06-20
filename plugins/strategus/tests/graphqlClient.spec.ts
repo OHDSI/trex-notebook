@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { GraphqlClient } from '../src/api/graphqlClient';
+import { setAuthToken } from '../src/api/authToken';
 
 describe('strategus GraphqlClient', () => {
   it('POSTs query+variables to /trex/graphql and returns data', async () => {
@@ -18,7 +19,7 @@ describe('strategus GraphqlClient', () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('http://x/trex/graphql');
     expect(init.method).toBe('POST');
-    expect(init.credentials).toBe('include');
+    expect(init.credentials).toBeUndefined();
   });
 
   it('throws on GraphQL errors array', async () => {
