@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { loadConfig } from '../config';
 import { ApiClient } from '../api/client';
+import { getAuthToken } from '../api/authToken';
 import { initiateSubmissionSchema } from '../api/schemas';
 import {
   type Study,
@@ -19,7 +20,7 @@ function defaultClient(): ApiClient {
   // The browser sends no bearer — access is gated by the trex session. The
   // human/Cognito browser-login path has been removed entirely.
   const cfg = loadConfig();
-  return new ApiClient(cfg.proxyUrl, () => null);
+  return new ApiClient(cfg.proxyUrl, getAuthToken);
 }
 
 async function putFileToS3(url: string, file: File): Promise<void> {

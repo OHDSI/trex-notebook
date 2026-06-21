@@ -1,6 +1,12 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vuetify from 'vite-plugin-vuetify';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = process.env.NETWORK_OUT_DIR
+  ? join(__dirname, process.env.NETWORK_OUT_DIR)
+  : join(__dirname, 'dist');
 
 export default defineConfig({
   plugins: [vue(), vuetify({ autoImport: true, styles: 'none' })],
@@ -15,7 +21,7 @@ export default defineConfig({
       external: ['vue'],
       output: { format: 'system', globals: { vue: 'vue' } },
     },
-    outDir: '../sibyl/public/plugins/network-plugin',
+    outDir: OUT_DIR,
     emptyOutDir: true,
   },
   define: {
