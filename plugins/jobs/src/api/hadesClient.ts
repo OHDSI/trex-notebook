@@ -1,11 +1,12 @@
 import type { HadesJob, HadesJobDetail, HadesEnv, RunRequest } from "./types";
+import { authHeaders } from "./authToken";
 
 export class HadesClient {
   constructor(private base: string) {}
 
   private async req<T>(path: string, init?: RequestInit): Promise<T> {
     const resp = await fetch(`${this.base}${path}`, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       ...init,
     });
     if (!resp.ok) throw new Error(`hades-api ${path} failed: ${resp.status}`);

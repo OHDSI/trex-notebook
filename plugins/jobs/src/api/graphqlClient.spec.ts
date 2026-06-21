@@ -14,7 +14,7 @@ describe("GraphqlClient", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("http://x/trex/graphql");
     expect(init.method).toBe("POST");
-    expect(init.credentials).toBe("include");
+    // credentials:'include' removed — Bearer token header is used instead
   });
 
   it("throws on GraphQL errors array", async () => {

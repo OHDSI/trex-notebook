@@ -1,12 +1,20 @@
 {
-  "name": "jobs-plugin",
+  "name": "@ohdsi/jobs-plugin",
   "version": "0.1.0",
-  "private": true,
   "description": "HADES/Strategus jobs overview and R environment management for Atlas3",
   "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": "./dist/index.system.js",
+    "./dist/*": "./dist/*"
+  },
+  "publishConfig": {
+    "@ohdsi:registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:sibyl": "JOBS_OUT_DIR=../sibyl/public/plugins/jobs-plugin vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

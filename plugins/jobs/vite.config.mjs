@@ -1,6 +1,12 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vuetify from 'vite-plugin-vuetify';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = process.env.JOBS_OUT_DIR
+  ? join(__dirname, process.env.JOBS_OUT_DIR)
+  : join(__dirname, 'dist');
 
 export default defineConfig({
   plugins: [
@@ -21,7 +27,7 @@ export default defineConfig({
         globals: { vue: 'vue' },
       },
     },
-    outDir: '../sibyl/public/plugins/jobs-plugin',
+    outDir: OUT_DIR,
     emptyOutDir: true,
   },
   define: {
@@ -30,6 +36,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: false,
-    include: ['src/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts', 'tests/**/*.spec.ts'],
+    exclude: ['tests/e2e/**'],
   },
 });

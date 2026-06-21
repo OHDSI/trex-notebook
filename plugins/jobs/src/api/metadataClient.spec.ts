@@ -12,7 +12,7 @@ describe("MetadataClient", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("http://x/plugins/metadata-api/metadata-api/cdm-connections/conn1/password");
     expect(init.method).toBe("POST");
-    expect(init.credentials).toBe("include");
+    // credentials:'include' removed — Bearer token header is used instead
     expect(JSON.parse(init.body).password).toBe("secret");
   });
 
