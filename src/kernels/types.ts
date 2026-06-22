@@ -13,6 +13,10 @@ export interface PyodideKernelConfig {
 export interface WebRKernelConfig {
   type: 'webr'
   preloadPackages?: string[]
+  /** Base URL for the WebR WASM binaries (offline override; defaults to CDN) */
+  baseUrl?: string
+  /** Repo URL for WebR package downloads (offline override; defaults to CDN) */
+  repoUrl?: string
   /** Environment variables to set in the R environment (e.g. TREX__ENDPOINT_URL, TREX__AUTHORIZATION_TOKEN) */
   envVars?: Record<string, string>
 }

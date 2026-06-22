@@ -5,40 +5,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { WebRKernel } from '@/kernels/webr/WebRKernel'
 
+const mockState = vi.hoisted(() => ({
+  lastWebROptions: undefined as unknown,
+}))
+
 // Mock the webr module
 vi.mock('webr', () => {
-  // Create a mock Shelter class that works as a constructor returning a promise
   class MockShelter {
     async captureR() {
-      return {
-        output: [{ type: 'stdout', data: 'Hello from R' }],
-        images: [],
-        result: null,
-      }
+      return { output: [{ type: 'stdout', data: 'Hello from R' }], images: [], result: null }
     }
-    purge() {
-      // noop
-    }
+    purge() {}
   }
-
   return {
     WebR: class MockWebR {
-      async init() {
-        return undefined
+      constructor(options?: unknown) {
+        mockState.lastWebROptions = options
       }
-      async close() {
-        return undefined
-      }
-      interrupt() {
-        // noop
-      }
-      async evalRVoid() {
-        return undefined
-      }
-      // Shelter is used as: new webR.Shelter() which returns a Promise
+      async init() { return undefined }
+      async close() { return undefined }
+      interrupt() {}
+      async evalRVoid() { return undefined }
       Shelter = class {
         constructor() {
-          // Return a promise that resolves to a MockShelter instance
           return Promise.resolve(new MockShelter())
         }
       }
@@ -182,6 +171,29 @@ describe('WebRKernel', () => {
 
       await kernel.disconnect()
       expect(callback).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('offline asset URLs', () => {
+    beforeEach(() => {
+      mockState.lastWebROptions = undefined
+    })
+
+    it('forwards baseUrl and repoUrl to the WebR constructor', async () => {
+      await kernel.connect({
+        type: 'webr',
+        baseUrl: '/resources/notebook/kernel-assets/webr/',
+        repoUrl: '/resources/notebook/kernel-assets/webr-repo/',
+      })
+      expect(mockState.lastWebROptions).toEqual({
+        baseUrl: '/resources/notebook/kernel-assets/webr/',
+        repoUrl: '/resources/notebook/kernel-assets/webr-repo/',
+      })
+    })
+
+    it('passes empty options when no URLs provided', async () => {
+      await kernel.connect({ type: 'webr' })
+      expect(mockState.lastWebROptions).toEqual({})
     })
   })
 })
