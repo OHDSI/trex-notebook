@@ -1,20 +1,35 @@
 <template>
-  <div ref="mountEl" style="min-height: 60vh"></div>
+  <div>
+    <div v-if="loading" style="display:flex; justify-content:center; padding:3rem">
+      <AtlasProgressCircular indeterminate />
+    </div>
+    <AtlasAlert v-if="error" type="error" style="margin:1rem">
+      Failed to load the {{ pluginId }} plugin: {{ error }}
+    </AtlasAlert>
+    <div ref="mountEl" v-show="!error" style="min-height: 60vh"></div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, inject, onMounted, onBeforeUnmount } from 'vue';
+import { AtlasProgressCircular, AtlasAlert } from '@ohdsi/atlas-ui';
 import type { StudiesHostCtx, HostParcel } from '../main';
 
 const props = defineProps<{ pluginId: string }>();
 
 const hostCtx = inject<StudiesHostCtx>('studiesHostCtx');
 const mountEl = ref<HTMLElement | null>(null);
+const loading = ref(true);
+const error = ref<string | null>(null);
 
 async function mountEmbeddedPlugin(): Promise<HostParcel | null> {
-  if (!hostCtx || !mountEl.value) return null;
+  if (!hostCtx || !mountEl.value) throw new Error('studies host context unavailable');
   if (!window.System) throw new Error('SystemJS is not available');
-
+  // uiFilesUrl is this plugin's own base (…/plugins/studies-plugin/); swap the id
+  // to resolve the target plugin's bundle. Guard against an unexpected base.
+  if (!hostCtx.uiFilesUrl.includes('studies-plugin')) {
+    throw new Error(`cannot resolve plugin base from "${hostCtx.uiFilesUrl}"`);
+  }
   const targetUrl = hostCtx.uiFilesUrl.replace('studies-plugin', props.pluginId);
   const lifecycles = await window.System.import(targetUrl + 'index.system.js');
 
@@ -41,7 +56,17 @@ async function mountEmbeddedPlugin(): Promise<HostParcel | null> {
 let parcelPromise: Promise<HostParcel | null> | null = null;
 
 onMounted(() => {
-  parcelPromise = mountEmbeddedPlugin();
+  parcelPromise = mountEmbeddedPlugin()
+    .then((p) => {
+      loading.value = false;
+      return p;
+    })
+    .catch((e) => {
+      error.value = e instanceof Error ? e.message : String(e);
+      loading.value = false;
+      console.error(`[studies] failed to embed ${props.pluginId}:`, e);
+      return null;
+    });
 });
 
 onBeforeUnmount(async () => {
