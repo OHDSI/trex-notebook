@@ -7,7 +7,6 @@ vi.mock('../data/network', () => ({
   listStudies: vi.fn().mockResolvedValue([
     { studyId: 's1', name: 'Study One', version: '1.0', status: 'published', description: '' },
   ]),
-  signupState: vi.fn().mockResolvedValue('none'),
   networkBase: () => 'http://x/plugins/network-api/network-api',
 }));
 

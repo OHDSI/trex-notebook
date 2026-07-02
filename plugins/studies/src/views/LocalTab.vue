@@ -6,10 +6,6 @@
     title="Local"
     subtitle="Studies running against this site's local data"
   >
-    <template #actions>
-      <AtlasIconButton icon="mdi-cog-outline" ariaLabel="Connections" size="sm" @click="goToConnections" />
-    </template>
-
     <AtlasAlert v-if="error" severity="danger" class="mb-4">{{ error }}</AtlasAlert>
 
     <AtlasDataTable
@@ -29,7 +25,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { AtlasPageShell, AtlasDataTable, AtlasIconButton, AtlasAlert } from '@ohdsi/atlas-ui';
+import { AtlasPageShell, AtlasDataTable, AtlasAlert } from '@ohdsi/atlas-ui';
 import { listLocalItems, type LocalItem } from '../data/local';
 
 const items = ref<LocalItem[]>([]);
@@ -61,10 +57,6 @@ async function reload(): Promise<void> {
 
 function open(item: LocalItem): void {
   window.location.href = item.route;
-}
-
-function goToConnections(): void {
-  window.location.href = '/plugins/jobs-plugin/';
 }
 
 onMounted(reload);

@@ -131,7 +131,7 @@
       </div>
     </AtlasCard>
 
-    <!-- Copy confirmation snackbar -->
+    <!-- Result snackbar -->
     <AtlasSnackbar
       v-model="snackbar"
       :timeout="2000"
@@ -142,7 +142,7 @@
       <AtlasIcon class="mr-2">
         mdi-check
       </AtlasIcon>
-      JSON copied to clipboard
+      {{ snackbarMessage }}
     </AtlasSnackbar>
   </div>
 </template>
@@ -160,15 +160,16 @@ const validation = useValidation();
 
 const fullscreen = ref(false);
 const snackbar = ref(false);
+const snackbarMessage = ref('JSON copied to clipboard');
 const showRun = ref(false);
 
 const spec = computed(() => serializeSpec(store));
 const jsonPreview = computed(() => JSON.stringify(spec.value, null, 2));
 
-function onSubmitted(jobId: string) {
+function onSubmitted() {
   showRun.value = false;
-  // Deep-link to the jobs plugin focused on this run.
-  window.location.assign(`/plugins/jobs-plugin/?job=${encodeURIComponent(jobId)}`);
+  snackbarMessage.value = 'Study run started — track progress in Jobs';
+  snackbar.value = true;
 }
 
 const validationChecks = computed(() => [
@@ -184,6 +185,7 @@ const allValid = computed(() => validation.canExport.value);
 async function copyJson() {
   try {
     await navigator.clipboard.writeText(jsonPreview.value);
+    snackbarMessage.value = 'JSON copied to clipboard';
     snackbar.value = true;
   } catch {
     // Fallback: select a textarea
@@ -193,6 +195,7 @@ async function copyJson() {
     el.select();
     document.execCommand('copy');
     document.body.removeChild(el);
+    snackbarMessage.value = 'JSON copied to clipboard';
     snackbar.value = true;
   }
 }

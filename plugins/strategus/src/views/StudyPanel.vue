@@ -23,6 +23,15 @@
     <!-- Run analysis (reuses the existing execute dialog) -->
     <RunAnalysisDialog :open="runOpen" :spec="spec" @close="runOpen = false" @submitted="onRun" />
 
+    <!-- Run started snackbar -->
+    <AtlasSnackbar
+      v-model="runStarted"
+      :timeout="4000"
+      severity="success"
+      text="Study run started — track progress in Jobs"
+      location="bottom"
+    />
+
     <!-- Delete confirmation -->
     <AtlasDialog
       :model-value="confirmOpen"
@@ -81,7 +90,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { AtlasIcon, AtlasTooltip, AtlasButton, AtlasDialog } from '@ohdsi/atlas-ui';
+import { AtlasIcon, AtlasTooltip, AtlasButton, AtlasDialog, AtlasSnackbar } from '@ohdsi/atlas-ui';
 import StudySetupPanel from './StudySetupPanel.vue';
 import CohortsPanel from './CohortsPanel.vue';
 import ComparisonsPanel from './ComparisonsPanel.vue';
@@ -102,6 +111,7 @@ const saving = ref(false);
 const deleting = ref(false);
 const runOpen = ref(false);
 const confirmOpen = ref(false);
+const runStarted = ref(false);
 const saveMsg = ref('');
 const saveError = ref(false);
 
@@ -134,9 +144,9 @@ async function onDelete(): Promise<void> {
   }
 }
 
-function onRun(jobId: string): void {
+function onRun(): void {
   runOpen.value = false;
-  window.location.assign(`/plugins/jobs-plugin/?job=${encodeURIComponent(jobId)}`);
+  runStarted.value = true;
 }
 
 interface DesignSection {
