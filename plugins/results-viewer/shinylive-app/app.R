@@ -121,22 +121,38 @@ local({
     else character()
   }
 
+  # cd.csv / plp.csv declare table names WITHOUT the module prefix, but the OHDSI
+  # modules query them WITH one (dataSource$cdTablePrefix = "cd_", plpTablePrefix
+  # = "plp_", ...). Without prefixing the stub, a data-less module queries e.g.
+  # cd_metadata, finds nothing, and downstream code (getDatabaseMetadata ->
+  # pivot_wider on variableField) errors on the missing column. Derive the prefix
+  # from the schema filename so every stub is named the way its module queries it;
+  # cm.csv / cg.csv already embed their prefix, so startsWith() avoids doubling.
+  schema_prefix <- function(csv_file) {
+    switch(tools::file_path_sans_ext(basename(csv_file)),
+           cd = "cd_", osm_cd = "cd_", cm = "cm_", cg = "cg_",
+           plp = "plp_", c = "c_", sccs = "sccs_", ci = "ci_",
+           "")
+  }
   created <- character()
   for (csv_file in list.files(schema_dir, pattern = "\\.csv$", full.names = TRUE)) {
     spec <- tryCatch(utils::read.csv(csv_file, stringsAsFactors = FALSE),
                        error = function(e) NULL)
     if (is.null(spec) || !"table_name" %in% colnames(spec)) next
-    for (tbl in unique(spec$table_name)) {
+    prefix <- schema_prefix(csv_file)
+    for (tbl0 in unique(spec$table_name)) {
+      tbl <- if (nzchar(prefix) && !startsWith(tbl0, prefix)) paste0(prefix, tbl0) else tbl0
       if (tbl %in% created) next
-      cols <- spec[spec$table_name == tbl, ]
+      cols <- spec[spec$table_name == tbl0, ]
       df_cols <- setNames(
         lapply(cols$data_type, init_for),
         cols$column_name
       )
-      # Record VARCHAR / TEXT / CHAR columns for this table.
+      # Record VARCHAR cols under the BARE name; .varchar_cols_for_table strips
+      # the prefix before lookup.
       varchar_idx <- grepl("^(varchar|text|char|string)",
                             tolower(trimws(cols$data_type)))
-      .varchar_cols_by_table[[tbl]] <<- as.character(cols$column_name[varchar_idx])
+      .varchar_cols_by_table[[tbl0]] <<- as.character(cols$column_name[varchar_idx])
       df <- do.call(data.frame, c(df_cols, list(stringsAsFactors = FALSE)))
       tryCatch({
         DBI::dbWriteTable(.results_con, tbl, df, overwrite = TRUE)
