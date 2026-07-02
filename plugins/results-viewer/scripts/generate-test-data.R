@@ -67,6 +67,12 @@ gen_value <- function(dtype, colname, idx, n_rows) {
   is_json <- grepl("json", cn)
   is_sql  <- grepl("sql", cn)
 
+  # Known enum / flag columns need realistic values, not generic val_N — module
+  # logic keys off them (e.g. subset flags gate the attrition display).
+  if (cn == "generation_status") return("COMPLETE")
+  if (grepl("^is_", cn)) return(0L)
+  if (cn %in% c("subset_parent", "subset_definition_id")) return("")
+
   # Numeric / integer
   if (grepl("int|bigint", dtype)) {
     if (is_id || is_concept) return(as.integer(1000L + idx))
