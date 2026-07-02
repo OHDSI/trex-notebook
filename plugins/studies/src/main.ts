@@ -1,3 +1,4 @@
+import './style.css';
 import { h, createApp } from 'vue';
 import { setAuthToken } from './api/authToken';
 import { createPinia } from 'pinia';
