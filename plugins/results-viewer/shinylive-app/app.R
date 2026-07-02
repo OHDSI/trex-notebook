@@ -520,8 +520,8 @@ ui <- tagList(
       --atlas-border: #e5e7eb;
       --atlas-text: #1f2937;
       --atlas-muted: #6b7280;
-      --atlas-primary: #1f425a;        /* navy brand primary */
-      --atlas-primary-dim: #5b7c93;
+      --atlas-primary: #000080;        /* navy brand primary */
+      --atlas-primary-dim: #4d4db3;
       --atlas-active: #0f3a5f;
     }
 
@@ -583,11 +583,11 @@ ui <- tagList(
       font-size: 1.15rem !important;
     }
     .sidebar-menu > li:hover > a {
-      background: rgba(31, 66, 90, 0.06) !important;
+      background: rgba(0,0,128, 0.06) !important;
       color: var(--atlas-text) !important;
     }
     .sidebar-menu > li.active > a {
-      background: rgba(31, 66, 90, 0.10) !important;
+      background: rgba(0,0,128, 0.10) !important;
       color: var(--atlas-active) !important;
       border-left-color: var(--atlas-primary) !important;
     }
@@ -658,9 +658,9 @@ ui <- tagList(
       border-color: var(--atlas-primary) !important;
       border-radius: 6px !important;
     }
-    .btn-primary:hover { background: #163349 !important; border-color: #163349 !important; }
+    .btn-primary:hover { background: #000066 !important; border-color: #000066 !important; }
     .action-button.btn-default:hover {
-      background: rgba(31, 66, 90, 0.08) !important;
+      background: rgba(0,0,128, 0.08) !important;
       border-color: var(--atlas-primary-dim) !important;
     }
 
@@ -691,7 +691,7 @@ ui <- tagList(
     /* Misc */
     h1, h2, h3, h4 { color: var(--atlas-text); }
     a { color: var(--atlas-primary); }
-    a:hover { color: #163349; }
+    a:hover { color: #000066; }
 
     /* Smaller, denser sidebar collapse on narrow screens */
     @media (max-width: 768px) {
