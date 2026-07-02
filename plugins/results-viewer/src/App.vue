@@ -17,7 +17,29 @@ const hasLoadedData = ref(false)
 const hasMountedShiny = ref(false)
 const phase = ref<'loader' | 'viewer'>('loader')
 
+// Remount ShinyFrame (fresh WebR/Shiny session) whenever a *different* dataset
+// is opened. The OHDSI module servers initialise once and guard re-entry
+// (OhdsiShinyAppBuilder's runServer==1), so re-posting new files into a live
+// session reloads the DuckDB tables but leaves the modules bound to the first
+// dataset — the viewer then renders empty/stale. Keying the frame by dataset
+// identity forces a clean re-init on switch; re-opening the same result keeps
+// the existing session (no needless WebR cold-start).
+const frameKey = ref(0)
+let lastSig = ''
+
+function datasetSignature(files: Map<string, ArrayBuffer>): string {
+  return Array.from(files.entries())
+    .map(([n, b]) => `${n}:${b.byteLength}`)
+    .sort()
+    .join('|')
+}
+
 function onDataLoaded(files: Map<string, ArrayBuffer>) {
+  const sig = datasetSignature(files)
+  if (sig !== lastSig) {
+    lastSig = sig
+    frameKey.value++
+  }
   filesForViewer.value = files
   hasLoadedData.value = true
   hasMountedShiny.value = true
@@ -40,6 +62,7 @@ function onReset() {
     <ShinyFrame
       v-if="hasMountedShiny"
       v-show="phase === 'viewer'"
+      :key="frameKey"
       :files="filesForViewer"
       @reset="onReset"
     />
