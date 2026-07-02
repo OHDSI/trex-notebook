@@ -139,23 +139,37 @@ build_table <- function(tbl_name, cols_spec) {
 set.seed(42)
 created <- character()
 
+# cd.csv / plp.csv declare table names WITHOUT the module prefix, but the OHDSI
+# modules query them WITH one (dataSource$cdTablePrefix = "cd_", etc.). Write the
+# CSV under the prefixed name so the loaded table matches the module query. Keep
+# this in sync with the stub-prefixing in shinylive-app/app.R. cm.csv / cg.csv
+# already embed their prefix, so startsWith() avoids doubling it.
+schema_prefix <- function(csv_file) {
+  switch(tools::file_path_sans_ext(basename(csv_file)),
+         cd = "cd_", osm_cd = "cd_", cm = "cm_", cg = "cg_",
+         plp = "plp_", c = "c_", sccs = "sccs_", ci = "ci_",
+         "")
+}
+
 for (csv_file in list.files(schemas_dir, pattern = "\\.csv$", full.names = TRUE)) {
   cat("Reading schema:", basename(csv_file), "\n")
   spec <- utils::read.csv(csv_file, stringsAsFactors = FALSE)
   if (!"table_name" %in% colnames(spec)) next
+  prefix <- schema_prefix(csv_file)
 
   for (tbl in unique(spec$table_name)) {
-    if (tbl %in% created) next
+    out_name <- if (nzchar(prefix) && !startsWith(tbl, prefix)) paste0(prefix, tbl) else tbl
+    if (out_name %in% created) next
     cols <- spec[spec$table_name == tbl, , drop = FALSE]
     df <- tryCatch(build_table(tbl, cols), error = function(e) {
       cat("  Skipped", tbl, ":", conditionMessage(e), "\n"); NULL
     })
     if (is.null(df)) next
 
-    out_path <- file.path(out_dir, paste0(tbl, ".csv"))
+    out_path <- file.path(out_dir, paste0(out_name, ".csv"))
     utils::write.csv(df, out_path, row.names = FALSE, quote = TRUE, na = "")
-    created <- c(created, tbl)
-    cat("  Wrote", tbl, "(", nrow(df), "rows ,", ncol(df), "cols)\n")
+    created <- c(created, out_name)
+    cat("  Wrote", out_name, "(", nrow(df), "rows ,", ncol(df), "cols)\n")
   }
 }
 
