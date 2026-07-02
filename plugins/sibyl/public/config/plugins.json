@@ -63,25 +63,6 @@
         "author": "OHDSI",
         "description": "Studies shell: Local / Network / Results"
       }
-    },
-    {
-      "id": "jobs-plugin",
-      "name": "Jobs",
-      "version": "0.1.0",
-      "entryPoint": "jobs-plugin/index.system.js",
-      "menuItems": [
-        {
-          "id": "jobs.main",
-          "name": "Jobs",
-          "route": "/plugins/jobs-plugin/",
-          "icon": "mdi-clipboard-list-outline",
-          "order": 55
-        }
-      ],
-      "metadata": {
-        "author": "OHDSI",
-        "description": "HADES/Strategus job runs and R environment management"
-      }
     }
   ]
 }

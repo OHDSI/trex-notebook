@@ -40,13 +40,6 @@
 
       <div class="nav-bar__actions">
         <AtlasIconButton
-          icon="mdi-briefcase-clock-outline"
-          variant="text"
-          ariaLabel="Open jobs panel"
-          data-test="nav-jobs"
-          @click="ui.toggleJobs()"
-        />
-        <AtlasIconButton
           icon="mdi-cog"
           variant="text"
           ariaLabel="Open settings panel"
@@ -85,7 +78,6 @@ import { ref, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   generatePluginMenuItems,
-  filterTextNavItems,
   type PluginMenuItem,
 } from '@/plugins/navigation/PluginMenuIntegration'
 import { useUiStore } from '@/stores/ui'
@@ -109,12 +101,12 @@ function handleLogout(): void {
   void router.push({ name: 'login' })
 }
 
-const menuItems = ref<PluginMenuItem[]>(filterTextNavItems(generatePluginMenuItems()))
+const menuItems = ref<PluginMenuItem[]>(generatePluginMenuItems())
 
 // Plugins register AFTER the app mounts (see main.ts bootstrap order), so
 // refresh the menu whenever the registry changes (add/remove/hot-reload).
 const unsubscribe = pluginRegistry.onPluginChange(() => {
-  menuItems.value = filterTextNavItems(generatePluginMenuItems())
+  menuItems.value = generatePluginMenuItems()
 })
 onUnmounted(unsubscribe)
 
