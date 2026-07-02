@@ -61,6 +61,28 @@ export interface PluginProps {
   };
 }
 
+// Minimal shape of the single-spa parcel returned by `mountParcel`/`mountRootParcel`.
+// Kept local (rather than typed against the `single-spa` package) because this
+// plugin only depends on `single-spa-vue`, not `single-spa` itself.
+export interface HostParcel {
+  mountPromise: Promise<unknown>;
+  unmount?: () => Promise<unknown>;
+}
+
+export type MountParcelFn = (
+  parcelConfig: unknown,
+  customProps: { domElement: HTMLElement } & Record<string, unknown>
+) => HostParcel;
+
+// Context handed down to tab components so they can embed sibling plugins
+// (results-viewer, network-plugin) as single-spa parcels — see PluginEmbed.vue.
+export interface StudiesHostCtx {
+  mountParcel: MountParcelFn;
+  authContext: PluginProps['authContext'];
+  messageBus: PluginProps['messageBus'];
+  uiFilesUrl: string;
+}
+
 // Read host's shared Vuetify config if available; otherwise use minimal fallback.
 // The host exposes its actual `buildVuetifyOptions()` output on window so the
 // plugin's components inherit the same density, rounding, and variant defaults
@@ -98,10 +120,19 @@ const vueLifecycles = singleSpaVue({
       return h(StudiesApp);
     },
   },
-  handleInstance(app) {
+  handleInstance(app, props) {
     const pinia = createPinia();
     app.use(pinia);
     app.use(vuetify);
+
+    const pluginProps = props as PluginProps;
+    const hostCtx: StudiesHostCtx = {
+      mountParcel: pluginProps.mountParcel as MountParcelFn,
+      authContext: pluginProps.authContext,
+      messageBus: pluginProps.messageBus,
+      uiFilesUrl: pluginProps.uiFilesUrl ?? '',
+    };
+    app.provide('studiesHostCtx', hostCtx);
   },
 });
 
