@@ -134,6 +134,9 @@ local({
            plp = "plp_", c = "c_", sccs = "sccs_", ci = "ci_",
            "")
   }
+  # Cross-module tables the modules query WITHOUT a prefix (databaseTablePrefix
+  # = ""). Several schemas declare these, so they must never be module-prefixed.
+  shared_unprefixed <- c("database_meta_data", "database")
   created <- character()
   for (csv_file in list.files(schema_dir, pattern = "\\.csv$", full.names = TRUE)) {
     spec <- tryCatch(utils::read.csv(csv_file, stringsAsFactors = FALSE),
@@ -141,7 +144,7 @@ local({
     if (is.null(spec) || !"table_name" %in% colnames(spec)) next
     prefix <- schema_prefix(csv_file)
     for (tbl0 in unique(spec$table_name)) {
-      tbl <- if (nzchar(prefix) && !startsWith(tbl0, prefix)) paste0(prefix, tbl0) else tbl0
+      tbl <- if (nzchar(prefix) && !startsWith(tbl0, prefix) && !(tbl0 %in% shared_unprefixed)) paste0(prefix, tbl0) else tbl0
       if (tbl %in% created) next
       cols <- spec[spec$table_name == tbl0, ]
       df_cols <- setNames(

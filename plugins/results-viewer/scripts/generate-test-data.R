@@ -150,6 +150,9 @@ schema_prefix <- function(csv_file) {
          plp = "plp_", c = "c_", sccs = "sccs_", ci = "ci_",
          "")
 }
+# Cross-module tables the modules query WITHOUT a prefix (databaseTablePrefix="").
+# Several schemas declare these, so they must never be module-prefixed.
+SHARED_UNPREFIXED <- c("database_meta_data", "database")
 
 for (csv_file in list.files(schemas_dir, pattern = "\\.csv$", full.names = TRUE)) {
   cat("Reading schema:", basename(csv_file), "\n")
@@ -158,7 +161,7 @@ for (csv_file in list.files(schemas_dir, pattern = "\\.csv$", full.names = TRUE)
   prefix <- schema_prefix(csv_file)
 
   for (tbl in unique(spec$table_name)) {
-    out_name <- if (nzchar(prefix) && !startsWith(tbl, prefix)) paste0(prefix, tbl) else tbl
+    out_name <- if (nzchar(prefix) && !startsWith(tbl, prefix) && !(tbl %in% SHARED_UNPREFIXED)) paste0(prefix, tbl) else tbl
     if (out_name %in% created) next
     cols <- spec[spec$table_name == tbl, , drop = FALSE]
     df <- tryCatch(build_table(tbl, cols), error = function(e) {
