@@ -38,5 +38,10 @@ export default defineConfig({
     globals: false,
     include: ['src/**/*.spec.ts', 'tests/**/*.spec.ts'],
     exclude: ['tests/e2e/**'],
+    // Transform Vuetify and @ohdsi/atlas-ui (which renders Vuetify internally)
+    // rather than treating them as external, so their `.css` imports are handled
+    // by vite instead of Node's ESM loader — otherwise a spec that renders an
+    // Atlas/Vuetify component throws "Unknown file extension .css".
+    server: { deps: { inline: ['vuetify', '@ohdsi/atlas-ui'] } },
   },
 });
