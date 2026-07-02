@@ -22,7 +22,21 @@ const hasItems = computed(() => items.value.length > 0)
 
 onMounted(async () => {
   items.value = await listResults()
+  openFromQueryString()
 })
+
+// Deep-link handoff: other plugins (e.g. studies) navigate here with
+// ?open=<id> to open a saved result directly. Fires at most once.
+let openedFromQueryString = false
+function openFromQueryString() {
+  if (openedFromQueryString) return
+  const id = new URLSearchParams(window.location.search).get('open')
+  if (!id) return
+  const meta = items.value.find(m => m.id === id)
+  if (!meta) return
+  openedFromQueryString = true
+  openMeta(meta)
+}
 
 function fmtSize(n: number): string {
   if (n < 1024) return `${n} B`
