@@ -3,6 +3,7 @@ export interface LocalItem {
   name: string;
   type: 'Notebook' | 'Strategus';
   updatedAt: string;
+  /** Base-relative deep-link path, e.g. "/plugins/notebook-plugin/?open=<id>". */
   route: string;
 }
 
@@ -52,7 +53,7 @@ async function listNotebookItems(): Promise<LocalItem[]> {
         name: n.name,
         type: 'Notebook' as const,
         updatedAt: n.updatedAt,
-        route: '/plugins/notebook-plugin/',
+        route: `/plugins/notebook-plugin/?open=${n.rowId}`,
       }));
   } catch {
     return [];
@@ -69,7 +70,7 @@ function listStrategusItems(): LocalItem[] {
       name: s.name,
       type: 'Strategus' as const,
       updatedAt: s.updatedAt,
-      route: '/plugins/strategus-plugin/',
+      route: `/plugins/strategus-plugin/?study=${s.id}`,
     }));
   } catch {
     return [];

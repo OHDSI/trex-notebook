@@ -6,6 +6,23 @@
     title="Local"
     subtitle="Studies running against this site's local data"
   >
+    <template #actions>
+      <AtlasButton
+        variant="ghost"
+        prepend-icon="mdi-notebook-plus-outline"
+        @click="navigate('/plugins/notebook-plugin/?new=1')"
+      >
+        New Notebook
+      </AtlasButton>
+      <AtlasButton
+        variant="primary"
+        prepend-icon="mdi-flask-plus-outline"
+        @click="navigate('/plugins/strategus-plugin/?new=1')"
+      >
+        New Study
+      </AtlasButton>
+    </template>
+
     <AtlasAlert v-if="error" severity="danger" class="mb-4">{{ error }}</AtlasAlert>
 
     <AtlasDataTable
@@ -24,13 +41,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { AtlasPageShell, AtlasDataTable, AtlasAlert } from '@ohdsi/atlas-ui';
+import { ref, inject, onMounted } from 'vue';
+import { AtlasPageShell, AtlasDataTable, AtlasAlert, AtlasButton } from '@ohdsi/atlas-ui';
 import { listLocalItems, type LocalItem } from '../data/local';
+import type { StudiesHostCtx } from '../main';
+
+const hostCtx = inject<StudiesHostCtx>('studiesHostCtx');
 
 const items = ref<LocalItem[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+// Navigation goes through the host message bus (not window.location, which
+// 404s under the /atlas/ base) so the SPA router applies the correct base.
+function navigate(path: string): void {
+  hostCtx?.messageBus.send('navigation:request', { path });
+}
 
 const headers = [
   { title: 'Name', key: 'name' },
@@ -56,7 +82,7 @@ async function reload(): Promise<void> {
 }
 
 function open(item: LocalItem): void {
-  window.location.href = item.route;
+  navigate(item.route);
 }
 
 onMounted(reload);

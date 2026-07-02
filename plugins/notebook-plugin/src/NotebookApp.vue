@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import NotebookListView from "./views/NotebookListView.vue";
 import NotebookEditorView from "./views/NotebookEditorView.vue";
 
@@ -47,6 +47,19 @@ function goToList(): void {
 function onSaved(id: string): void {
   activeId.value = id;
 }
+
+// Deep-link: the Studies "Local" tab navigates here with ?open=<rowId> or
+// ?new=1 to jump straight into the editor. Runs once on mount only.
+onMounted(() => {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  const openId = params.get("open");
+  if (openId) {
+    openNotebook(openId);
+  } else if (params.has("new")) {
+    newNotebook();
+  }
+});
 </script>
 
 <style scoped>

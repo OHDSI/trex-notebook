@@ -88,15 +88,25 @@ const panelMap: Record<string, unknown> = {
 const activeComponent = computed(() => panelMap[store.activePanel] ?? OverviewPanel);
 
 // Deep-link: the jobs "Open in Strategus" affordance navigates here with
-// ?definition=<rowId>. On mount, fetch that server-stored definition and open it
-// in the editor (same hydration path as opening a local study).
+// ?definition=<rowId> (fetch + open a server-stored definition); the Studies
+// "Local" tab navigates here with ?study=<localId> (open a local study) or
+// ?new=1 (start a fresh study). Only one fires, in that precedence order.
 onMounted(() => {
   if (typeof window === 'undefined') return;
-  const id = new URLSearchParams(window.location.search).get('definition');
-  if (!id) return;
-  studiesStore.loadServerDefinition(id).catch((e) => {
-    // Non-fatal: fall back to the studies list if the definition can't be loaded.
-    console.error('Failed to load server definition', id, e);
-  });
+  const params = new URLSearchParams(window.location.search);
+  const definitionId = params.get('definition');
+  const studyId = params.get('study');
+  if (definitionId) {
+    studiesStore.loadServerDefinition(definitionId).catch((e) => {
+      // Non-fatal: fall back to the studies list if the definition can't be loaded.
+      console.error('Failed to load server definition', definitionId, e);
+    });
+  } else if (studyId) {
+    const study = studiesStore.openStudy(studyId);
+    if (study) store.restore(study.state);
+  } else if (params.has('new')) {
+    store.resetToDefaults();
+    studiesStore.openNew();
+  }
 });
 </script>
