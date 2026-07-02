@@ -25,12 +25,23 @@ onMounted(async () => {
   openFromQueryString()
 })
 
+// Under Atlas3's hash routing (createWebHashHistory), query params live in
+// window.location.hash (e.g. "#/plugins/results-viewer-plugin/?open=<id>"),
+// not window.location.search — but fall back to search too, since this
+// component also runs standalone (outside the hash-routed host).
+function readHashQuery(): URLSearchParams {
+  const hash = window.location.hash || ''
+  const i = hash.indexOf('?')
+  return i >= 0 ? new URLSearchParams(hash.slice(i + 1)) : new URLSearchParams()
+}
+
 // Deep-link handoff: other plugins (e.g. studies) navigate here with
 // ?open=<id> to open a saved result directly. Fires at most once.
 let openedFromQueryString = false
 function openFromQueryString() {
   if (openedFromQueryString) return
-  const id = new URLSearchParams(window.location.search).get('open')
+  const hashParams = readHashQuery()
+  const id = hashParams.get('open') ?? new URLSearchParams(window.location.search).get('open')
   if (!id) return
   const meta = items.value.find(m => m.id === id)
   if (!meta) return

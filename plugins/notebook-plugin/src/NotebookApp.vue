@@ -48,11 +48,20 @@ function onSaved(id: string): void {
   activeId.value = id;
 }
 
+// Under Atlas3's hash routing (createWebHashHistory), query params live in
+// window.location.hash (e.g. "#/plugins/notebook-plugin/?new=1"), not
+// window.location.search, which is always empty here.
+function readHashQuery(): URLSearchParams {
+  const hash = window.location.hash || "";
+  const i = hash.indexOf("?");
+  return i >= 0 ? new URLSearchParams(hash.slice(i + 1)) : new URLSearchParams();
+}
+
 // Deep-link: the Studies "Local" tab navigates here with ?open=<rowId> or
 // ?new=1 to jump straight into the editor. Runs once on mount only.
 onMounted(() => {
   if (typeof window === "undefined") return;
-  const params = new URLSearchParams(window.location.search);
+  const params = readHashQuery();
   const openId = params.get("open");
   if (openId) {
     openNotebook(openId);

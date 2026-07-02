@@ -91,9 +91,18 @@ const activeComponent = computed(() => panelMap[store.activePanel] ?? OverviewPa
 // ?definition=<rowId> (fetch + open a server-stored definition); the Studies
 // "Local" tab navigates here with ?study=<localId> (open a local study) or
 // ?new=1 (start a fresh study). Only one fires, in that precedence order.
+// Under Atlas3's hash routing (createWebHashHistory), query params live in
+// window.location.hash (e.g. "#/plugins/strategus-plugin/?new=1"), not
+// window.location.search, which is always empty here.
+function readHashQuery(): URLSearchParams {
+  const hash = window.location.hash || '';
+  const i = hash.indexOf('?');
+  return i >= 0 ? new URLSearchParams(hash.slice(i + 1)) : new URLSearchParams();
+}
+
 onMounted(() => {
   if (typeof window === 'undefined') return;
-  const params = new URLSearchParams(window.location.search);
+  const params = readHashQuery();
   const definitionId = params.get('definition');
   const studyId = params.get('study');
   if (definitionId) {

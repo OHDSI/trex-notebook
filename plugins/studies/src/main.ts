@@ -32,6 +32,9 @@ function injectPluginCss(uiFilesUrl: string): Promise<void> {
     // reject) on error so a missing file can't hang the parcel forever.
     link.addEventListener('load', () => { link.dataset.loaded = 'true'; resolve(); }, { once: true });
     link.addEventListener('error', () => { link.dataset.loaded = 'true'; resolve(); }, { once: true }); // mark settled so a remount doesn't await a dead listener
+    // Studies has no bundled CSS, so this build emits no style.css; drop the
+    // dead <link> rather than leave a 404'd stylesheet in the DOM.
+    link.onerror = () => { link.remove(); };
     document.head.appendChild(link);
   });
 }
