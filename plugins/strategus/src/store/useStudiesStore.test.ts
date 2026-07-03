@@ -9,11 +9,9 @@ vi.mock('../api/graphqlClient', () => ({
   GraphqlClient: vi.fn().mockImplementation(() => ({ request })),
   defaultGraphqlEndpoint: () => 'http://g/graphql',
 }));
-// serializeSpec needs the full strategus snapshot; stub it so save/delete can be
-// tested with a lightweight editor stub.
-vi.mock('../services/SpecSerializer', () => ({
-  serializeSpec: () => ({ moduleSpecifications: [], sharedResources: [] }),
-}));
+// SpecSerializer is intentionally NOT mocked: save/delete and the legacy-migration
+// path both drive the real serializeSpec against a real useStrategusStore, so the
+// migration test can assert it produces a valid AnalysisSpecification.
 
 import { useStudiesStore } from './useStudiesStore';
 import { useStrategusStore } from './useStrategusStore';
@@ -70,11 +68,29 @@ describe('useStudiesStore (GraphQL-backed)', () => {
     expect(out.map((s) => s.rowId)).toEqual(['R1']);
   });
 
-  it('listStudies migrates un-migrated legacy localStorage studies once, then clears the key', async () => {
+  it('listStudies migrates un-migrated legacy studies via restore→serializeSpec (valid spec)', async () => {
+    // Build a REAL editor snapshot: a legacy `state` is the raw snapshot() dump,
+    // NOT an AnalysisSpecification. The migration must restore it and serialize
+    // into a valid spec (with sharedResources + moduleSpecifications), not write
+    // the raw dump as the spec.
+    const editor = useStrategusStore();
+    editor.studyName = 'Legacy A';
+    editor.description = 'old';
+    editor.cohorts = [
+      { cohortId: 1, cohortName: 'Target', role: 'Target', subjectCount: 100, cohortDefinition: '{"t":1}' },
+      { cohortId: 2, cohortName: 'Comparator', role: 'Comparator', subjectCount: 90, cohortDefinition: '{"c":1}' },
+    ] as never;
+    editor.comparisons = [
+      { targetId: 1, comparatorId: 2, indicationId: null, genderConceptIds: [8507, 8532], minAge: null, maxAge: null },
+    ] as never;
+    const legacyState = editor.snapshot();
+    // Reset the active editor so it can't be the source of the migrated spec.
+    setActivePinia(createPinia());
+
     localStorage.setItem(
       'strategus-plugin:studies',
       JSON.stringify([
-        { name: 'Legacy A', description: 'old', state: { moduleSpecifications: [] } },
+        { name: 'Legacy A', description: 'old', state: legacyState },
         { name: 'Already migrated', description: '', serverId: 'srv-9', state: {} },
       ])
     );
@@ -86,9 +102,20 @@ describe('useStudiesStore (GraphQL-backed)', () => {
 
     const out = await useStudiesStore().listStudies();
 
-    expect(request.mock.calls[0][0]).toContain('createNotebookAnalysisDefinition');
-    expect(request.mock.calls[0][1]).toMatchObject({ name: 'Legacy A', description: 'old' });
+    // Exactly one create (the already-migrated record is skipped) then the LIST.
     expect(request).toHaveBeenCalledTimes(2);
+    const [createQuery, createVars] = request.mock.calls[0];
+    expect(createQuery).toContain('createNotebookAnalysisDefinition');
+    expect(createVars).toMatchObject({ name: 'Legacy A', description: 'old' });
+
+    // The sent spec must be a valid AnalysisSpecification, not the raw snapshot.
+    const spec = createVars.spec;
+    expect(Array.isArray(spec.sharedResources)).toBe(true);
+    expect(Array.isArray(spec.moduleSpecifications)).toBe(true);
+    expect(spec).not.toHaveProperty('cohorts'); // raw-snapshot keys must be gone
+    // And it round-trips through the real deserializer without throwing.
+    expect(() => deserializeSpec(spec, useStrategusStore())).not.toThrow();
+
     expect(localStorage.getItem('strategus-plugin:studies')).toBeNull();
     expect(out).toEqual([]);
   });
@@ -106,10 +133,7 @@ describe('useStudiesStore (GraphQL-backed)', () => {
 });
 
 // Decision D1 gate: persisting only `spec` (not the editor's live `state`) is
-// lossless iff serialize -> deserialize -> serialize is a fixed point. This
-// module-level test file stubs SpecSerializer for the save/delete suite above,
-// so pull in the real implementation via importActual to exercise genuine
-// serializer/deserializer logic instead of the stub.
+// lossless iff serialize -> deserialize -> serialize is a fixed point.
 describe('spec round-trip is lossless (D1)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());

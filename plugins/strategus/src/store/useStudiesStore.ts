@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore, createPinia } from 'pinia';
 import { ref } from 'vue';
 import { GraphqlClient, defaultGraphqlEndpoint } from '../api/graphqlClient';
 import { deserializeSpec } from '../services/SpecDeserializer';
@@ -103,10 +103,19 @@ export const useStudiesStore = defineStore('strategus-studies', () => {
       const gql = new GraphqlClient(defaultGraphqlEndpoint());
       for (const rec of records as LegacyStudyRecord[]) {
         if (!rec || typeof rec !== 'object' || rec.serverId) continue;
-        const name = (typeof rec.name === 'string' && rec.name.trim()) || 'Untitled study';
-        const description = typeof rec.description === 'string' ? rec.description : '';
-        const spec = (rec.state ?? {}) as AnalysisSpecification;
-        await gql.request(CREATE_DEFINITION, { name, description, spec });
+        try {
+          const name = (typeof rec.name === 'string' && rec.name.trim()) || 'Untitled study';
+          const description = typeof rec.description === 'string' ? rec.description : '';
+          // A legacy `state` is the raw editor snapshot, NOT an AnalysisSpecification.
+          // Restore it onto an isolated store (its own pinia, so the live editor is
+          // untouched) and run it through serializeSpec to produce a valid spec.
+          const scratch = useStrategusStore(createPinia());
+          scratch.restore(rec.state ?? {});
+          const spec = serializeSpec(scratch as unknown as Parameters<typeof serializeSpec>[0]);
+          await gql.request(CREATE_DEFINITION, { name, description, spec });
+        } catch {
+          // best-effort per record: skip a study that fails to restore/serialize/create
+        }
       }
     } catch {
       // best-effort; a failed migration must not break listing
