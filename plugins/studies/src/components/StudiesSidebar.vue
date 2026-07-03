@@ -78,12 +78,12 @@ const items: Array<{ key: StudiesSection; label: string; icon: string }> = [
   transition: background 120ms ease, color 120ms ease;
 }
 .studies-sidebar__item:hover {
-  background: rgba(31, 66, 90, 0.04);
-  color: rgb(31, 66, 90);
+  background: rgba(var(--v-theme-primary), 0.04);
+  color: rgb(var(--v-theme-primary));
 }
 .studies-sidebar__item.is-active {
-  background: rgba(31, 66, 90, 0.08);
-  color: rgb(31, 66, 90);
+  background: rgba(var(--v-theme-primary), 0.08);
+  color: rgb(var(--v-theme-primary));
   font-weight: 600;
 }
 </style>

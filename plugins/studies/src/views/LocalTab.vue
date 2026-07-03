@@ -103,7 +103,7 @@ onMounted(reload);
   font-size: 34px;
   font-weight: 300;
   line-height: 1.2;
-  color: rgb(31, 66, 90);
+  color: rgb(var(--v-theme-primary));
 }
 .studies-overview__head .text-subtitle-1 {
   font-size: 14px;
