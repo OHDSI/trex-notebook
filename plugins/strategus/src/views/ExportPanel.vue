@@ -33,26 +33,8 @@
         >
           Export JSON
         </AtlasButton>
-        <AtlasButton
-          variant="primary"
-          tone="primary"
-          size="sm"
-          prepend-icon="mdi-play"
-          data-test="run-analysis"
-          :disabled="!validation.canExport.value"
-          @click="showRun = true"
-        >
-          Run analysis
-        </AtlasButton>
       </div>
     </div>
-
-    <RunAnalysisDialog
-      :open="showRun"
-      :spec="spec"
-      @close="showRun = false"
-      @submitted="onSubmitted"
-    />
 
     <!-- Validation card -->
     <AtlasCard
@@ -153,7 +135,6 @@ import { AtlasButton, AtlasCard, AtlasDivider, AtlasIcon, AtlasSpacer, AtlasChip
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import { serializeSpec } from '../services/SpecSerializer';
-import RunAnalysisDialog from '../components/RunAnalysisDialog.vue';
 
 const store = useStrategusStore();
 const validation = useValidation();
@@ -161,16 +142,9 @@ const validation = useValidation();
 const fullscreen = ref(false);
 const snackbar = ref(false);
 const snackbarMessage = ref('JSON copied to clipboard');
-const showRun = ref(false);
 
 const spec = computed(() => serializeSpec(store));
 const jsonPreview = computed(() => JSON.stringify(spec.value, null, 2));
-
-function onSubmitted() {
-  showRun.value = false;
-  snackbarMessage.value = 'Study run started — track progress in Jobs';
-  snackbar.value = true;
-}
 
 const validationChecks = computed(() => [
   { key: 'setup', label: 'Study name', result: validation.statusFor('setup') },

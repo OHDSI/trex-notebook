@@ -12,45 +12,6 @@
       Configure cohorts, comparisons, time-at-risk and analysis modules.
     </p>
 
-    <!-- Study actions -->
-    <div class="study-actions">
-      <AtlasButton :loading="saving" data-test="study-save" @click="onSave">Save</AtlasButton>
-      <AtlasButton variant="ghost" data-test="study-run" @click="runOpen = true">Run analysis</AtlasButton>
-      <AtlasButton variant="ghost" class="study-actions__delete" data-test="study-delete" @click="confirmOpen = true">Delete</AtlasButton>
-      <span v-if="saveMsg" class="study-actions__msg" :class="{ 'is-error': saveError }" data-test="study-save-msg">{{ saveMsg }}</span>
-    </div>
-
-    <!-- Run analysis (reuses the existing execute dialog) -->
-    <RunAnalysisDialog :open="runOpen" :spec="spec" @close="runOpen = false" @submitted="onRun" />
-
-    <!-- Run started snackbar -->
-    <AtlasSnackbar
-      v-model="runStarted"
-      :timeout="4000"
-      severity="success"
-      text="Study run started — track progress in Jobs"
-      location="bottom"
-    />
-
-    <!-- Delete confirmation -->
-    <AtlasDialog
-      :model-value="confirmOpen"
-      eyebrow="DELETE"
-      title="Delete study"
-      :max-width="440"
-      @close="confirmOpen = false"
-      @update:model-value="(v: boolean) => { if (!v) confirmOpen = false }"
-    >
-      <p class="text-body-2">
-        Delete this study? This removes it locally and, if it was saved, deletes the
-        server definition. This cannot be undone.
-      </p>
-      <template #actions>
-        <AtlasButton variant="ghost" @click="confirmOpen = false">Cancel</AtlasButton>
-        <AtlasButton class="study-actions__delete" data-test="study-delete-confirm" :loading="deleting" @click="onDelete">Delete</AtlasButton>
-      </template>
-    </AtlasDialog>
-
     <!-- Design sections -->
     <section
       v-for="section in designSections"
@@ -89,65 +50,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { AtlasIcon, AtlasTooltip, AtlasButton, AtlasDialog, AtlasSnackbar } from '@ohdsi/atlas-ui';
+import { computed } from 'vue';
+import { AtlasIcon, AtlasTooltip } from '@ohdsi/atlas-ui';
 import StudySetupPanel from './StudySetupPanel.vue';
 import CohortsPanel from './CohortsPanel.vue';
 import ComparisonsPanel from './ComparisonsPanel.vue';
 import OutcomesPanel from './OutcomesPanel.vue';
 import TimeAtRiskPanel from './TimeAtRiskPanel.vue';
-import RunAnalysisDialog from '../components/RunAnalysisDialog.vue';
 import { useStrategusStore } from '../store/useStrategusStore';
-import { useStudiesStore } from '../store/useStudiesStore';
-import { serializeSpec } from '../services/SpecSerializer';
 import { useValidation } from '../store/validation';
 import type { SidebarItem, ValidationStatus } from '../models/Validation';
 
 const store = useStrategusStore();
-const studies = useStudiesStore();
 const { statusFor } = useValidation();
-
-const saving = ref(false);
-const deleting = ref(false);
-const runOpen = ref(false);
-const confirmOpen = ref(false);
-const runStarted = ref(false);
-const saveMsg = ref('');
-const saveError = ref(false);
-
-// Cast as StudiesListView/ExportPanel do: serializeSpec is duck-typed against a
-// snapshot whose cohortsByRole/timeAtRisk are slightly looser than the live store.
-const spec = computed(() => serializeSpec(store as unknown as Parameters<typeof serializeSpec>[0]));
-
-async function onSave(): Promise<void> {
-  saving.value = true;
-  saveMsg.value = '';
-  saveError.value = false;
-  try {
-    await studies.saveCurrent(store);
-    saveMsg.value = 'Saved';
-  } catch (e) {
-    saveError.value = true;
-    saveMsg.value = e instanceof Error ? e.message : String(e);
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function onDelete(): Promise<void> {
-  deleting.value = true;
-  try {
-    await studies.deleteCurrent();
-  } finally {
-    deleting.value = false;
-    confirmOpen.value = false;
-  }
-}
-
-function onRun(): void {
-  runOpen.value = false;
-  runStarted.value = true;
-}
 
 interface DesignSection {
   id: string;
@@ -187,23 +102,6 @@ function colorFor(key: SidebarItem): string {
 </script>
 
 <style scoped>
-.study-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.study-actions__delete {
-  color: #c62828;
-}
-.study-actions__msg {
-  font-size: 13px;
-  color: rgba(0, 0, 0, 0.6);
-  margin-left: 4px;
-}
-.study-actions__msg.is-error {
-  color: #c62828;
-}
 .study-section {
   padding: 18px 0;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
