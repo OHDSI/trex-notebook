@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+// The default project environment is 'node' (no DOM globals); this file's
+// migration tests need a real `localStorage`, so jsdom is opted in locally.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 
@@ -17,54 +20,88 @@ import { useStrategusStore } from './useStrategusStore';
 import { deserializeSpec, parseTciRestriction } from '../services/SpecDeserializer';
 import type { serializeSpec as SerializeSpecFn } from '../services/SpecSerializer';
 
-const strat = { studyName: 'My Study', description: 'desc', snapshot: () => ({ a: 1 }) };
-const createPayload = {
-  createNotebookAnalysisDefinition: { notebookAnalysisDefinition: { rowId: 'srv-1' } },
-};
-
-describe('useStudiesStore save/delete (server upsert)', () => {
+describe('useStudiesStore (GraphQL-backed)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     request.mockReset();
-    request.mockResolvedValue(createPayload);
+    localStorage.clear();
   });
 
-  it('saveCurrent creates a server definition when none exists and tracks the rowId', async () => {
-    const store = useStudiesStore();
-    const rec = await store.saveCurrent(strat);
-    expect(request).toHaveBeenCalledTimes(1);
+  it('saveCurrent CREATEs when no rowId, tracks it, UPDATEs after', async () => {
+    request.mockResolvedValueOnce({
+      createNotebookAnalysisDefinition: { notebookAnalysisDefinition: { rowId: 'R1' } },
+    });
+    const s = useStudiesStore();
+    const strat = useStrategusStore();
+    strat.studyName = 'A';
+    const rowId = await s.saveCurrent();
+    expect(rowId).toBe('R1');
+    expect(s.currentRowId).toBe('R1');
     expect(request.mock.calls[0][0]).toContain('createNotebookAnalysisDefinition');
-    expect(store.currentServerId).toBe('srv-1');
-    expect(store.studies).toHaveLength(1);
-    expect(rec.serverId).toBe('srv-1');
-    expect(rec.name).toBe('My Study');
-  });
 
-  it('saveCurrent updates (not creates) once a server id is known — no duplicate', async () => {
-    const store = useStudiesStore();
-    await store.saveCurrent(strat); // create
-    await store.saveCurrent(strat); // update
-    expect(request).toHaveBeenCalledTimes(2);
+    request.mockResolvedValueOnce({ updateNotebookAnalysisDefinitionByRowId: { clientMutationId: null } });
+    await s.saveCurrent();
     expect(request.mock.calls[1][0]).toContain('updateNotebookAnalysisDefinitionByRowId');
-    expect(request.mock.calls[1][0]).not.toContain('createNotebook');
-    expect(store.studies).toHaveLength(1);
   });
 
-  it('deleteCurrent deletes the server definition and removes the local study', async () => {
-    const store = useStudiesStore();
-    await store.saveCurrent(strat);
-    await store.deleteCurrent();
-    const last = String(request.mock.calls[request.mock.calls.length - 1][0]);
-    expect(last).toContain('deleteNotebookAnalysisDefinitionByRowId');
-    expect(store.studies).toHaveLength(0);
-    expect(store.mode).toBe('list');
-    expect(store.currentServerId).toBeNull();
+  it('deleteCurrent soft-deletes (patch deletedAt) then closes', async () => {
+    const s = useStudiesStore();
+    s.currentRowId = 'R1';
+    s.mode = 'editor';
+    request.mockResolvedValueOnce({ updateNotebookAnalysisDefinitionByRowId: { clientMutationId: null } });
+    await s.deleteCurrent();
+    const [q, vars] = request.mock.calls[0];
+    expect(q).toContain('updateNotebookAnalysisDefinitionByRowId');
+    expect(vars.patch).toHaveProperty('deletedAt');
+    expect(s.mode).toBe('list');
+    expect(s.currentRowId).toBeNull();
   });
 
-  it('first save issues no update/delete mutation', async () => {
-    const store = useStudiesStore();
-    await store.saveCurrent(strat);
-    expect(request.mock.calls.every((c) => !/update|delete/i.test(String(c[0])))).toBe(true);
+  it('listStudies filters soft-deleted', async () => {
+    request.mockResolvedValueOnce({
+      allNotebookAnalysisDefinitions: {
+        nodes: [
+          { rowId: 'R1', name: 'A', description: '', updatedAt: '2026-01-02', deletedAt: null },
+          { rowId: 'R2', name: 'B', description: '', updatedAt: '2026-01-01', deletedAt: '2026-01-03' },
+        ],
+      },
+    });
+    const out = await useStudiesStore().listStudies();
+    expect(out.map((s) => s.rowId)).toEqual(['R1']);
+  });
+
+  it('listStudies migrates un-migrated legacy localStorage studies once, then clears the key', async () => {
+    localStorage.setItem(
+      'strategus-plugin:studies',
+      JSON.stringify([
+        { name: 'Legacy A', description: 'old', state: { moduleSpecifications: [] } },
+        { name: 'Already migrated', description: '', serverId: 'srv-9', state: {} },
+      ])
+    );
+    request
+      .mockResolvedValueOnce({
+        createNotebookAnalysisDefinition: { notebookAnalysisDefinition: { rowId: 'NEW1' } },
+      })
+      .mockResolvedValueOnce({ allNotebookAnalysisDefinitions: { nodes: [] } });
+
+    const out = await useStudiesStore().listStudies();
+
+    expect(request.mock.calls[0][0]).toContain('createNotebookAnalysisDefinition');
+    expect(request.mock.calls[0][1]).toMatchObject({ name: 'Legacy A', description: 'old' });
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem('strategus-plugin:studies')).toBeNull();
+    expect(out).toEqual([]);
+  });
+
+  it('listStudies migration failure is swallowed and does not break listing', async () => {
+    localStorage.setItem('strategus-plugin:studies', '{not json');
+    request.mockResolvedValueOnce({ allNotebookAnalysisDefinitions: { nodes: [] } });
+
+    const out = await useStudiesStore().listStudies();
+
+    expect(out).toEqual([]);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('strategus-plugin:studies')).toBeNull();
   });
 });
 
