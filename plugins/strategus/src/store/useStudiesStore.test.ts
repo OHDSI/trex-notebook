@@ -133,9 +133,12 @@ describe('spec round-trip is lossless (D1)', () => {
     strategus.characterizationSettings.includeTargetBaseline = true;
     strategus.characterizationSettings.includeRiskFactors = true;
 
-    const spec1 = serializeSpec(strategus);
-    deserializeSpec(spec1, strategus);
-    const spec2 = serializeSpec(strategus);
+    // serializeSpec/deserializeSpec duck-type the store against their own
+    // structural snapshot interfaces; the Pinia store satisfies them at runtime.
+    const editor = strategus as unknown as Parameters<typeof serializeSpec>[0];
+    const spec1 = serializeSpec(editor);
+    deserializeSpec(spec1, editor as unknown as Parameters<typeof deserializeSpec>[1]);
+    const spec2 = serializeSpec(editor);
 
     expect(spec2).toEqual(spec1);
   });
