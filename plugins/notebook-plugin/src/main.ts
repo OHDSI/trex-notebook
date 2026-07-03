@@ -85,7 +85,9 @@ const vueLifecycles = singleSpaVue({
   createApp,
   appOptions: {
     render() {
-      return h(NotebookApp);
+      return h(NotebookApp, {
+        messageBus: (this as unknown as PluginProps).messageBus,
+      });
     },
   },
   handleInstance(app) {

@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, onMounted, ref } from 'vue';
+import { computed, provide, onMounted, ref, watch } from 'vue';
 import { AtlasPageShell, AtlasButton } from '@ohdsi/atlas-ui';
 import StrategusLayout from './components/StrategusLayout.vue';
 import OverviewPanel from './views/OverviewPanel.vue';
@@ -87,6 +87,24 @@ const panelMap: Record<string, unknown> = {
 
 const activeComponent = computed(() => panelMap[store.activePanel] ?? OverviewPanel);
 
+// The combined Studies plugin overview is the single entry point for browsing
+// studies + notebooks, so Strategus no longer surfaces its own standalone list.
+// Whenever the editor closes (Back, or after delete) — i.e. the store returns to
+// 'list' mode — bounce to the Studies overview instead of rendering the local
+// StudiesListView.
+function goToStudiesOverview(): void {
+  (props.messageBus as { send?: (t: string, p: unknown) => void })?.send?.(
+    'navigation:request',
+    { path: '/plugins/studies-plugin/' },
+  );
+}
+watch(
+  () => studiesStore.mode,
+  (mode) => {
+    if (mode === 'list') goToStudiesOverview();
+  },
+);
+
 // Deep-link: the jobs "Open in Strategus" affordance navigates here with
 // ?definition=<rowId> (fetch + open a server-stored definition); the Studies
 // "Local" tab navigates here with ?study=<localId> (open a local study) or
@@ -116,6 +134,10 @@ onMounted(() => {
   } else if (params.has('new')) {
     store.resetToDefaults();
     studiesStore.openNew();
+  } else {
+    // Direct navigation with no deep-link would otherwise show the standalone
+    // Strategus list; send the user to the combined Studies overview instead.
+    goToStudiesOverview();
   }
 });
 </script>
