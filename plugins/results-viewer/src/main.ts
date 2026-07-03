@@ -50,6 +50,10 @@ export interface PluginProps {
     request: <T>(type: string, payload: unknown) => Promise<T>
     subscribe: (type: string, callback: (data: unknown) => void) => () => void
   }
+  // Set by the Studies host when embedding the viewer for a specific result:
+  // the host owns the list, so the viewer runs library-less and opens by id.
+  embedded?: boolean
+  openResultId?: string
 }
 
 // Parcel Vuetify with no theme override — sharing the host's Vuetify
@@ -68,6 +72,8 @@ const vueLifecycles = singleSpaVue({
         name: (this as PluginProps).name,
         authContext: (this as PluginProps).authContext,
         messageBus: (this as PluginProps).messageBus,
+        embedded: (this as PluginProps).embedded,
+        openResultId: (this as PluginProps).openResultId,
       })
     },
   },
