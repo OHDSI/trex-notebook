@@ -23,6 +23,28 @@ export async function isNetworkActive(base: string = defaultBase()): Promise<boo
   }
 }
 
+interface CoordinatorStateResponse {
+  configured?: boolean;
+}
+
+/**
+ * True only when network-api has a coordinator credential path central will
+ * actually accept as role=coordinator on POST /studies and POST
+ * /studies/{id}/publish. As of this writing central never grants that role
+ * to a machine token (see network-api/index.ts), so this reports false in
+ * every real deployment until that changes on the central side.
+ */
+export async function isCoordinatorConfigured(base: string = defaultBase()): Promise<boolean> {
+  try {
+    const res = await fetch(`${base}/coordinator/state`, { headers: { ...authHeaders() } });
+    if (res.status !== 200) return false;
+    const body = (await res.json()) as CoordinatorStateResponse;
+    return body.configured === true;
+  } catch {
+    return false;
+  }
+}
+
 export interface PublishStudyArgs {
   name: string;
   description: string;

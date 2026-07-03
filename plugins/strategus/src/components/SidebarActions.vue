@@ -3,7 +3,7 @@
     <div class="sidebar-actions__row">
       <AtlasButton size="sm" :loading="saving" @click="onSave">Save</AtlasButton>
       <AtlasButton size="sm" variant="ghost" :disabled="!validation.canExport.value" @click="runOpen = true">Run</AtlasButton>
-      <AtlasButton v-if="networkActive" size="sm" variant="ghost" @click="submitOpen = true">Submit</AtlasButton>
+      <AtlasButton v-if="canSubmitToNetwork" size="sm" variant="ghost" @click="submitOpen = true">Submit</AtlasButton>
     </div>
     <div class="sidebar-actions__row">
       <AtlasButton size="sm" variant="ghost" tone="danger" :disabled="!studies.currentRowId" @click="confirmOpen = true">Delete</AtlasButton>
@@ -31,7 +31,7 @@ import { useStrategusStore } from '../store/useStrategusStore';
 import { useStudiesStore } from '../store/useStudiesStore';
 import { useValidation } from '../store/validation';
 import { serializeSpec } from '../services/SpecSerializer';
-import { isNetworkActive } from '../api/networkClient';
+import { isNetworkActive, isCoordinatorConfigured } from '../api/networkClient';
 
 const store = useStrategusStore();
 const studies = useStudiesStore();
@@ -40,12 +40,20 @@ const spec = computed(() => serializeSpec(store as unknown as Parameters<typeof 
 const saving = ref(false), deleting = ref(false), stateError = ref(false);
 const snack = ref(false), snackText = ref('');
 const runOpen = ref(false), submitOpen = ref(false), confirmOpen = ref(false);
-// Submit is only shown once a network is configured and this site is an
-// active member; the probe fails closed (false) so an unconfigured/local
-// deployment never shows an action that would just error.
+// Submit is only shown once a network is configured, this site is an active
+// member, AND network-api has a coordinator credential path central will
+// actually accept for the publish call — both probes fail closed (false) so
+// an unconfigured/local deployment never shows an action that would just
+// error. See networkClient.isCoordinatorConfigured for why the coordinator
+// probe reports false everywhere today.
 const networkActive = ref(false);
+const coordinatorConfigured = ref(false);
+const canSubmitToNetwork = computed(() => networkActive.value && coordinatorConfigured.value);
 onMounted(async () => {
-  networkActive.value = await isNetworkActive();
+  [networkActive.value, coordinatorConfigured.value] = await Promise.all([
+    isNetworkActive(),
+    isCoordinatorConfigured(),
+  ]);
 });
 
 // The persisted state is derived from the store's currentRowId so it agrees with the

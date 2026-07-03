@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isNetworkActive, publishStudy } from './networkClient';
+import { isNetworkActive, isCoordinatorConfigured, publishStudy } from './networkClient';
 
 describe('isNetworkActive', () => {
   beforeEach(() => {
@@ -41,6 +41,44 @@ describe('isNetworkActive', () => {
       vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ status: 'pending' }) })
     );
     await expect(isNetworkActive('http://n/network-api')).resolves.toBe(false);
+  });
+});
+
+describe('isCoordinatorConfigured', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('true for 200 + configured true', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ configured: true }) })
+    );
+    await expect(isCoordinatorConfigured('http://n/network-api')).resolves.toBe(true);
+  });
+
+  it('false for 200 + configured false', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ configured: false }) })
+    );
+    await expect(isCoordinatorConfigured('http://n/network-api')).resolves.toBe(false);
+  });
+
+  it('false for 503', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ status: 503, ok: false, json: async () => ({ error: 'COORDINATOR_NOT_CONFIGURED' }) })
+    );
+    await expect(isCoordinatorConfigured('http://n/network-api')).resolves.toBe(false);
+  });
+
+  it('false on network error, never throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(isCoordinatorConfigured('http://n/network-api')).resolves.toBe(false);
   });
 });
 
