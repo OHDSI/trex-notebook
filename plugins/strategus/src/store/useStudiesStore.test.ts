@@ -14,7 +14,7 @@ vi.mock('../services/SpecSerializer', () => ({
 
 import { useStudiesStore } from './useStudiesStore';
 import { useStrategusStore } from './useStrategusStore';
-import { deserializeSpec } from '../services/SpecDeserializer';
+import { deserializeSpec, parseTciRestriction } from '../services/SpecDeserializer';
 import type { serializeSpec as SerializeSpecFn } from '../services/SpecSerializer';
 
 const strat = { studyName: 'My Study', description: 'desc', snapshot: () => ({ a: 1 }) };
@@ -141,5 +141,55 @@ describe('spec round-trip is lossless (D1)', () => {
     const spec2 = serializeSpec(editor);
 
     expect(spec2).toEqual(spec1);
+  });
+});
+
+// Unit coverage for the TCI restriction reader that backs the D1 round-trip.
+// The serializer encodes a comparison's age/gender restriction into a subset
+// def's DemographicSubsetOperator entries and OMITS the gender operator when the
+// TCI is unrestricted — which the UI represents as BOTH genders [8507, 8532].
+// So "no gender operator" must read back as both genders, not an empty selection.
+describe('parseTciRestriction (D1 gender/age read-back)', () => {
+  const BOTH_GENDERS = [8507, 8532];
+  const limitOp = { subsetType: 'LimitSubsetOperator', priorTime: 365, followUpTime: 1, limitTo: 'firstEver' };
+
+  it('reads a gender-only restriction and leaves ages null', () => {
+    const r = parseTciRestriction([limitOp, { subsetType: 'DemographicSubsetOperator', gender: [8507] }]);
+    expect(r).toEqual({ genderConceptIds: [8507], minAge: null, maxAge: null });
+  });
+
+  it('reads an age-only restriction and defaults gender to both', () => {
+    const r = parseTciRestriction([limitOp, { subsetType: 'DemographicSubsetOperator', ageMin: 18, ageMax: 65 }]);
+    expect(r).toEqual({ genderConceptIds: BOTH_GENDERS, minAge: 18, maxAge: 65 });
+  });
+
+  it('reads minAge without maxAge (maxAge stays null)', () => {
+    const r = parseTciRestriction([limitOp, { subsetType: 'DemographicSubsetOperator', ageMin: 40 }]);
+    expect(r).toEqual({ genderConceptIds: BOTH_GENDERS, minAge: 40, maxAge: null });
+  });
+
+  it('defaults an unrestricted TCI (no demographic operator) to both genders', () => {
+    const r = parseTciRestriction([limitOp]);
+    expect(r).toEqual({ genderConceptIds: BOTH_GENDERS, minAge: null, maxAge: null });
+  });
+
+  it('reads combined gender + age restriction across separate operators', () => {
+    const r = parseTciRestriction([
+      limitOp,
+      { subsetType: 'DemographicSubsetOperator', gender: [8532] },
+      { subsetType: 'DemographicSubsetOperator', ageMin: 0, ageMax: 17 },
+    ]);
+    expect(r).toEqual({ genderConceptIds: [8532], minAge: 0, maxAge: 17 });
+  });
+
+  it('returns graceful defaults for absent/malformed operators without crashing', () => {
+    expect(parseTciRestriction([])).toEqual({ genderConceptIds: BOTH_GENDERS, minAge: null, maxAge: null });
+    // Non-demographic / unknown operators are ignored; malformed field types are skipped.
+    const r = parseTciRestriction([
+      { subsetType: 'CohortSubsetOperator', cohortIds: [7] } as unknown as Record<string, unknown>,
+      { subsetType: 'DemographicSubsetOperator', gender: 'nonsense', ageMin: 'x' } as unknown as Record<string, unknown>,
+      {} as unknown as Record<string, unknown>,
+    ]);
+    expect(r).toEqual({ genderConceptIds: BOTH_GENDERS, minAge: null, maxAge: null });
   });
 });

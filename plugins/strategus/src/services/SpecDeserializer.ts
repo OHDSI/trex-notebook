@@ -113,9 +113,16 @@ interface TciRestriction {
   maxAge: number | null;
 }
 
+// Concept IDs the UI uses to represent an unrestricted gender selection
+// (both male + female). The serializer omits the gender DemographicSubsetOperator
+// in this case, so on read-back "no gender operator" must map to both genders —
+// not an empty selection — to match the editor's default (ComparisonsPanel.vue).
+const BOTH_GENDER_CONCEPT_IDS = [8507, 8532];
+
 /** Read a TCI age/gender restriction back out of a subset def's operators. */
-function parseTciRestriction(operators: Array<Record<string, unknown>>): TciRestriction {
-  const restriction: TciRestriction = { genderConceptIds: [], minAge: null, maxAge: null };
+export function parseTciRestriction(operators: Array<Record<string, unknown>>): TciRestriction {
+  // Default gender to "both" (unrestricted); only a gender operator narrows it.
+  const restriction: TciRestriction = { genderConceptIds: [...BOTH_GENDER_CONCEPT_IDS], minAge: null, maxAge: null };
   for (const op of operators) {
     if (op['subsetType'] !== 'DemographicSubsetOperator') continue;
     if (Array.isArray(op['gender'])) {
