@@ -13,6 +13,9 @@ vi.mock('../services/SpecSerializer', () => ({
 }));
 
 import { useStudiesStore } from './useStudiesStore';
+import { useStrategusStore } from './useStrategusStore';
+import { deserializeSpec } from '../services/SpecDeserializer';
+import type { serializeSpec as SerializeSpecFn } from '../services/SpecSerializer';
 
 const strat = { studyName: 'My Study', description: 'desc', snapshot: () => ({ a: 1 }) };
 const createPayload = {
@@ -62,5 +65,78 @@ describe('useStudiesStore save/delete (server upsert)', () => {
     const store = useStudiesStore();
     await store.saveCurrent(strat);
     expect(request.mock.calls.every((c) => !/update|delete/i.test(String(c[0])))).toBe(true);
+  });
+});
+
+// Decision D1 gate: persisting only `spec` (not the editor's live `state`) is
+// lossless iff serialize -> deserialize -> serialize is a fixed point. This
+// module-level test file stubs SpecSerializer for the save/delete suite above,
+// so pull in the real implementation via importActual to exercise genuine
+// serializer/deserializer logic instead of the stub.
+describe('spec round-trip is lossless (D1)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it('spec survives serialize -> deserialize -> serialize unchanged', async () => {
+    const { serializeSpec } = await vi.importActual<{ serializeSpec: typeof SerializeSpecFn }>(
+      '../services/SpecSerializer'
+    );
+    const strategus = useStrategusStore();
+
+    // Study metadata
+    strategus.studyName = 'RT Gate Study';
+    strategus.description = 'Exercises every serializer section for the D1 gate';
+    strategus.studyStartDate = '2015-01-01';
+    strategus.studyEndDate = '2020-12-31';
+
+    // Cohorts across all roles
+    strategus.cohorts = [
+      { cohortId: 1, cohortName: 'Target', role: 'Target', subjectCount: 1000, cohortDefinition: '{"t":1}' },
+      { cohortId: 2, cohortName: 'Comparator', role: 'Comparator', subjectCount: 900, cohortDefinition: '{"c":1}' },
+      { cohortId: 3, cohortName: 'Outcome', role: 'Outcome', subjectCount: 50, cohortDefinition: '{"o":1}' },
+    ];
+
+    // Comparisons (TCI), including a real age/gender restriction and an
+    // excluded-covariate override, so the subset-generation and CohortMethod/
+    // SCCS covariate paths are all exercised.
+    strategus.comparisons = [
+      {
+        targetId: 1,
+        comparatorId: 2,
+        indicationId: null,
+        genderConceptIds: [8507],
+        minAge: 18,
+        maxAge: 65,
+        excludedCovariateConceptIds: [12345],
+      },
+    ];
+
+    // Outcomes and negative controls
+    strategus.outcomes = [{ cohortId: 3, cleanWindow: 30 }];
+    strategus.negativeControls = [
+      { cohortId: 99, cohortName: 'NC 1', outcomeConceptId: 111, domainId: 'Condition' },
+    ];
+    strategus.ncOccurrenceType = 'all';
+    strategus.ncDetectOnDescendants = false;
+
+    // Time-at-risk
+    strategus.timeAtRisk = [
+      { label: 'On treatment', riskWindowStart: 1, startAnchor: 'cohort start', riskWindowEnd: 0, endAnchor: 'cohort end' },
+    ];
+
+    // Enable a spread of analysis modules (CohortDiagnostics/Characterization/
+    // CohortIncidence/CohortMethod/SCCS are already enabled by default)
+    strategus.cohortMethodSettings.analyses[0].psAdjustmentMethod = 'matching';
+    strategus.cohortMethodSettings.useEmpiricalCalibration = true;
+    strategus.sccsSettings.useEmpiricalCalibration = true;
+    strategus.characterizationSettings.includeTargetBaseline = true;
+    strategus.characterizationSettings.includeRiskFactors = true;
+
+    const spec1 = serializeSpec(strategus);
+    deserializeSpec(spec1, strategus);
+    const spec2 = serializeSpec(strategus);
+
+    expect(spec2).toEqual(spec1);
   });
 });
