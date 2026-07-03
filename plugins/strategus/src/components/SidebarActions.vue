@@ -36,19 +36,26 @@ const studies = useStudiesStore();
 const validation = useValidation();
 const spec = computed(() => serializeSpec(store as unknown as Parameters<typeof serializeSpec>[0]));
 const saving = ref(false), deleting = ref(false), stateError = ref(false);
-const stateText = ref('Unsaved'), snack = ref(false), snackText = ref('');
+const snack = ref(false), snackText = ref('');
 const runOpen = ref(false), submitOpen = ref(false), confirmOpen = ref(false);
 
+// The persisted state is derived from the store's currentRowId so it agrees with the
+// sidebar header badge and is correct on open without needing a Save click. A transient
+// message (save timestamp, or an error) overrides it after an explicit action.
+const savedState = computed(() => (studies.currentRowId ? 'Saved' : 'Unsaved'));
+const transient = ref<string | null>(null);
+const stateText = computed(() => transient.value ?? savedState.value);
+
 async function onSave() {
-  saving.value = true; stateError.value = false;
-  try { await studies.saveCurrent(); stateText.value = 'Saved · ' + new Date().toLocaleTimeString(); }
-  catch (e) { stateError.value = true; stateText.value = e instanceof Error ? e.message : String(e); }
+  saving.value = true; stateError.value = false; transient.value = null;
+  try { await studies.saveCurrent(); transient.value = 'Saved · ' + new Date().toLocaleTimeString(); }
+  catch (e) { stateError.value = true; transient.value = e instanceof Error ? e.message : String(e); }
   finally { saving.value = false; }
 }
 async function onDelete() {
-  deleting.value = true;
+  deleting.value = true; stateError.value = false;
   try { await studies.deleteCurrent(); confirmOpen.value = false; }
-  catch (e) { stateError.value = true; stateText.value = e instanceof Error ? e.message : String(e); }
+  catch (e) { stateError.value = true; transient.value = e instanceof Error ? e.message : String(e); }
   finally { deleting.value = false; }
 }
 function onRun() { runOpen.value = false; snackText.value = 'Run started — track in Jobs'; snack.value = true; }
