@@ -18,7 +18,7 @@
         {{ store.studyName.trim() || 'Untitled Study' }}
       </div>
       <div class="sidebar-nav__draft-badge text-caption text-medium-emphasis">
-        {{ studiesStore.currentStudyId ? 'SAVED' : 'UNSAVED' }}
+        {{ studiesStore.currentRowId ? 'SAVED' : 'UNSAVED' }}
       </div>
     </div>
 
@@ -220,18 +220,15 @@ function scrollTo(anchorId: string) {
   document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function handleBack(): void {
-  // Save current edits if we have an open study record
-  if (studiesStore.currentStudyId) {
-    studiesStore.updateStudy(studiesStore.currentStudyId, {
-      name: store.studyName.trim() || 'Untitled study',
-      description: store.description,
-      state: store.snapshot(),
-    });
-  } else if (store.studyName.trim()) {
-    // Persist new study if user gave it a name
-    const created = studiesStore.createStudy(store.snapshot(), store.studyName.trim(), store.description);
-    studiesStore.currentStudyId = created.id;
+async function handleBack(): Promise<void> {
+  // Only persist if the study already exists on the server or the user gave
+  // it a name — an untitled, never-saved study shouldn't be created on Back.
+  if (studiesStore.currentRowId || store.studyName.trim()) {
+    try {
+      await studiesStore.saveCurrent();
+    } catch (e) {
+      console.error('Failed to save study', e);
+    }
   }
   studiesStore.closeEditor();
 }

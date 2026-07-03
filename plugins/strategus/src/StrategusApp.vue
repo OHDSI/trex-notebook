@@ -121,16 +121,14 @@ function readHashQuery(): URLSearchParams {
 onMounted(() => {
   if (typeof window === 'undefined') return;
   const params = readHashQuery();
-  const definitionId = params.get('definition');
-  const studyId = params.get('study');
-  if (definitionId) {
-    studiesStore.loadServerDefinition(definitionId).catch((e) => {
-      // Non-fatal: fall back to the studies list if the definition can't be loaded.
-      console.error('Failed to load server definition', definitionId, e);
+  // A server definition IS an analysis_definition rowId now, so both
+  // deep-links resolve through the same store method.
+  const studyId = params.get('definition') ?? params.get('study');
+  if (studyId) {
+    studiesStore.openStudy(studyId).catch((e) => {
+      // Non-fatal: fall back to the studies list if the study can't be loaded.
+      console.error('Failed to load study', studyId, e);
     });
-  } else if (studyId) {
-    const study = studiesStore.openStudy(studyId);
-    if (study) store.restore(study.state);
   } else if (params.has('new')) {
     store.resetToDefaults();
     studiesStore.openNew();
