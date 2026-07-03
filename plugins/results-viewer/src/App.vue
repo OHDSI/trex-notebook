@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, onMounted } from 'vue'
 import ResultsLibrary from './components/ResultsLibrary.vue'
 import ShinyFrame from './components/ShinyFrame.vue'
+import { loadResultFiles } from './composables/useResultsLibrary'
 
-defineProps<{
+const props = defineProps<{
   name: string
   authContext: unknown
   messageBus: unknown
+  // When embedded by the Studies plugin, the host owns the results list and
+  // passes the result to open. In that mode this component is viewer-only: it
+  // hides its own library and hands Back navigation to the host.
+  embedded?: boolean
+  openResultId?: string
 }>()
 
 // The actual stable Map we pass to ShinyFrame. Updated by reference only
@@ -47,15 +53,36 @@ function onDataLoaded(files: Map<string, ArrayBuffer>) {
 }
 
 function onReset() {
-  // Switch back to loader, but keep ShinyFrame mounted and don't touch
-  // filesForViewer — the existing data stays in the iframe.
+  if (props.embedded) {
+    // The host (Studies) owns the results list; hand Back navigation to it.
+    (props.messageBus as { send?: (t: string, p: unknown) => void })?.send?.(
+      'results-viewer:back',
+      {},
+    )
+    return
+  }
+  // Standalone: switch back to loader, but keep ShinyFrame mounted and don't
+  // touch filesForViewer — the existing data stays in the iframe.
   phase.value = 'loader'
 }
+
+// Embedded viewer-only mode: open the result the host handed us. The blob lives
+// in the shared IndexedDB, so no re-upload is needed.
+onMounted(async () => {
+  if (!props.embedded || !props.openResultId) return
+  try {
+    const files = await loadResultFiles(props.openResultId)
+    onDataLoaded(files)
+  } catch (e) {
+    console.error('[results-viewer] failed to open result', props.openResultId, e)
+  }
+})
 </script>
 
 <template>
   <div class="results-viewer">
     <ResultsLibrary
+      v-if="!embedded"
       v-show="phase === 'loader'"
       @loaded="onDataLoaded"
     />
@@ -64,6 +91,7 @@ function onReset() {
       v-show="phase === 'viewer'"
       :key="frameKey"
       :files="filesForViewer"
+      :embedded="embedded"
       @reset="onReset"
     />
   </div>

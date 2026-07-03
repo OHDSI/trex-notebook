@@ -3,7 +3,7 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { pluginBase } from '../pluginBase'
 import { AtlasIconButton } from '@ohdsi/atlas-ui'
 
-const props = defineProps<{ files: Map<string, ArrayBuffer> }>()
+const props = defineProps<{ files: Map<string, ArrayBuffer>; embedded?: boolean }>()
 const emit = defineEmits<{ reset: [] }>()
 
 const iframeRef = ref<HTMLIFrameElement | null>(null)
@@ -176,6 +176,7 @@ onBeforeUnmount(() => {
 <template>
   <div :style="{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }">
     <AtlasIconButton
+      v-if="!props.embedded"
       icon="mdi-arrow-left"
       ariaLabel="Back to library"
       size="sm"

@@ -1,7 +1,7 @@
 <template>
-  <!-- Overview + Network live inside the boxed sidebar layout. Hidden (not
-       unmounted) while Results is full-screen so their state is preserved. -->
-  <div v-show="section !== 'results'" class="studies-fill">
+  <!-- Boxed sidebar layout: Overview / Network / Results list. Hidden (not
+       unmounted) while a result is open full-screen so its state is preserved. -->
+  <div v-show="!openResultId" class="studies-fill">
     <StudiesLayout>
       <div v-show="section === 'overview'" class="studies-section studies-section--scroll">
         <LocalTab />
@@ -13,23 +13,26 @@
       >
         <NetworkTab />
       </div>
+      <div v-show="section === 'results'" class="studies-section studies-section--scroll">
+        <ResultsTab />
+      </div>
     </StudiesLayout>
   </div>
 
-  <!-- The Results viewer is a full application (module tabs, WebR viewer), so it
-       takes over the whole canvas below the top nav rather than the boxed detail
-       panel. Mounts lazily on first open and stays alive so switching away/back
-       doesn't re-boot WebR. A compact control returns to the boxed Overview. -->
-  <div
-    v-if="visited.has('results')"
-    v-show="section === 'results'"
-    class="studies-results-full"
-  >
-    <button class="studies-results-full__back" @click="section = 'overview'">
+  <!-- Full-screen result viewer. The Results viewer is a full application, so it
+       takes over the whole canvas below the top nav. Keyed by id so opening a
+       different result mounts a fresh viewer (fresh WebR session). The embedded
+       viewer hides its own library + back; the pill below returns to the list. -->
+  <div v-if="openResultId" class="studies-results-full">
+    <button class="studies-results-full__back" @click="closeResult">
       <AtlasIcon icon="mdi-arrow-left" size="16" />
-      <span>Studies</span>
+      <span>Results</span>
     </button>
-    <ResultsTab />
+    <PluginEmbed
+      :key="openResultId"
+      plugin-id="results-viewer"
+      :parcel-props="{ embedded: true, openResultId }"
+    />
   </div>
 </template>
 
@@ -38,9 +41,10 @@ export type StudiesSection = 'overview' | 'network' | 'results';
 </script>
 
 <script setup lang="ts">
-import { ref, reactive, provide, watch } from 'vue';
+import { ref, reactive, provide, inject, watch, onMounted, onUnmounted } from 'vue';
 import { AtlasIcon } from '@ohdsi/atlas-ui';
 import StudiesLayout from './components/StudiesLayout.vue';
+import PluginEmbed from './components/PluginEmbed.vue';
 import LocalTab from './views/LocalTab.vue';
 import NetworkTab from './views/NetworkTab.vue';
 import ResultsTab from './views/ResultsTab.vue';
@@ -48,9 +52,27 @@ import ResultsTab from './views/ResultsTab.vue';
 const section = ref<StudiesSection>('overview');
 provide('studiesSection', section);
 
-// Track which lazy sections have been opened at least once.
+// Set by the Results list to open a result full-screen; cleared to return.
+const openResultId = ref<string | null>(null);
+provide('studiesOpenResult', openResultId);
+
+// Lazily mount Network on first visit, then keep it alive across switches.
 const visited = reactive(new Set<StudiesSection>(['overview']));
 watch(section, (s) => visited.add(s), { immediate: true });
+
+function closeResult(): void {
+  openResultId.value = null;
+}
+
+// The embedded viewer hands Back navigation to us over the shared host message
+// bus (it doesn't own the list). Return to the boxed Results list.
+type Bus = { subscribe?: (ch: string, cb: (p: unknown) => void) => (() => void) | void };
+const hostCtx = inject<{ messageBus?: Bus }>('studiesHostCtx');
+let unsubscribe: (() => void) | void;
+onMounted(() => {
+  unsubscribe = hostCtx?.messageBus?.subscribe?.('results-viewer:back', closeResult);
+});
+onUnmounted(() => unsubscribe?.());
 </script>
 
 <style scoped>

@@ -15,7 +15,11 @@ import { ref, inject, onMounted, onBeforeUnmount } from 'vue';
 import { AtlasProgressCircular, AtlasAlert } from '@ohdsi/atlas-ui';
 import type { StudiesHostCtx, HostParcel } from '../main';
 
-const props = defineProps<{ pluginId: string }>();
+const props = defineProps<{
+  pluginId: string;
+  /** Extra props merged into the mounted parcel (e.g. { embedded, openResultId }). */
+  parcelProps?: Record<string, unknown>;
+}>();
 
 const hostCtx = inject<StudiesHostCtx>('studiesHostCtx');
 const mountEl = ref<HTMLElement | null>(null);
@@ -44,6 +48,7 @@ async function mountEmbeddedPlugin(): Promise<HostParcel | null> {
     isAtlas: true,
     uiFilesUrl: targetUrl,
     autoMount: false,
+    ...(props.parcelProps ?? {}),
   });
 
   await parcel.mountPromise;
