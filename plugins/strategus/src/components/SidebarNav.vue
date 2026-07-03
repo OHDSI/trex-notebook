@@ -114,6 +114,9 @@
         panel="export"
       />
     </div>
+
+    <!-- Persistent Save / Delete / Run action bar, visible on every editor panel -->
+    <SidebarActions />
   </nav>
 </template>
 
@@ -124,6 +127,7 @@ import { useStrategusStore } from '../store/useStrategusStore';
 import { useStudiesStore } from '../store/useStudiesStore';
 import { useValidation } from '../store/validation';
 import SidebarItem from './SidebarItem.vue';
+import SidebarActions from './SidebarActions.vue';
 import type { SidebarItem as SidebarItemType, ValidationStatus } from '../models/Validation';
 
 const store = useStrategusStore();
