@@ -3,14 +3,14 @@
     <div class="sidebar-actions__row">
       <AtlasButton size="sm" :loading="saving" @click="onSave">Save</AtlasButton>
       <AtlasButton size="sm" variant="ghost" :disabled="!validation.canExport.value" @click="runOpen = true">Run</AtlasButton>
-      <AtlasButton size="sm" variant="ghost" @click="onSubmit">Submit</AtlasButton>
+      <AtlasButton v-if="networkActive" size="sm" variant="ghost" @click="submitOpen = true">Submit</AtlasButton>
     </div>
     <div class="sidebar-actions__row">
       <AtlasButton size="sm" variant="ghost" tone="danger" :disabled="!studies.currentRowId" @click="confirmOpen = true">Delete</AtlasButton>
       <span class="sidebar-actions__state" :class="{ 'is-error': stateError }">{{ stateText }}</span>
     </div>
     <RunAnalysisDialog :open="runOpen" :spec="spec" @close="runOpen = false" @submitted="onRun" />
-    <!-- SubmitToNetworkDialog wired in Phase 4; until then Submit shows a notice -->
+    <SubmitToNetworkDialog :open="submitOpen" @close="submitOpen = false" @submitted="onNetworkSubmitted" />
     <AtlasSnackbar v-model="snack" :timeout="3000" :text="snackText" severity="success" location="bottom" />
     <AtlasDialog :model-value="confirmOpen" eyebrow="DELETE" title="Delete study" :max-width="420"
       @close="confirmOpen=false" @update:model-value="(v:boolean)=>{ if(!v) confirmOpen=false }">
@@ -23,13 +23,15 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { AtlasButton, AtlasDialog, AtlasSnackbar } from '@ohdsi/atlas-ui';
 import RunAnalysisDialog from './RunAnalysisDialog.vue';
+import SubmitToNetworkDialog from './SubmitToNetworkDialog.vue';
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useStudiesStore } from '../store/useStudiesStore';
 import { useValidation } from '../store/validation';
 import { serializeSpec } from '../services/SpecSerializer';
+import { isNetworkActive } from '../api/networkClient';
 
 const store = useStrategusStore();
 const studies = useStudiesStore();
@@ -38,6 +40,13 @@ const spec = computed(() => serializeSpec(store as unknown as Parameters<typeof 
 const saving = ref(false), deleting = ref(false), stateError = ref(false);
 const snack = ref(false), snackText = ref('');
 const runOpen = ref(false), submitOpen = ref(false), confirmOpen = ref(false);
+// Submit is only shown once a network is configured and this site is an
+// active member; the probe fails closed (false) so an unconfigured/local
+// deployment never shows an action that would just error.
+const networkActive = ref(false);
+onMounted(async () => {
+  networkActive.value = await isNetworkActive();
+});
 
 // The persisted state is derived from the store's currentRowId so it agrees with the
 // sidebar header badge and is correct on open without needing a Save click. A transient
@@ -59,11 +68,9 @@ async function onDelete() {
   finally { deleting.value = false; }
 }
 function onRun() { runOpen.value = false; snackText.value = 'Run started — track in Jobs'; snack.value = true; }
-function onSubmit() {
-  // Network submission is wired in Phase 4 (SubmitToNetworkDialog); until then this
-  // button is a stub that acknowledges the click without performing any network call.
+function onNetworkSubmitted() {
   submitOpen.value = false;
-  snackText.value = 'Network submit not configured';
+  snackText.value = 'Submitted to network';
   snack.value = true;
 }
 </script>
