@@ -57,6 +57,6 @@ jobs:
   # of the root @trex/notebook package) was removed. This repo is now a plugins
   # monorepo with no root package.json/package-lock.json, so the root `npm ci`
   # could never succeed. Each plugin is built and tested by its own workflow
-  # (sibyl.yml, strategus-plugin.yml, jobs-plugin.yml, network-plugin.yml,
+  # (sibyl.yml, strategus-plugin.yml, network-plugin.yml,
   # results-viewer.yml, notebook-plugin.yml, function-plugins.yml) and the Docker
   # image (docker-image.yml) bakes the finished bundles.

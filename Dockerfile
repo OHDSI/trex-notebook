@@ -137,9 +137,6 @@ RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
 RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
     printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
  && cd plugins/results-viewer && npm ci && npm run build && rm -f /root/.npmrc
-RUN --mount=type=secret,id=ghtoken,env=NODE_AUTH_TOKEN \
-    printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > /root/.npmrc \
- && cd plugins/jobs && npm ci && npm run build && rm -f /root/.npmrc
 # notebook-plugin embeds the @trex/notebook lib (file:../notebook) and bundles it
 # from source, so the lib's own deps must be installed first.
 RUN cd plugins/notebook && npm ci

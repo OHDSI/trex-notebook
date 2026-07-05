@@ -2,7 +2,7 @@ name: docker-image
 
 # Full multi-stage trex image build: the R stage (rocker + OHDSI stack →
 # shinylive-export/ + r-packages/), every sub-plugin bundle (strategus, network,
-# results-viewer, jobs, notebook-plugin) + the sibyl shell, and the function
+# results-viewer, notebook-plugin) + the sibyl shell, and the function
 # plugins, all baked into the trex backend. This is the end-to-end "everything
 # builds together" check.
 #

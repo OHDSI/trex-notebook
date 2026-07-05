@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Fails if banned raw Vuetify components appear in an ENFORCED plugin's templates.
 // Rolled out per-plugin: add a plugin id to ENFORCED once it is fully migrated.
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-const ENFORCED = ['sibyl','network','results-viewer','jobs','notebook-plugin','strategus'] // e.g. 'sibyl','network','results-viewer','jobs','notebook-plugin','strategus'
+const ENFORCED = ['sibyl','network','results-viewer','notebook-plugin','strategus'] // e.g. 'sibyl','network','results-viewer','notebook-plugin','strategus'
 
 const BANNED = [
   'v-text-field','v-btn','v-checkbox','v-select','v-icon','v-card','v-col','v-divider',
@@ -20,6 +20,7 @@ const ALLOWED = new Set([
 const TAG = /<\/?(v-[a-z0-9-]+)/g
 
 function walk(dir, out = []) {
+  if (!existsSync(dir)) return out
   for (const e of readdirSync(dir)) {
     if (e === 'node_modules' || e === 'dist') continue
     const p = join(dir, e)
