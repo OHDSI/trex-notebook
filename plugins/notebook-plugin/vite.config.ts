@@ -6,9 +6,12 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Default target is the sibyl shell's plugin dir (dev/CI `npm run build`,
+// matching how the plugin is actually consumed at runtime). Standalone
+// package builds (npm publish) set OUT_DIR=dist via `build:pkg`.
 const OUT_DIR = process.env.OUT_DIR
   ? path.join(__dirname, process.env.OUT_DIR)
-  : path.join(__dirname, 'dist');
+  : path.join(__dirname, '../sibyl/public/plugins/notebook-plugin');
 
 export default defineConfig({
   plugins: [
