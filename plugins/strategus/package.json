@@ -15,6 +15,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:sibyl": "STRATEGUS_OUT_DIR=../sibyl/public/plugins/strategus-plugin vite build",
+    "build:pkg": "STRATEGUS_OUT_DIR=dist vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

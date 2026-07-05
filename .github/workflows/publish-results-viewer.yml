@@ -21,7 +21,7 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
           scope: "@ohdsi"
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:pkg
       - name: Version stamp (prerelease)
         run: npm version --no-git-tag-version "0.2.0-$(date -u +%Y%m%d%H%M%S).g${GITHUB_SHA::7}"
       - run: npm publish

@@ -26,6 +26,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:sibyl": "NETWORK_OUT_DIR=../sibyl/public/plugins/network-plugin vite build",
+    "build:pkg": "NETWORK_OUT_DIR=dist vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest",
