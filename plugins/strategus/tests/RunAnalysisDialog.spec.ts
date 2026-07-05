@@ -1,7 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createApp, h, nextTick } from 'vue';
 import type { App } from 'vue';
+import { createVuetify } from 'vuetify';
 import RunAnalysisDialog from '../src/components/RunAnalysisDialog.vue';
+
+// jsdom does not implement the visualViewport API; Vuetify's VOverlay
+// positioning logic references the bare global unconditionally, which
+// throws a ReferenceError under jsdom unless the property exists.
+if (typeof window !== 'undefined' && !('visualViewport' in window)) {
+  Object.defineProperty(window, 'visualViewport', { value: undefined, writable: true, configurable: true });
+}
 
 // Mock the hades-api client so the dialog loads a fixed env list and
 // resolves execute() to a known jobId.
@@ -35,6 +43,7 @@ function mountDialog(props: Record<string, unknown>): HTMLElement {
       });
     },
   });
+  app.use(createVuetify());
   app.mount(root);
   return root;
 }
@@ -62,13 +71,16 @@ afterEach(() => {
 
 describe('RunAnalysisDialog', () => {
   it("loads envs on open and emits 'submitted' with the jobId", async () => {
-    const el = mountDialog({ open: true, spec: { x: 1 } });
+    mountDialog({ open: true, spec: { x: 1 } });
     await flush();
-    expect(el.textContent).toContain('study1');
+    // AtlasDialog (VDialog) teleports its content to document.body rather
+    // than rendering it under the mount root, so assertions must query the
+    // document, not the returned root element.
+    expect(document.body.textContent).toContain('study1');
 
-    await setValue(el.querySelector('[data-test=cdm]') as HTMLInputElement, 'cdm');
-    await setValue(el.querySelector('[data-test=env]') as HTMLSelectElement, 'study1');
-    (el.querySelector('[data-test=run]') as HTMLButtonElement).click();
+    await setValue(document.querySelector('[data-test=cdm]') as HTMLInputElement, 'cdm');
+    await setValue(document.querySelector('[data-test=env]') as HTMLSelectElement, 'study1');
+    (document.querySelector('[data-test=run]') as HTMLButtonElement).click();
     await flush();
 
     expect(emitted.submitted?.[0]).toEqual(['run42']);
