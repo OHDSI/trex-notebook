@@ -4,6 +4,9 @@
 // right tool. Metadata (name, size, addedAt) is mirrored in localStorage so
 // the list renders synchronously on first paint.
 
+import JSZip from 'jszip'
+import { gunzipBuffer } from '../webr/gunzip'
+
 const DB_NAME = 'results-viewer'
 const STORE = 'results'
 const META_KEY = 'results-viewer:index'
@@ -110,6 +113,34 @@ export async function deleteResult(id: string): Promise<void> {
     tx.onerror = () => reject(tx.error)
   })
   writeIndex(readIndex().filter(m => m.id !== id))
+}
+
+// Load a stored result and unpack it into the file map ShinyFrame expects.
+// A binary DuckDB file (optionally gzip'd) passes through as a single
+// `results.db` entry; anything else is treated as a ZIP of CSV/parquet exports.
+export async function loadResultFiles(
+  id: string,
+  onProgress?: (msg: string) => void,
+): Promise<Map<string, ArrayBuffer>> {
+  const blob = await getResultBlob(id)
+  if (!blob) throw new Error('Result no longer in storage')
+  const arr = await blob.arrayBuffer()
+  const name = readIndex().find(m => m.id === id)?.name ?? ''
+  if (name.endsWith('.db.gz')) {
+    return new Map([['results.db', await gunzipBuffer(arr)]])
+  }
+  if (name.endsWith('.db')) {
+    return new Map([['results.db', arr]])
+  }
+  const zip = await JSZip.loadAsync(arr)
+  const map = new Map<string, ArrayBuffer>()
+  const entries = Object.entries(zip.files).filter(([, f]) => !f.dir)
+  for (let i = 0; i < entries.length; i++) {
+    const [n, f] = entries[i]
+    onProgress?.(`Extracting ${i + 1} / ${entries.length}`)
+    map.set(n, await f.async('arraybuffer'))
+  }
+  return map
 }
 
 export async function exportResult(id: string): Promise<void> {

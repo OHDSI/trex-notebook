@@ -1,10 +1,11 @@
+import { authHeaders } from './authToken';
+
 export class GraphqlClient {
   constructor(private endpoint: string) {}
   async request<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
     const resp = await fetch(this.endpoint, {
       method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ query, variables }),
     });
     if (!resp.ok) throw new Error(`graphql ${resp.status}`);

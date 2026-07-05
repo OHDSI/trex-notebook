@@ -1,5 +1,6 @@
 import './style.css';
 import { h, createApp } from 'vue';
+import { setAuthToken } from './api/authToken';
 import { createPinia } from 'pinia';
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
@@ -84,7 +85,9 @@ const vueLifecycles = singleSpaVue({
   createApp,
   appOptions: {
     render() {
-      return h(NotebookApp);
+      return h(NotebookApp, {
+        messageBus: (this as unknown as PluginProps).messageBus,
+      });
     },
   },
   handleInstance(app) {
@@ -95,6 +98,7 @@ const vueLifecycles = singleSpaVue({
 });
 
 export const bootstrap = async (props: PluginProps) => {
+  setAuthToken(props.authContext?.token ?? null);
   const baseUrl = props.uiFilesUrl ?? '';
   await injectPluginCss(baseUrl);
   injectMdiCss();

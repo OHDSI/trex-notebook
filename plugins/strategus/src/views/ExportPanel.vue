@@ -33,26 +33,8 @@
         >
           Export JSON
         </AtlasButton>
-        <AtlasButton
-          variant="primary"
-          tone="primary"
-          size="sm"
-          prepend-icon="mdi-play"
-          data-test="run-analysis"
-          :disabled="!validation.canExport.value"
-          @click="showRun = true"
-        >
-          Run analysis
-        </AtlasButton>
       </div>
     </div>
-
-    <RunAnalysisDialog
-      :open="showRun"
-      :spec="spec"
-      @close="showRun = false"
-      @submitted="onSubmitted"
-    />
 
     <!-- Validation card -->
     <AtlasCard
@@ -131,7 +113,7 @@
       </div>
     </AtlasCard>
 
-    <!-- Copy confirmation snackbar -->
+    <!-- Result snackbar -->
     <AtlasSnackbar
       v-model="snackbar"
       :timeout="2000"
@@ -142,7 +124,7 @@
       <AtlasIcon class="mr-2">
         mdi-check
       </AtlasIcon>
-      JSON copied to clipboard
+      {{ snackbarMessage }}
     </AtlasSnackbar>
   </div>
 </template>
@@ -153,23 +135,16 @@ import { AtlasButton, AtlasCard, AtlasDivider, AtlasIcon, AtlasSpacer, AtlasChip
 import { useStrategusStore } from '../store/useStrategusStore';
 import { useValidation } from '../store/validation';
 import { serializeSpec } from '../services/SpecSerializer';
-import RunAnalysisDialog from '../components/RunAnalysisDialog.vue';
 
 const store = useStrategusStore();
 const validation = useValidation();
 
 const fullscreen = ref(false);
 const snackbar = ref(false);
-const showRun = ref(false);
+const snackbarMessage = ref('JSON copied to clipboard');
 
 const spec = computed(() => serializeSpec(store));
 const jsonPreview = computed(() => JSON.stringify(spec.value, null, 2));
-
-function onSubmitted(jobId: string) {
-  showRun.value = false;
-  // Deep-link to the jobs plugin focused on this run.
-  window.location.assign(`/plugins/jobs-plugin/?job=${encodeURIComponent(jobId)}`);
-}
 
 const validationChecks = computed(() => [
   { key: 'setup', label: 'Study name', result: validation.statusFor('setup') },
@@ -184,6 +159,7 @@ const allValid = computed(() => validation.canExport.value);
 async function copyJson() {
   try {
     await navigator.clipboard.writeText(jsonPreview.value);
+    snackbarMessage.value = 'JSON copied to clipboard';
     snackbar.value = true;
   } catch {
     // Fallback: select a textarea
@@ -193,6 +169,7 @@ async function copyJson() {
     el.select();
     document.execCommand('copy');
     document.body.removeChild(el);
+    snackbarMessage.value = 'JSON copied to clipboard';
     snackbar.value = true;
   }
 }

@@ -1,15 +1,16 @@
 // Minimal GraphQL client for trex's auto-generated PostGraphile endpoint.
-// Same-origin POST with the session cookie (credentials: "include"); throws on
-// a GraphQL `errors[]` payload. Mirrors the jobs plugin's graphqlClient so the
-// two stay interchangeable.
+// Sends Authorization: Bearer <token> (set via setAuthToken from main.ts);
+// throws on a GraphQL `errors[]` payload. Mirrors the jobs plugin's
+// graphqlClient so the two stay interchangeable.
+import { authHeaders } from './authToken';
+
 export class GraphqlClient {
   constructor(private endpoint: string) {}
 
   async request<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
     const resp = await fetch(this.endpoint, {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ query, variables }),
     });
     if (!resp.ok) throw new Error(`graphql ${resp.status}`);

@@ -1,13 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { mockTrexAuth, seedSession } from './_auth'
 
-// Register TWO plugins: the served fixture (proves a normal plugin DOES appear as
-// a text nav link) and jobs-plugin (which must NOT appear as text — it's promoted
-// to a header icon). Contrasting the two proves Jobs is *filtered*, not merely
-// absent because its parcel failed to load. The exhaustive filter logic itself is
-// unit-tested in tests/navmenu-filter.spec.ts; here we verify the shell wiring.
-// jobs-plugin's parcel entry isn't served in e2e, so opening the Jobs drawer may
-// surface a mount error — that's fine; we only assert the drawer opens/closes.
+// Register the served fixture to prove a normal plugin appears as a text nav link.
 const manifest = {
   version: '1.0',
   plugins: [
@@ -18,15 +12,6 @@ const manifest = {
       entryPoint: 'hello-fixture-plugin/index.system.js',
       menuItems: [
         { id: 'main', name: 'Hello Fixture', route: '/plugins/hello-fixture-plugin/', icon: 'mdi-hand-wave-outline', order: 10 },
-      ],
-    },
-    {
-      id: 'jobs-plugin',
-      name: 'Jobs',
-      version: '1.0.0',
-      entryPoint: 'jobs-plugin/index.system.js',
-      menuItems: [
-        { id: 'main', name: 'Jobs', route: '/plugins/jobs-plugin/', icon: 'mdi-clipboard-list-outline', order: 55 },
       ],
     },
   ],
@@ -58,19 +43,5 @@ test.describe('header sidepanels', () => {
 
     await page.getByTestId('settings-close').click()
     await expect(page.getByTestId('settings-panel')).not.toHaveClass(ACTIVE)
-  })
-
-  test('jobs is a header icon (not a text link) and opens the jobs drawer', async ({ page }) => {
-    // A normal registered plugin DOES show as a text nav link...
-    await expect(page.getByTestId('nav-hello-fixture-plugin')).toBeVisible()
-    // ...but Jobs is filtered out of the text nav (no nav-jobs-plugin link)...
-    await expect(page.getByTestId('nav-jobs-plugin')).toHaveCount(0)
-    // ...and instead is a header icon button that opens the drawer.
-    await expect(page.getByTestId('nav-jobs')).toBeVisible()
-    await page.getByTestId('nav-jobs').click()
-    await expect(page.getByTestId('jobs-panel')).toHaveClass(ACTIVE)
-
-    await page.getByTestId('jobs-close').click()
-    await expect(page.getByTestId('jobs-panel')).not.toHaveClass(ACTIVE)
   })
 })

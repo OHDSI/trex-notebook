@@ -15,14 +15,6 @@ export interface PluginMenuItem {
   }
 }
 
-/** Plugin whose nav entry is rendered as a header icon, not a text link. */
-export const JOBS_PLUGIN_ID = 'jobs-plugin'
-
-/** Items shown as text links in the navbar (Jobs is excluded — it has an icon). */
-export function filterTextNavItems(items: PluginMenuItem[]): PluginMenuItem[] {
-  return items.filter(item => item.pluginId !== JOBS_PLUGIN_ID)
-}
-
 export function generatePluginMenuItems(): PluginMenuItem[] {
   const plugins = pluginRegistry.getAllPlugins()
   const menuItems: PluginMenuItem[] = []

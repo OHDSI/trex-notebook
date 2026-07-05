@@ -1,8 +1,16 @@
 {
-  "name": "network-plugin",
+  "name": "@ohdsi/network-plugin",
   "version": "0.1.0",
   "description": "Federated network studies — site plugin",
   "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": "./dist/index.system.js",
+    "./dist/*": "./dist/*"
+  },
+  "publishConfig": {
+    "@ohdsi:registry": "https://npm.pkg.github.com"
+  },
   "trex": {
     "ui": {
       "routes": [
@@ -17,6 +25,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:sibyl": "NETWORK_OUT_DIR=../sibyl/public/plugins/network-plugin vite build",
+    "build:pkg": "NETWORK_OUT_DIR=dist vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest",

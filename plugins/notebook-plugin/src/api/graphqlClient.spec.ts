@@ -1,8 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { GraphqlClient, defaultGraphqlEndpoint } from "./graphqlClient";
+import { setAuthToken } from "./authToken";
 
 describe("GraphqlClient", () => {
-  it("POSTs query+variables to the endpoint with credentials and returns data", async () => {
+  it("POSTs query+variables to the endpoint and returns data", async () => {
+    setAuthToken(null);
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ data: { allNotebookDocuments: { nodes: [{ rowId: "n1" }] } } }),
@@ -15,7 +17,7 @@ describe("GraphqlClient", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("http://x/trex/graphql");
     expect(init.method).toBe("POST");
-    expect(init.credentials).toBe("include");
+    expect(init.credentials).toBeUndefined();
   });
 
   it("throws on a GraphQL errors array", async () => {

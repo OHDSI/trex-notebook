@@ -121,22 +121,41 @@ local({
     else character()
   }
 
+  # cd.csv / plp.csv declare table names WITHOUT the module prefix, but the OHDSI
+  # modules query them WITH one (dataSource$cdTablePrefix = "cd_", plpTablePrefix
+  # = "plp_", ...). Without prefixing the stub, a data-less module queries e.g.
+  # cd_metadata, finds nothing, and downstream code (getDatabaseMetadata ->
+  # pivot_wider on variableField) errors on the missing column. Derive the prefix
+  # from the schema filename so every stub is named the way its module queries it;
+  # cm.csv / cg.csv already embed their prefix, so startsWith() avoids doubling.
+  schema_prefix <- function(csv_file) {
+    switch(tools::file_path_sans_ext(basename(csv_file)),
+           cd = "cd_", osm_cd = "cd_", cm = "cm_", cg = "cg_",
+           plp = "plp_", c = "c_", sccs = "sccs_", ci = "ci_",
+           "")
+  }
+  # Cross-module tables the modules query WITHOUT a prefix (databaseTablePrefix
+  # = ""). Several schemas declare these, so they must never be module-prefixed.
+  shared_unprefixed <- c("database_meta_data", "database")
   created <- character()
   for (csv_file in list.files(schema_dir, pattern = "\\.csv$", full.names = TRUE)) {
     spec <- tryCatch(utils::read.csv(csv_file, stringsAsFactors = FALSE),
                        error = function(e) NULL)
     if (is.null(spec) || !"table_name" %in% colnames(spec)) next
-    for (tbl in unique(spec$table_name)) {
+    prefix <- schema_prefix(csv_file)
+    for (tbl0 in unique(spec$table_name)) {
+      tbl <- if (nzchar(prefix) && !startsWith(tbl0, prefix) && !(tbl0 %in% shared_unprefixed)) paste0(prefix, tbl0) else tbl0
       if (tbl %in% created) next
-      cols <- spec[spec$table_name == tbl, ]
+      cols <- spec[spec$table_name == tbl0, ]
       df_cols <- setNames(
         lapply(cols$data_type, init_for),
         cols$column_name
       )
-      # Record VARCHAR / TEXT / CHAR columns for this table.
+      # Record VARCHAR cols under the BARE name; .varchar_cols_for_table strips
+      # the prefix before lookup.
       varchar_idx <- grepl("^(varchar|text|char|string)",
                             tolower(trimws(cols$data_type)))
-      .varchar_cols_by_table[[tbl]] <<- as.character(cols$column_name[varchar_idx])
+      .varchar_cols_by_table[[tbl0]] <<- as.character(cols$column_name[varchar_idx])
       df <- do.call(data.frame, c(df_cols, list(stringsAsFactors = FALSE)))
       tryCatch({
         DBI::dbWriteTable(.results_con, tbl, df, overwrite = TRUE)
@@ -520,8 +539,8 @@ ui <- tagList(
       --atlas-border: #e5e7eb;
       --atlas-text: #1f2937;
       --atlas-muted: #6b7280;
-      --atlas-primary: #eb6622;        /* ATLAS brand orange */
-      --atlas-primary-dim: #f3a07a;
+      --atlas-primary: #000080;        /* navy brand primary */
+      --atlas-primary-dim: #4d4db3;
       --atlas-active: #0f3a5f;
     }
 
@@ -583,11 +602,11 @@ ui <- tagList(
       font-size: 1.15rem !important;
     }
     .sidebar-menu > li:hover > a {
-      background: rgba(235, 102, 34, 0.06) !important;
+      background: rgba(0,0,128, 0.06) !important;
       color: var(--atlas-text) !important;
     }
     .sidebar-menu > li.active > a {
-      background: rgba(235, 102, 34, 0.10) !important;
+      background: rgba(0,0,128, 0.10) !important;
       color: var(--atlas-active) !important;
       border-left-color: var(--atlas-primary) !important;
     }
@@ -658,9 +677,9 @@ ui <- tagList(
       border-color: var(--atlas-primary) !important;
       border-radius: 6px !important;
     }
-    .btn-primary:hover { background: #c14e15 !important; border-color: #c14e15 !important; }
+    .btn-primary:hover { background: #000066 !important; border-color: #000066 !important; }
     .action-button.btn-default:hover {
-      background: rgba(235, 102, 34, 0.08) !important;
+      background: rgba(0,0,128, 0.08) !important;
       border-color: var(--atlas-primary-dim) !important;
     }
 
@@ -691,7 +710,7 @@ ui <- tagList(
     /* Misc */
     h1, h2, h3, h4 { color: var(--atlas-text); }
     a { color: var(--atlas-primary); }
-    a:hover { color: #c14e15; }
+    a:hover { color: #000066; }
 
     /* Smaller, denser sidebar collapse on narrow screens */
     @media (max-width: 768px) {

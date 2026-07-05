@@ -104,6 +104,36 @@ function isNegativeControlSharedResources(sr: SharedResource): sr is Extract<Sha
     ((sr as Record<string, unknown>).attr_class as string[]).includes('NegativeControlOutcomeSharedResources');
 }
 
+// Age/gender restriction a TCI-generated subset def encodes, recovered so
+// comparisons round-trip. The serializer writes these into the subset def's
+// DemographicSubsetOperator entries (see SpecSerializer buildSubsetsForComparisons).
+interface TciRestriction {
+  genderConceptIds: number[];
+  minAge: number | null;
+  maxAge: number | null;
+}
+
+// Concept IDs the UI uses to represent an unrestricted gender selection
+// (both male + female). The serializer omits the gender DemographicSubsetOperator
+// in this case, so on read-back "no gender operator" must map to both genders —
+// not an empty selection — to match the editor's default (ComparisonsPanel.vue).
+const BOTH_GENDER_CONCEPT_IDS = [8507, 8532];
+
+/** Read a TCI age/gender restriction back out of a subset def's operators. */
+export function parseTciRestriction(operators: Array<Record<string, unknown>>): TciRestriction {
+  // Default gender to "both" (unrestricted); only a gender operator narrows it.
+  const restriction: TciRestriction = { genderConceptIds: [...BOTH_GENDER_CONCEPT_IDS], minAge: null, maxAge: null };
+  for (const op of operators) {
+    if (op['subsetType'] !== 'DemographicSubsetOperator') continue;
+    if (Array.isArray(op['gender'])) {
+      restriction.genderConceptIds = (op['gender'] as unknown[]).filter((g) => typeof g === 'number') as number[];
+    }
+    if (typeof op['ageMin'] === 'number') restriction.minAge = op['ageMin'];
+    if (typeof op['ageMax'] === 'number') restriction.maxAge = op['ageMax'];
+  }
+  return restriction;
+}
+
 export function deserializeSpec(spec: AnalysisSpecification, store: StrategusStore): void {
   // Step 1: Reset store to defaults
   store.resetToDefaults();
@@ -111,6 +141,10 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
   // Build a reverse map: subsetCohortId → originalCohortId
   // Used to un-subset TCO targetId/comparatorId when reading comparisons
   const subsetToOriginalId = new Map<number, number>();
+
+  // Build a reverse map: subsetCohortId → TCI age/gender restriction, recovered
+  // from the TCI-generated subset defs so comparisons round-trip losslessly.
+  const subsetToRestriction = new Map<number, TciRestriction>();
 
   // Step 2: Extract cohort definitions
   for (const sr of spec.sharedResources) {
@@ -133,6 +167,33 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
         for (const cs of cohortSR.cohortSubsets) {
           if (typeof cs.cohortId === 'number' && typeof cs.targetCohortId === 'number') {
             subsetToOriginalId.set(cs.cohortId, cs.targetCohortId);
+          }
+        }
+      }
+
+      // Recover TCI age/gender restrictions from the TCI-generated subset defs
+      // (definitionId 1..999) and index them by subset cohort id so the
+      // comparisons rebuilt in parseCohortMethodSettings carry them back.
+      const restrictionBySubsetId = new Map<number, TciRestriction>();
+      if (Array.isArray(cohortSR.subsetDefs)) {
+        for (const raw of cohortSR.subsetDefs) {
+          let def: Record<string, unknown>;
+          if (typeof raw === 'string') {
+            try { def = JSON.parse(raw); } catch { continue; }
+          } else {
+            def = raw as Record<string, unknown>;
+          }
+          const defId = typeof def['definitionId'] === 'number' ? def['definitionId'] : 0;
+          if (defId <= 0 || defId >= 1000) continue; // only TCI-generated defs
+          const ops = (def['subsetOperators'] as Array<Record<string, unknown>> | undefined) ?? [];
+          restrictionBySubsetId.set(defId, parseTciRestriction(ops));
+        }
+      }
+      if (Array.isArray(cohortSR.cohortSubsets)) {
+        for (const cs of cohortSR.cohortSubsets) {
+          const restriction = restrictionBySubsetId.get(cs.subsetId);
+          if (restriction && typeof cs.cohortId === 'number') {
+            subsetToRestriction.set(cs.cohortId, restriction);
           }
         }
       }
@@ -286,7 +347,7 @@ export function deserializeSpec(spec: AnalysisSpecification, store: StrategusSto
         parseCohortIncidenceSettings(modSpec, store);
         break;
       case 'CohortMethodModule':
-        parseCohortMethodSettings(modSpec, store, subsetToOriginalId);
+        parseCohortMethodSettings(modSpec, store, subsetToOriginalId, subsetToRestriction);
         break;
       case 'SelfControlledCaseSeriesModule':
         parseSccsSettings(modSpec, store);
@@ -657,7 +718,8 @@ function detectPsAdjustmentMethod(analysis: Record<string, unknown>): {
 function parseCohortMethodSettings(
   modSpec: ModuleSpecification,
   store: StrategusStore,
-  subsetToOriginalId: Map<number, number> = new Map()
+  subsetToOriginalId: Map<number, number> = new Map(),
+  subsetToRestriction: Map<number, TciRestriction> = new Map()
 ): void {
   const s = modSpec.settings as Record<string, unknown>;
   const cms = store.cohortMethodSettings;
@@ -676,13 +738,16 @@ function parseCohortMethodSettings(
       // Reverse-map subset cohort IDs back to original cohort IDs using the cohortSubsets map
       const targetId = subsetToOriginalId.get(rawTargetId) ?? rawTargetId;
       const comparatorId = subsetToOriginalId.get(rawComparatorId) ?? rawComparatorId;
+      // Recover the TCI's age/gender restriction from the subset def that the
+      // serializer generated for this target/comparator pair.
+      const restriction = subsetToRestriction.get(rawTargetId) ?? subsetToRestriction.get(rawComparatorId);
       return {
         targetId,
         comparatorId,
         indicationId: null,
-        genderConceptIds: [],
-        minAge: null,
-        maxAge: null,
+        genderConceptIds: restriction?.genderConceptIds ?? [],
+        minAge: restriction?.minAge ?? null,
+        maxAge: restriction?.maxAge ?? null,
         excludedCovariateConceptIds: (tco['excludedCovariateConceptIds'] as number[]) ?? [],
       };
     });

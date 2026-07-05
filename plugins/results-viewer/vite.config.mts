@@ -7,11 +7,18 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Default target is the sibyl shell's plugin dir (dev/CI `npm run build`,
+// matching how the plugin is actually consumed at runtime). Standalone
+// package builds (npm publish) set RESULTS_VIEWER_OUT_DIR=dist via `build:pkg`.
+const OUT_DIR = process.env.RESULTS_VIEWER_OUT_DIR
+  ? join(__dirname, process.env.RESULTS_VIEWER_OUT_DIR)
+  : join(__dirname, '../sibyl/public/plugins/results-viewer');
+
 function copyPublicAssets() {
   return {
     name: 'copy-public-assets',
     closeBundle() {
-      const outDir = join(__dirname, '../sibyl/public/plugins/results-viewer');
+      const outDir = OUT_DIR;
 
       // The httpuv service worker lives under src/public (not vite's default
       // publicDir), so it isn't emitted by the lib build. Copy it to the outDir
@@ -76,7 +83,8 @@ export default defineConfig({
       external: ['vue'],
       output: { format: 'system', globals: { vue: 'vue' } },
     },
-    outDir: '../sibyl/public/plugins/results-viewer',
+    outDir: OUT_DIR,
+    emptyOutDir: true,
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
