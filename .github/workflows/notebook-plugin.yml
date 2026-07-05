@@ -41,12 +41,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ohdsi'
       - name: Install notebook lib (bundled by the plugin)
         working-directory: plugins/notebook
         run: npm ci
       - name: Install notebook-plugin
         working-directory: plugins/notebook-plugin
         run: npm ci
+        env:
+          # @ohdsi/atlas-ui is served from GitHub Packages, which requires auth
+          # even for reads; without a token npm ci 401s.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Typecheck
         working-directory: plugins/notebook-plugin
         run: npm run typecheck
