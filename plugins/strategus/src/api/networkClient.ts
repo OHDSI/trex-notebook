@@ -3,7 +3,7 @@
 // coordinator API; central's contract (`central/shared/src/schemas.ts` /
 // `central/web/src/stores/studies.ts`) is duplicated here rather than imported
 // because each trex plugin builds independently.
-import { authHeaders } from './authToken';
+import { authHeaders, ensureAuthToken } from './authToken';
 
 export const defaultBase = (): string => `${location.origin}/plugins/network-api/network-api`;
 
@@ -14,6 +14,7 @@ interface SignupStateResponse {
 /** True only when the network is configured AND this site is an active member. */
 export async function isNetworkActive(base: string = defaultBase()): Promise<boolean> {
   try {
+    await ensureAuthToken();
     const res = await fetch(`${base}/signup/state`, { headers: { ...authHeaders() } });
     if (res.status !== 200) return false;
     const body = (await res.json()) as SignupStateResponse;
@@ -36,6 +37,7 @@ interface CoordinatorStateResponse {
  */
 export async function isCoordinatorConfigured(base: string = defaultBase()): Promise<boolean> {
   try {
+    await ensureAuthToken();
     const res = await fetch(`${base}/coordinator/state`, { headers: { ...authHeaders() } });
     if (res.status !== 200) return false;
     const body = (await res.json()) as CoordinatorStateResponse;
@@ -70,6 +72,7 @@ interface StudyWithUploads {
  * are pre-signed), then publish it.
  */
 export async function publishStudy(args: PublishStudyArgs, base: string = defaultBase()): Promise<void> {
+  await ensureAuthToken();
   const createRes = await fetch(`${base}/studies`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },

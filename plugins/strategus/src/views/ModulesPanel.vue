@@ -7,7 +7,7 @@
     <h1 class="text-h4 font-weight-light text-primary mb-1">
       Modules
     </h1>
-    <p class="text-body-2 text-medium-emphasis mb-6">
+    <p class="text-body-2 text-medium-emphasis mb-3">
       Toggle each module to include it in the spec. Settings appear inline when enabled.
     </p>
 
@@ -140,13 +140,13 @@ function colorFor(key: SidebarItem): string {
 
 <style scoped>
 .module-section {
-  padding: 18px 0;
+  padding: 14px 0;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   scroll-margin-top: 24px;
 }
 .module-section:first-of-type {
   border-top: none;
-  padding-top: 12px;
+  padding-top: 8px;
 }
 .module-section__heading {
   display: flex;
@@ -157,7 +157,7 @@ function colorFor(key: SidebarItem): string {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: rgba(0, 0, 0, 0.72);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .module-section__heading .v-icon {
   color: rgba(0, 0, 0, 0.4);

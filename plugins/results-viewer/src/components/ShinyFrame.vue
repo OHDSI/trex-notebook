@@ -238,7 +238,7 @@ onBeforeUnmount(() => {
   width: 48px;
   height: 48px;
   border: 4px solid #e5e7eb;
-  border-top-color: #1976d2;
+  border-top-color: rgb(var(--v-theme-primary, 0, 0, 128));
   border-radius: 50%;
   animation: rv-spin 1s linear infinite;
 }

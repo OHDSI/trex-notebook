@@ -26,7 +26,7 @@ export function loadConfig(): NetworkConfig {
       injected.proxyUrl ??
       env.VITE_PROXY_URL ??
       (typeof location !== 'undefined'
-        ? `${location.origin}/plugins/network-api/network-api`
+        ? `${location.origin}/network-api`
         : ''),
   };
 }

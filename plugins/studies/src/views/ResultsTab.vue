@@ -1,27 +1,23 @@
 <template>
-  <div class="studies-results-list">
-    <header class="studies-results-list__head">
-      <div>
-        <h1 class="text-h4">Results</h1>
-        <p class="text-subtitle-1">Imported study results — open one to explore it in the viewer</p>
-      </div>
-      <div class="studies-results-list__actions">
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".zip,.db,.db.gz"
-          style="display: none"
-          @change="onFile"
-        />
-        <AtlasButton
-          variant="primary"
-          prepend-icon="mdi-upload-outline"
-          @click="fileInput?.click()"
-        >
-          Import result
-        </AtlasButton>
-      </div>
-    </header>
+  <div class="studies-section-body">
+    <SectionHero eyebrow="OHDSI · Results" title="Results" subtitle="Imported study results — open one to explore it in the viewer">
+    <template #actions>
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".zip,.db,.db.gz"
+        style="display: none"
+        @change="onFile"
+      />
+      <AtlasButton
+        variant="primary"
+        prepend-icon="mdi-upload-outline"
+        @click="fileInput?.click()"
+      >
+        Import result
+      </AtlasButton>
+    </template>
+    </SectionHero>
 
     <AtlasAlert v-if="error" severity="danger" class="mb-4">{{ error }}</AtlasAlert>
 
@@ -32,7 +28,7 @@
       item-value="id"
     >
       <template #item.name="{ item }">
-        <a class="text-primary" style="cursor: pointer" @click="open(item)">{{ item.name }}</a>
+        <a class="text-primary" style="cursor: pointer" @click="open(item)">{{ displayName(item.name) }}</a>
       </template>
       <template #item.size="{ item }">{{ formatSize(item.size) }}</template>
       <template #item.addedAt="{ item }">{{ formatDate(item.addedAt) }}</template>
@@ -52,6 +48,7 @@
 <script setup lang="ts">
 import { ref, inject, onMounted, type Ref } from 'vue';
 import { AtlasDataTable, AtlasAlert, AtlasButton, AtlasIconButton } from '@ohdsi/atlas-ui';
+import SectionHero from '../components/SectionHero.vue';
 import { listResults, addResult, deleteResult, formatSize, type ResultMeta } from '../data/results';
 
 // Setting this (provided by StudiesApp) opens the full-screen viewer for that id.
@@ -68,6 +65,15 @@ const headers = [
   { title: 'Added', key: 'addedAt' },
   { title: '', key: 'actions', sortable: false, align: 'end' as const },
 ];
+
+// Display the result by a study-like name rather than the raw upload filename:
+// drop the archive extension and turn separators into spaces.
+function displayName(name: string): string {
+  return name
+    .replace(/\.(db\.gz|zip|db)$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+}
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleString();
@@ -115,31 +121,5 @@ onMounted(reload);
 </script>
 
 <style scoped>
-.studies-results-list {
-  padding: 28px 32px;
-}
-.studies-results-list__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.studies-results-list__head h1.text-h4 {
-  font-size: 34px;
-  font-weight: 300;
-  line-height: 1.2;
-  color: rgb(var(--v-theme-primary));
-}
-.studies-results-list__head .text-subtitle-1 {
-  font-size: 14px;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.62);
-  margin-top: 2px;
-}
-.studies-results-list__actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
+.studies-section-body { padding: 20px 24px; }
 </style>

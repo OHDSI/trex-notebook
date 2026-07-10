@@ -1,4 +1,4 @@
-import { authHeaders } from '../api/authToken';
+import { authHeaders, ensureAuthToken } from '../api/authToken';
 
 export interface LocalItem {
   id: string;
@@ -41,6 +41,7 @@ const LIST_DEFINITIONS = `query {
 }`;
 
 async function graphqlRequest<T>(query: string): Promise<T> {
+  await ensureAuthToken();
   const res = await fetch(GRAPHQL_ENDPOINT(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },

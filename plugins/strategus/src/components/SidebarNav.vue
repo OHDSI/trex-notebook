@@ -23,12 +23,6 @@
     </div>
 
     <div class="sidebar-nav__body">
-      <SidebarItem
-        icon="mdi-view-dashboard-outline"
-        label="Overview"
-        panel="overview"
-      />
-
       <!-- Study Design section -->
       <SidebarItem
         icon="mdi-pencil-ruler"

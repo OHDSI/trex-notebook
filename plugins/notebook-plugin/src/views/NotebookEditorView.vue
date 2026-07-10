@@ -1,19 +1,35 @@
 <template>
-  <div class="notebook-editor">
-    <div class="d-flex align-center mb-3" style="gap: 8px;">
-      <AtlasIconButton icon="mdi-arrow-left" ariaLabel="Back" @click="emit('back')" />
-      <AtlasTextField
-        v-model="name"
-        label="Name"
-        style="max-width: 320px;"
-      />
+  <div class="notebook-editor studies-section-body">
+    <button class="notebook-editor__back" @click="emit('back')">
+      <AtlasIcon icon="mdi-arrow-left" size="16" />
+      <span>Notebooks</span>
+    </button>
+
+    <SectionHero
+      eyebrow="OHDSI · Notebook"
+      :title="props.id ? 'Edit notebook' : 'New notebook'"
+      subtitle="Write and run analytical cells against this site's data."
+    >
+      <template #actions>
+        <AtlasChip v-if="dirty" tone="warning" size="sm">Unsaved</AtlasChip>
+        <AtlasButton
+          variant="primary"
+          prepend-icon="mdi-content-save"
+          :loading="saving"
+          :disabled="!name"
+          @click="save"
+        >Save</AtlasButton>
+      </template>
+    </SectionHero>
+
+    <div class="notebook-editor__meta">
+      <AtlasTextField v-model="name" label="Name" class="notebook-editor__name" />
       <AtlasTextField
         v-model="description"
         label="Description"
+        placeholder="Optional summary"
+        class="notebook-editor__desc"
       />
-      <AtlasSpacer />
-      <AtlasChip v-if="dirty" tone="warning" size="sm">Unsaved</AtlasChip>
-      <AtlasButton variant="primary" :loading="saving" :disabled="!name" @click="save">Save</AtlasButton>
     </div>
 
     <AtlasAlert v-if="error" severity="danger" class="mb-3">{{ error }}</AtlasAlert>
@@ -38,7 +54,8 @@ import {
   createEmptyNotebook,
 } from "@trex/notebook";
 import type { NotebookData } from "@trex/notebook";
-import { AtlasAlert, AtlasButton, AtlasChip, AtlasIconButton, AtlasSpacer, AtlasTextField } from "@ohdsi/atlas-ui";
+import { AtlasAlert, AtlasButton, AtlasChip, AtlasIcon, AtlasTextField } from "@ohdsi/atlas-ui";
+import SectionHero from "../components/SectionHero.vue";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 
 const props = defineProps<{ id: string | null }>();
@@ -112,5 +129,35 @@ onMounted(load);
 </script>
 
 <style scoped>
-.notebook-editor { padding: 4px; }
+/* Padded, scrollable body inside the shared notebook shell card — matches the
+   Studies section body so both plugins share the same rhythm. */
+.studies-section-body {
+  padding: 20px 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+.notebook-editor__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-primary));
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.notebook-editor__back:hover { text-decoration: underline; }
+.notebook-editor__meta {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.notebook-editor__name { flex: 0 0 320px; max-width: 320px; }
+.notebook-editor__desc { flex: 1 1 360px; min-width: 240px; }
 </style>

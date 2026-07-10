@@ -8,7 +8,7 @@
     <h1 class="text-h4 font-weight-light text-primary mb-1">
       {{ store.studyName.trim() || 'Untitled Study' }}
     </h1>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-2 text-medium-emphasis mb-3">
       Configure cohorts, comparisons, time-at-risk and analysis modules.
     </p>
 
@@ -103,13 +103,13 @@ function colorFor(key: SidebarItem): string {
 
 <style scoped>
 .study-section {
-  padding: 18px 0;
+  padding: 14px 0;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   scroll-margin-top: 24px;
 }
 .study-section:first-of-type {
   border-top: none;
-  padding-top: 12px;
+  padding-top: 8px;
 }
 .study-section__heading {
   display: flex;
@@ -120,7 +120,7 @@ function colorFor(key: SidebarItem): string {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: rgba(0, 0, 0, 0.72);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .study-section__heading .v-icon {
   color: rgba(0, 0, 0, 0.4);

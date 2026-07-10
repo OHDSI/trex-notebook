@@ -9,7 +9,7 @@
     </template>
     <div
       v-if="!props.embedded"
-      class="mb-4"
+      class="mb-3"
     >
       <h1 class="text-h4 font-weight-light text-primary mb-1">
         Comparisons

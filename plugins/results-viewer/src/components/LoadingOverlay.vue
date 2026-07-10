@@ -28,7 +28,7 @@ defineProps<{ message: string }>()
   width: 48px;
   height: 48px;
   border: 4px solid #e0e0e0;
-  border-top-color: #1976d2;
+  border-top-color: rgb(var(--v-theme-primary, 0, 0, 128));
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-bottom: 24px;

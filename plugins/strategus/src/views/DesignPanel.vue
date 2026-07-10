@@ -16,7 +16,7 @@ import ModulesPanel from './ModulesPanel.vue';
 
 <style scoped>
 .design-panel__modules {
-  margin-top: 24px;
+  margin-top: 16px;
   padding-top: 8px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   scroll-margin-top: 16px;

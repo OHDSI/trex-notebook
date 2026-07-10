@@ -14,6 +14,19 @@
         <AtlasIcon :icon="it.icon" size="16" />
         <span>{{ it.label }}</span>
       </button>
+
+      <div class="studies-sidebar__spacer" />
+
+      <button
+        v-for="it in bottomItems"
+        :key="it.key"
+        class="studies-sidebar__item"
+        :class="{ 'is-active': section === it.key }"
+        @click="section = it.key"
+      >
+        <AtlasIcon :icon="it.icon" size="16" />
+        <span>{{ it.label }}</span>
+      </button>
     </div>
   </nav>
 </template>
@@ -30,6 +43,10 @@ const items: Array<{ key: StudiesSection; label: string; icon: string }> = [
   { key: 'overview', label: 'Overview', icon: 'mdi-view-dashboard-outline' },
   { key: 'network', label: 'Network', icon: 'mdi-earth' },
   { key: 'results', label: 'Results', icon: 'mdi-chart-box-outline' },
+];
+
+const bottomItems: Array<{ key: StudiesSection; label: string; icon: string }> = [
+  { key: 'configuration', label: 'Configuration', icon: 'mdi-cog-outline' },
 ];
 </script>
 
@@ -60,6 +77,12 @@ const items: Array<{ key: StudiesSection; label: string; icon: string }> = [
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.studies-sidebar__spacer {
+  flex: 1 1 auto;
+  min-height: 12px;
+  margin: 8px 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 .studies-sidebar__item {
   display: flex;

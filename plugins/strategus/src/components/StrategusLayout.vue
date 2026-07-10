@@ -29,7 +29,7 @@ import SidebarNav from './SidebarNav.vue';
 .strategus-detail {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 32px;
+  padding: 20px 24px;
 }
 </style>
 
@@ -37,8 +37,8 @@ import SidebarNav from './SidebarNav.vue';
      :deep() only pierces direct descendants of the scoped component;
      slotted content rendered by sibling Vue components is out of scope. -->
 <style>
-/* Page header — match Atlas3 landing's hero (large light title) */
-.strategus-detail h1.text-h4 { font-size: 34px !important; font-weight: 300 !important; line-height: 1.2; color: rgb(31, 66, 90); }
+/* Page header — match the studies plugin's SectionHero metrics (26px light) */
+.strategus-detail h1.text-h4 { font-size: 26px !important; font-weight: 300 !important; line-height: 1.2; letter-spacing: 0.01em; color: rgb(31, 66, 90); }
 .strategus-detail .text-subtitle-1 { font-size: 14px !important; font-weight: 400; color: rgba(0, 0, 0, .62); }
 .strategus-detail .text-overline { font-size: 11px !important; letter-spacing: 0.1em; line-height: 1.4; color: rgba(0, 0, 0, .54); font-weight: 500; }
 .strategus-detail .text-body-2 { font-size: 13px !important; }

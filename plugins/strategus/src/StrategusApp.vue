@@ -1,11 +1,14 @@
 <template>
   <StrategusLayout>
     <component :is="activeComponent" />
+    <StudyTypePicker v-model="showTypePicker" @select="onTypeSelected" />
   </StrategusLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, provide, onMounted, watch } from 'vue';
+import { computed, provide, onMounted, ref, watch } from 'vue';
+import StudyTypePicker from './components/StudyTypePicker.vue';
+import { applyStudyTypePreset, type StudyTypeId } from './services/StudyTypePresets';
 import StrategusLayout from './components/StrategusLayout.vue';
 import OverviewPanel from './views/OverviewPanel.vue';
 import DesignPanel from './views/DesignPanel.vue';
@@ -54,7 +57,14 @@ const panelMap: Record<string, unknown> = {
   evidenceSynthesis: EvidenceSynthesisPanel,
 };
 
-const activeComponent = computed(() => panelMap[store.activePanel] ?? OverviewPanel);
+const activeComponent = computed(() => panelMap[store.activePanel] ?? DesignPanel);
+
+const showTypePicker = ref(false);
+
+function onTypeSelected(id: StudyTypeId | null): void {
+  if (id) applyStudyTypePreset(store as unknown as Parameters<typeof applyStudyTypePreset>[0], id);
+  store.activePanel = 'study';
+}
 
 // The combined Studies plugin overview is the single entry point for browsing
 // studies + notebooks, so Strategus no longer surfaces its own standalone list.
@@ -101,6 +111,9 @@ onMounted(() => {
   } else if (params.has('new')) {
     store.resetToDefaults();
     studiesStore.openNew();
+    // New studies start from the type picker; the chosen preset pre-selects
+    // modules and defaults before the design page shows.
+    showTypePicker.value = true;
   } else {
     // Direct navigation with no deep-link would otherwise show the standalone
     // Strategus list; send the user to the combined Studies overview instead.

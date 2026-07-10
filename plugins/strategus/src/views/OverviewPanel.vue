@@ -60,7 +60,7 @@
     >
 
     <!-- Study Design section -->
-    <div class="section-label text-overline text-medium-emphasis mt-6 mb-2">
+    <div class="section-label text-overline text-medium-emphasis mt-4 mb-2">
       Study Design
     </div>
 
@@ -86,7 +86,7 @@
 
     <!-- Enabled Modules section -->
     <template v-if="enabledModules.length > 0">
-      <div class="section-label text-overline text-medium-emphasis mt-6 mb-2">
+      <div class="section-label text-overline text-medium-emphasis mt-4 mb-2">
         Enabled Modules
       </div>
       <AtlasRow dense>
@@ -112,7 +112,7 @@
 
     <!-- Disabled Modules section -->
     <template v-if="disabledModules.length > 0">
-      <div class="section-label text-overline text-medium-emphasis mt-6 mb-2">
+      <div class="section-label text-overline text-medium-emphasis mt-4 mb-2">
         Disabled Modules
       </div>
       <div class="d-flex flex-wrap gap-2">

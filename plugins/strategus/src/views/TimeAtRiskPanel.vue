@@ -11,7 +11,7 @@
           <h1 class="text-h4 font-weight-light text-primary mb-1">
             Time-at-Risk
           </h1>
-          <p class="text-body-2 text-medium-emphasis mb-4">
+          <p class="text-body-2 text-medium-emphasis mb-3">
             Shared across all modules. Override per module in Advanced.
           </p>
         </div>
@@ -21,10 +21,10 @@
     <!-- Shared Windows card -->
     <AtlasCard
       variant="outlined"
-      class="mb-4"
+      class="mb-3"
       padding="none"
     >
-      <h3 class="card-title pa-4 pb-2 d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
+      <h3 class="card-title pa-3 pb-1 d-flex align-center justify-space-between text-subtitle-2 font-weight-medium">
         Shared Windows
       </h3>
       <AtlasDataTable
@@ -77,7 +77,7 @@
           />
         </template>
       </AtlasDataTable>
-      <div class="card-actions" style="display:flex; gap:8px; justify-content:flex-start; padding: 8px 16px">
+      <div class="card-actions" style="display:flex; gap:8px; justify-content:flex-start; padding: 6px 12px">
         <AtlasButton
           prepend-icon="mdi-plus"
           variant="ghost"
@@ -97,10 +97,10 @@
         class="mb-3 mt-2"
         padding="none"
       >
-        <h3 class="card-title text-subtitle-1 pa-4 pb-2 font-weight-medium">
+        <h3 class="card-title text-subtitle-2 pa-3 pb-1 font-weight-medium">
           SCCS Override
         </h3>
-        <div class="pa-4 pt-0">
+        <div class="pa-3 pt-0">
           <p class="text-body-2 text-medium-emphasis mb-3">
             Avoid intent-to-treat time-at-risk windows for SCCS. On-treatment or similarly defined TARs are more appropriate.
           </p>
@@ -180,10 +180,10 @@
         variant="outlined"
         padding="none"
       >
-        <h3 class="card-title text-subtitle-1 pa-4 pb-2 font-weight-medium">
+        <h3 class="card-title text-subtitle-2 pa-3 pb-1 font-weight-medium">
           PLP Override
         </h3>
-        <div class="pa-4 pt-0">
+        <div class="pa-3 pt-0">
           <p class="text-body-2 text-medium-emphasis mb-3">
             Patient-Level Prediction typically requires fixed-time windows (e.g., 365 days from cohort start) rather than on-treatment definitions.
           </p>

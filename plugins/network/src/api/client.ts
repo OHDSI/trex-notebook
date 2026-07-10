@@ -5,6 +5,8 @@ export class ApiClientError extends Error {
   }
 }
 
+import { ensureAuthToken } from './authToken';
+
 type Fetch = typeof fetch;
 
 export class ApiClient {
@@ -18,6 +20,7 @@ export class ApiClient {
   ) {}
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    await ensureAuthToken();
     const headers: Record<string, string> = {};
     const token = this.getToken();
     if (token) headers.authorization = `Bearer ${token}`;

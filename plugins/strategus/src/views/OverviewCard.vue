@@ -76,7 +76,7 @@ const statusIcon = computed(() => {
   display: block;
   background: #fff;
   border-radius: 12px;
-  padding: 20px;
+  padding: 14px 16px;
   cursor: pointer;
   text-decoration: none;
   color: rgba(0, 0, 0, 0.87);
@@ -100,7 +100,7 @@ const statusIcon = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .overview-tile__icon {
@@ -108,7 +108,7 @@ const statusIcon = computed(() => {
 }
 
 .overview-tile__title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.87);
   line-height: 1.3;

@@ -1,27 +1,23 @@
 <template>
-  <div class="studies-overview">
-    <header class="studies-overview__head">
-      <div>
-        <h1 class="text-h4">Overview</h1>
-        <p class="text-subtitle-1">Studies and notebooks running against this site's local data</p>
-      </div>
-      <div class="studies-overview__actions">
-        <AtlasButton
-          variant="ghost"
-          prepend-icon="mdi-notebook-plus-outline"
-          @click="navigate('/plugins/notebook-plugin/?new=1')"
-        >
-          New Notebook
-        </AtlasButton>
-        <AtlasButton
-          variant="primary"
-          prepend-icon="mdi-flask-plus-outline"
-          @click="navigate('/plugins/strategus-plugin/?new=1')"
-        >
-          New Study
-        </AtlasButton>
-      </div>
-    </header>
+  <div class="studies-section-body">
+    <SectionHero eyebrow="OHDSI · Studies" title="Overview" subtitle="Studies and notebooks running against this site's local data">
+    <template #actions>
+      <AtlasButton
+        variant="ghost"
+        prepend-icon="mdi-notebook-plus-outline"
+        @click="navigate('/plugins/notebook-plugin/?new=1')"
+      >
+        New Notebook
+      </AtlasButton>
+      <AtlasButton
+        variant="primary"
+        prepend-icon="mdi-flask-plus-outline"
+        @click="navigate('/plugins/strategus-plugin/?new=1')"
+      >
+        New Study
+      </AtlasButton>
+    </template>
+    </SectionHero>
 
     <AtlasAlert v-if="error" severity="danger" class="mb-4">{{ error }}</AtlasAlert>
 
@@ -43,6 +39,7 @@
 <script setup lang="ts">
 import { ref, inject, onMounted } from 'vue';
 import { AtlasDataTable, AtlasAlert, AtlasButton } from '@ohdsi/atlas-ui';
+import SectionHero from '../components/SectionHero.vue';
 import { listLocalItems, type LocalItem } from '../data/local';
 import type { StudiesHostCtx } from '../main';
 
@@ -89,31 +86,5 @@ onMounted(reload);
 </script>
 
 <style scoped>
-.studies-overview {
-  padding: 28px 32px;
-}
-.studies-overview__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.studies-overview__head h1.text-h4 {
-  font-size: 34px;
-  font-weight: 300;
-  line-height: 1.2;
-  color: rgb(var(--v-theme-primary));
-}
-.studies-overview__head .text-subtitle-1 {
-  font-size: 14px;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.62);
-  margin-top: 2px;
-}
-.studies-overview__actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
+.studies-section-body { padding: 20px 24px; }
 </style>

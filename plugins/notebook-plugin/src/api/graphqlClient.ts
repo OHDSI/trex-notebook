@@ -1,8 +1,9 @@
-import { authHeaders } from './authToken';
+import { authHeaders, ensureAuthToken } from './authToken';
 
 export class GraphqlClient {
   constructor(private endpoint: string) {}
   async request<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+    await ensureAuthToken();
     const resp = await fetch(this.endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },

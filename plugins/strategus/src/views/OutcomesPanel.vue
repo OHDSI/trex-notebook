@@ -6,7 +6,7 @@
         Study Design
       </div>
       <div style="width: 28px; height: 2px; background: #eb6622; margin-bottom: 8px" />
-      <h1 class="text-h4 font-weight-light text-primary mb-4">
+      <h1 class="text-h4 font-weight-light text-primary mb-3">
         Outcomes &amp; Negative Controls
       </h1>
     </template>
@@ -17,7 +17,7 @@
     </div>
     <table
       v-if="store.outcomes.length > 0"
-      class="bordered-table mb-4"
+      class="bordered-table mb-3"
     >
       <thead>
         <tr>
