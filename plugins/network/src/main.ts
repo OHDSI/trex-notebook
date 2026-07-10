@@ -46,6 +46,7 @@ export interface PluginProps {
   uiFilesUrl?: string;
   authContext?: unknown;
   messageBus?: unknown;
+  section?: 'main' | 'configuration';
 }
 
 function getSharedDefaults(): Record<string, Record<string, unknown>> {
@@ -75,7 +76,7 @@ const vueLifecycles = singleSpaVue({
   createApp,
   appOptions: {
     render() {
-      return h(NetworkApp);
+      return h(NetworkApp, { section: (this as PluginProps).section });
     },
   },
   handleInstance(app) {

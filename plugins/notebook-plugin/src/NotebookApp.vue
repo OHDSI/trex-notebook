@@ -1,22 +1,23 @@
 <template>
   <v-app class="notebook-plugin">
     <v-main>
-      <!-- List view renders AtlasPageShell, which supplies its own page padding
-           (matching every other plugin). Keep inner padding for the editor. -->
-      <NotebookListView
-        v-if="view === 'list'"
-        @open="openNotebook"
-        @new="newNotebook"
-      />
-      <div
-        v-else
-        class="pa-4"
-      >
-        <NotebookEditorView
-          :id="activeId"
-          @back="goToList"
-          @saved="onSaved"
-        />
+      <!-- Single boxed surface (sidebar-less) matching the Studies layout: one
+           card with a padded, scrollable body. Each view renders its own flat
+           SectionHero inside — no nested page-card. -->
+      <div class="notebook-layout">
+        <div class="notebook-shell">
+          <NotebookListView
+            v-if="view === 'list'"
+            @open="openNotebook"
+            @new="newNotebook"
+          />
+          <NotebookEditorView
+            v-else
+            :id="activeId"
+            @back="goToList"
+            @saved="onSaved"
+          />
+        </div>
       </div>
     </v-main>
   </v-app>
@@ -90,4 +91,23 @@ onMounted(() => {
 
 <style scoped>
 .notebook-plugin { background: transparent; }
+
+/* Mirrors the Studies layout so the notebook plugin reads as the same product:
+   a single rounded card floating on the page background, its body owning the
+   scroll. Sidebar-less (the notebook is its own full detail). */
+.notebook-layout {
+  height: calc(100vh - 60px);
+  padding: 24px;
+  background: rgb(var(--v-theme-background));
+  overflow: hidden;
+}
+.notebook-shell {
+  display: flex;
+  flex-direction: column;
+  background: rgb(var(--v-theme-surface));
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 8px 24px rgba(15, 23, 42, .04);
+  height: 100%;
+  overflow: hidden;
+}
 </style>

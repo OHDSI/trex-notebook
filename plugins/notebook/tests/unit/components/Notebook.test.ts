@@ -9,7 +9,7 @@ const data: NotebookData = { metadata: { title: 'T' }, cells: [] }
 describe('Notebook', () => {
   it('shows the empty state with add buttons', () => {
     render(Notebook, { props: { initialData: data } })
-    expect(screen.getByText('Add your first cell')).toBeInTheDocument()
+    expect(screen.getByText('Start your notebook')).toBeInTheDocument()
   })
 
   it('adds a cell when an empty-state button is clicked', async () => {

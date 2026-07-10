@@ -43,7 +43,20 @@ const activeKernel = computed(() => props.availableKernels.find((k) => k.id === 
 const hasPerKernelStatuses = computed(() => props.kernelStatuses && props.kernelStatuses.size > 0)
 
 function statusLabel(status: KernelStatus): string {
-  return status === 'connecting' ? 'loading' : status
+  const labels: Record<KernelStatus, string> = {
+    disconnected: 'Not connected',
+    connecting: 'Starting…',
+    idle: 'Ready',
+    busy: 'Running…',
+    error: 'Failed to start',
+  }
+  return labels[status] ?? status
+}
+
+function statusHint(status: KernelStatus): string | undefined {
+  if (status === 'error') return 'The kernel could not start. Run a cell to try again.'
+  if (status === 'disconnected') return 'The kernel starts when you run your first cell.'
+  return undefined
 }
 
 function dotClass(st: KernelStatus): string {
@@ -59,11 +72,11 @@ function dotClass(st: KernelStatus): string {
 </script>
 
 <template>
-  <div :class="cn('flex items-center gap-1 rounded-lg border bg-background p-1', props.class)">
+  <div :class="cn('flex items-center gap-0.5 rounded-lg border bg-background p-0.5', props.class)">
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Button variant="ghost" size="sm" class="gap-1">
-          <Plus class="h-4 w-4" />
+        <Button variant="ghost" size="sm" class="h-7 gap-1 px-2 text-xs">
+          <Plus class="h-3.5 w-3.5" />
           Add Cell
         </Button>
       </DropdownMenuTrigger>
@@ -83,36 +96,36 @@ function dotClass(st: KernelStatus): string {
       </DropdownMenuContent>
     </DropdownMenu>
 
-    <Separator orientation="vertical" class="mx-1 h-6" />
+    <Separator orientation="vertical" class="mx-1 h-5" />
 
     <Button
       v-if="isExecuting"
       variant="ghost"
       size="sm"
-      class="gap-1 text-destructive hover:text-destructive"
+      class="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
       @click="emit('interruptExecution')"
     >
-      <Square class="h-4 w-4" />
+      <Square class="h-3.5 w-3.5" />
       Stop
     </Button>
     <Button
       v-else
       variant="ghost"
       size="sm"
-      class="gap-1"
+      class="h-7 gap-1 px-2 text-xs"
       :disabled="kernelStatus !== 'idle'"
       @click="emit('runAllCells')"
     >
-      <Play class="h-4 w-4" />
+      <Play class="h-3.5 w-3.5" />
       Run All
     </Button>
 
-    <Separator orientation="vertical" class="mx-1 h-6" />
+    <Separator orientation="vertical" class="mx-1 h-5" />
 
     <Button
       variant="ghost"
       size="icon"
-      class="h-8 w-8"
+      class="h-7 w-7"
       :disabled="!canUndo"
       title="Undo (Ctrl+Z)"
       @click="emit('undo')"
@@ -122,7 +135,7 @@ function dotClass(st: KernelStatus): string {
     <Button
       variant="ghost"
       size="icon"
-      class="h-8 w-8"
+      class="h-7 w-7"
       :disabled="!canRedo"
       title="Redo (Ctrl+Shift+Z)"
       @click="emit('redo')"
@@ -130,14 +143,14 @@ function dotClass(st: KernelStatus): string {
       <Redo2 class="h-4 w-4" />
     </Button>
 
-    <div class="ml-auto flex items-center gap-3 px-2 text-sm">
+    <div class="ml-auto flex items-center gap-2 px-1 text-xs">
       <template v-if="showKernelSelector && availableKernels.length > 0">
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Button
               variant="ghost"
               size="sm"
-              class="gap-1 text-muted-foreground"
+              class="h-7 gap-1 px-2 text-xs text-muted-foreground"
               :disabled="kernelStatus === 'busy' || isExecuting"
             >
               {{ activeKernel?.name || 'Select Kernel' }}
@@ -158,7 +171,7 @@ function dotClass(st: KernelStatus): string {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Separator orientation="vertical" class="h-6" />
+        <Separator orientation="vertical" class="h-5" />
       </template>
 
       <template v-if="hasPerKernelStatuses">
@@ -173,8 +186,13 @@ function dotClass(st: KernelStatus): string {
         </template>
       </template>
       <template v-else-if="availableKernels.length > 0">
-        <div :class="dotClass(kernelStatus)" />
-        <span class="capitalize text-muted-foreground">{{ statusLabel(kernelStatus) }}</span>
+        <div
+          class="flex items-center gap-1.5 rounded-full border border-muted bg-muted/40 px-2 py-px"
+          :title="statusHint(kernelStatus)"
+        >
+          <div :class="dotClass(kernelStatus)" />
+          <span class="whitespace-nowrap text-muted-foreground">{{ statusLabel(kernelStatus) }}</span>
+        </div>
       </template>
     </div>
   </div>

@@ -6,14 +6,14 @@
         Study
       </div>
       <div style="width: 28px; height: 2px; background: #eb6622; margin-bottom: 8px" />
-      <h1 class="text-h4 font-weight-light text-primary mb-4">
+      <h1 class="text-h4 font-weight-light text-primary mb-3">
         Study Setup
       </h1>
     </template>
 
     <AtlasCard
-      padding="md"
-      class="mb-4"
+      padding="sm"
+      class="mb-3"
     >
       <AtlasRow dense>
         <AtlasCol cols="12">

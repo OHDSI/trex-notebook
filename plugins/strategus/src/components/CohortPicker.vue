@@ -14,6 +14,16 @@
       class="mb-3"
     />
 
+    <AtlasAlert
+      v-if="selectError"
+      severity="danger"
+      variant="tonal"
+      class="mb-3"
+      data-test="select-error"
+    >
+      {{ selectError }}
+    </AtlasAlert>
+
     <table
       v-if="cohorts.length > 0"
       class="cohort-table"
@@ -44,7 +54,15 @@
           </td>
           <td>{{ cohort.cohortName }}</td>
           <td class="text-right text-medium-emphasis">
-            {{ cohort.subjectCount?.toLocaleString() ?? '—' }}
+            <AtlasProgressCircular
+              v-if="selectingId === cohort.cohortId"
+              indeterminate
+              color="primary"
+              size="16"
+            />
+            <template v-else>
+              {{ cohort.subjectCount?.toLocaleString() ?? '—' }}
+            </template>
           </td>
         </tr>
       </tbody>
@@ -123,12 +141,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { AtlasDialog, AtlasButton, AtlasTextField, AtlasProgressCircular, AtlasAlert } from '@ohdsi/atlas-ui';
 import { parseManualCohort } from '../services/parseManualCohort';
+import { fetchCohortDefinitionList, fetchCohortDefinitionExpression } from '../api/webapiClient';
 
 interface AtlasCohort {
   cohortId: number;
   cohortName: string;
   subjectCount: number | null;
   cohortDefinition: string;
+}
+
+/** WebAPI list entries carry no expression; it is fetched lazily on select. */
+interface PickerCohort extends AtlasCohort {
+  expressionPending?: boolean;
 }
 
 const props = defineProps<{
@@ -143,7 +167,9 @@ const emit = defineEmits<{
 
 const search = ref('');
 const loading = ref(false);
-const cohorts = ref<AtlasCohort[]>([]);
+const cohorts = ref<PickerCohort[]>([]);
+const selectingId = ref<number | null>(null);
+const selectError = ref<string | null>(null);
 const manualJson = ref('');
 const manualName = ref('');
 const manualError = ref<string | null>(null);
@@ -158,22 +184,57 @@ const filteredCohorts = computed(() => {
 });
 
 onMounted(async () => {
-  if (!props.messageBus) return;
   loading.value = true;
   try {
-    const result = await props.messageBus.request<unknown, AtlasCohort[]>('data:request', { resource: 'cohorts' });
-    if (Array.isArray(result)) {
-      cohorts.value = result;
+    // Preferred source: the host's messageBus (trexsql-native hosts serve
+    // cohorts directly). Fall through to WebAPI when it throws or is empty.
+    if (props.messageBus) {
+      try {
+        const result = await props.messageBus.request<unknown, AtlasCohort[]>('data:request', { resource: 'cohorts' });
+        if (Array.isArray(result) && result.length > 0) {
+          cohorts.value = result;
+          return;
+        }
+      } catch {
+        // host doesn't support this message type — try WebAPI next
+      }
     }
+    const list = await fetchCohortDefinitionList();
+    cohorts.value = list.map((item) => ({
+      cohortId: item.id,
+      cohortName: item.name,
+      subjectCount: null,
+      cohortDefinition: '',
+      expressionPending: true,
+    }));
   } catch {
-    // Atlas doesn't support this message type yet — show manual fallback
+    // WebAPI also unavailable — the manual-JSON fallback renders below
   } finally {
     loading.value = false;
   }
 });
 
-function selectCohort(cohort: AtlasCohort) {
-  emit('select', cohort);
+async function selectCohort(cohort: PickerCohort) {
+  if (selectingId.value !== null) return;
+  if (cohort.expressionPending) {
+    selectingId.value = cohort.cohortId;
+    selectError.value = null;
+    try {
+      cohort.cohortDefinition = await fetchCohortDefinitionExpression(cohort.cohortId);
+      cohort.expressionPending = false;
+    } catch {
+      selectError.value = `Could not load the definition for "${cohort.cohortName}" from Atlas.`;
+      return;
+    } finally {
+      selectingId.value = null;
+    }
+  }
+  emit('select', {
+    cohortId: cohort.cohortId,
+    cohortName: cohort.cohortName,
+    subjectCount: cohort.subjectCount,
+    cohortDefinition: cohort.cohortDefinition,
+  });
   emit('update:modelValue', false);
 }
 

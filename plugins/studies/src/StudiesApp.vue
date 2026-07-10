@@ -9,12 +9,19 @@
       <div
         v-if="visited.has('network')"
         v-show="section === 'network'"
-        class="studies-section"
+        class="studies-section studies-section--scroll"
       >
         <NetworkTab />
       </div>
       <div v-show="section === 'results'" class="studies-section studies-section--scroll">
         <ResultsTab />
+      </div>
+      <div
+        v-if="visited.has('configuration')"
+        v-show="section === 'configuration'"
+        class="studies-section studies-section--scroll"
+      >
+        <NetworkTab section="configuration" />
       </div>
     </StudiesLayout>
   </div>
@@ -37,7 +44,7 @@
 </template>
 
 <script lang="ts">
-export type StudiesSection = 'overview' | 'network' | 'results';
+export type StudiesSection = 'overview' | 'network' | 'results' | 'configuration';
 </script>
 
 <script setup lang="ts">
@@ -97,8 +104,8 @@ onUnmounted(() => unsubscribe?.());
 }
 .studies-results-full__back {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  top: 44px;
+  left: 64px;
   /* Above the Results viewer's own loading overlay (z-index 200) so it stays
      reachable while WebR is booting. */
   z-index: 300;

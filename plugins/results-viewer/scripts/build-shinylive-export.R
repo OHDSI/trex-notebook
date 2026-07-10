@@ -43,18 +43,19 @@ if (!file.exists(duckdb_tgz) || file.info(duckdb_tgz)$size == 0) {
 }
 cat("  bundled", basename(duckdb_tgz), "(", file.info(duckdb_tgz)$size, "bytes)\n")
 
-cat("\nStep 1c: Version-tag shinylive's service worker (caching left OFF)\n")
-# Do NOT enable shinylive's `useCaching`. With it on, the SW caches /shinylive/
-# assets and the browser subsequently issues cache:"only-if-cached" requests;
-# the app_* proxy handler rebuilds those into a new Request that inherits a
-# non-same-origin mode, which throws ("only-if-cached can be set only with
-# same-origin mode"). The rejected fetch means the embedded app never registers
-# with the SW ("App URL not registered") and renders empty. Leaving useCaching
-# at its shipped default (false) keeps the proxy path working.
-# We still fold the app build id into the SW cache version so each rebuild
-# invalidates any stale registration cleanly. shinylive's export contains more
-# than one copy of shinylive-sw.js (the active one sits at the export root);
-# patch every copy.
+cat("\nStep 1c: Enable + version-tag shinylive's service worker cache\n")
+# Enable shinylive's `useCaching` so the SW serves the heavy /shinylive/ assets
+# (WebR runtime + R package binaries, ~150 MB) cache-first on repeat opens.
+# Two guards make this safe: Chromium issues cache:"only-if-cached" requests
+# whose mode is not "same-origin"; both fetch() and the Request constructor
+# reject that combination ("only-if-cached can be set only with same-origin
+# mode"), which killed asset loads and app_* proxying ("App URL not
+# registered") when caching was first tried. Such requests are (a) skipped in
+# the fetch handler so the browser resolves them natively from its HTTP cache,
+# and (b) normalized in the app_* proxy Request rebuild.
+# The app build id is folded into the SW cache version so each rebuild drops
+# stale caches cleanly. shinylive's export contains more than one copy of
+# shinylive-sw.js (the active one sits at the export root); patch every copy.
 sw_files <- list.files(export_dir, pattern = "^shinylive-sw\\.js$",
                         recursive = TRUE, full.names = TRUE)
 if (length(sw_files) == 0) {
@@ -65,10 +66,18 @@ patched_any <- FALSE
 for (sw_path in sw_files) {
   txt <- readChar(sw_path, file.info(sw_path)$size)
   before <- txt
-  # Force useCaching off even if a future shinylive ships it on.
-  txt <- sub("var useCaching = true;", "var useCaching = false;", txt, fixed = TRUE)
+  txt <- sub("var useCaching = false;", "var useCaching = true;", txt, fixed = TRUE)
   txt <- sub('var version = "v10";',
              sprintf('var version = "v10-%s";', build_id), txt, fixed = TRUE)
+  txt <- sub("cache: request.cache,",
+             'cache: request.cache === "only-if-cached" ? void 0 : request.cache,',
+             txt, fixed = TRUE)
+  txt <- sub("if (useCaching) {",
+             paste0('if (request.cache === "only-if-cached" && request.mode !== "same-origin") {\n',
+                    "    return;\n",
+                    "  }\n",
+                    "  if (useCaching) {"),
+             txt, fixed = TRUE)
   if (!identical(txt, before)) {
     writeLines(txt, sw_path, sep = "")
     patched_any <- TRUE
@@ -78,7 +87,7 @@ for (sw_path in sw_files) {
 if (!patched_any) {
   stop("build-shinylive-export: useCaching/version markers not found in any shinylive-sw.js")
 }
-cat("  version tagged", build_id, "(useCaching left off)\n")
+cat("  version tagged", build_id, "(useCaching ON with only-if-cached guards)\n")
 
 cat("\nStep 2: Override Java-dep packages with pure-R shims\n")
 temp_lib <- tempfile("shim-libs-")

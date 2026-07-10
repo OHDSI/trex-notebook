@@ -25,7 +25,7 @@ export interface NotebookTheme {
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
 import draggable from 'vuedraggable'
-import { Plus, Code, FileText } from 'lucide-vue-next'
+import { Plus, Code, FileText, NotebookPen } from 'lucide-vue-next'
 import { useNotebook } from '@/hooks/useNotebook'
 import { useKernel } from '@/hooks/useKernel'
 import { useCellExecution } from '@/hooks/useCellExecution'
@@ -327,7 +327,7 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="cn('flex flex-col gap-4', props.class)" :style="themeStyle">
+  <div :class="cn('flex flex-col gap-3', props.class)" :style="themeStyle">
     <NotebookToolbar
       v-if="showToolbar"
       :kernel-status="effectiveStatus"
@@ -350,10 +350,18 @@ defineExpose({
     <div class="flex flex-col gap-2">
       <div
         v-if="notebook.cells.length === 0"
-        class="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted py-12"
+        class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-muted bg-muted/20 px-6 py-10 text-center"
       >
-        <p class="text-muted-foreground">Add your first cell</p>
-        <div class="flex gap-2">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <NotebookPen class="h-5 w-5" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <p class="text-sm font-medium text-foreground">Start your notebook</p>
+          <p class="text-sm text-muted-foreground">
+            Add a cell to write and run analysis against this site’s data.
+          </p>
+        </div>
+        <div class="mt-1 flex flex-wrap justify-center gap-2">
           <Button variant="outline" class="gap-2" @click="handleAddCodeCell('python')">
             <Code class="h-4 w-4" />
             Python
@@ -399,11 +407,11 @@ defineExpose({
           </template>
         </draggable>
 
-        <div v-if="!readOnly" class="flex justify-center gap-2 py-4">
+        <div v-if="!readOnly" class="flex justify-center gap-2 py-3">
           <Button
             variant="ghost"
             size="sm"
-            class="gap-1 text-muted-foreground hover:text-foreground"
+            class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
             @click="handleAddCodeCell('python')"
           >
             <Plus class="h-4 w-4" />
@@ -412,7 +420,7 @@ defineExpose({
           <Button
             variant="ghost"
             size="sm"
-            class="gap-1 text-muted-foreground hover:text-foreground"
+            class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
             @click="handleAddCodeCell('r')"
           >
             <Plus class="h-4 w-4" />
@@ -421,7 +429,7 @@ defineExpose({
           <Button
             variant="ghost"
             size="sm"
-            class="gap-1 text-muted-foreground hover:text-foreground"
+            class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
             @click="handleAddMarkdownCell"
           >
             <Plus class="h-4 w-4" />

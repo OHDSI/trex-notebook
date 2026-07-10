@@ -91,7 +91,7 @@ function handleBlur() {
       )"
     >
       <div
-        class="prose prose-sm max-w-none dark:prose-invert prose-headings:my-2 prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2"
+        class="prose prose-sm max-w-none dark:prose-invert text-[13px] leading-relaxed prose-headings:my-2 prose-headings:font-semibold prose-h1:text-base prose-h2:text-sm prose-h3:text-[13px] prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-code:text-[12px]"
         v-html="renderedHtml"
       />
     </div>

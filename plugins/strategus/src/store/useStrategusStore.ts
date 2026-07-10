@@ -123,7 +123,7 @@ type ModuleName =
 
 export const useStrategusStore = defineStore('strategus', () => {
   // ── Active panel ──────────────────────────────────────────────────────────
-  const activePanel = ref<SidebarItem>('overview');
+  const activePanel = ref<SidebarItem>('study');
 
   // ── Study metadata ────────────────────────────────────────────────────────
   const studyType = ref<StudyTypeId | null>(null);
@@ -192,7 +192,7 @@ export const useStrategusStore = defineStore('strategus', () => {
   }
 
   function resetToDefaults(): void {
-    activePanel.value = 'overview';
+    activePanel.value = 'study';
 
     studyType.value = null;
     studyName.value = '';

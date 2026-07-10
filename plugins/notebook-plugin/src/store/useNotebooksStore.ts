@@ -28,8 +28,14 @@ const UPDATE = `mutation($id: UUID!, $patch: NotebookDocumentPatch!) {
   }
 }`;
 
+// notebook.document.created_by is a uuid column; Logto-issued user ids are
+// short alphanumerics, so anything non-UUID must be omitted or the mutation
+// fails input validation (HTTP 400).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function currentUserId(): string | null {
-  return (window as unknown as { __notebookAuthUserId?: string | null }).__notebookAuthUserId ?? null;
+  const id = (window as unknown as { __notebookAuthUserId?: string | null }).__notebookAuthUserId ?? null;
+  return id && UUID_RE.test(id) ? id : null;
 }
 
 export const useNotebooksStore = defineStore("notebooks", () => {

@@ -1,14 +1,14 @@
 <template>
-  <AtlasPageShell
-    hero
-    compact
-    eyebrow="OHDSI · Notebooks"
-    title="Notebooks"
-    subtitle="Create and manage analytical notebooks for your cohort studies"
-  >
-    <template #actions>
-      <AtlasButton variant="primary" prepend-icon="mdi-plus" @click="emit('new')">New notebook</AtlasButton>
-    </template>
+  <div class="studies-section-body">
+    <SectionHero
+      eyebrow="OHDSI · Notebooks"
+      title="Notebooks"
+      subtitle="Create and manage analytical notebooks for your cohort studies"
+    >
+      <template #actions>
+        <AtlasButton variant="primary" prepend-icon="mdi-plus" @click="emit('new')">New notebook</AtlasButton>
+      </template>
+    </SectionHero>
 
     <AtlasAlert v-if="store.error" severity="danger" class="mb-4">{{ store.error }}</AtlasAlert>
 
@@ -50,12 +50,13 @@
         <AtlasButton variant="danger" @click="confirmDelete">Delete</AtlasButton>
       </template>
     </AtlasDialog>
-  </AtlasPageShell>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { AtlasPageShell, AtlasDialog, AtlasButton, AtlasAlert, AtlasDataTable, AtlasIconButton, AtlasTextField } from "@ohdsi/atlas-ui";
+import { AtlasDialog, AtlasButton, AtlasAlert, AtlasDataTable, AtlasIconButton, AtlasTextField } from "@ohdsi/atlas-ui";
+import SectionHero from "../components/SectionHero.vue";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 import type { NotebookSummary } from "../api/types";
 
@@ -119,4 +120,12 @@ async function duplicate(id: string): Promise<void> {
 
 onMounted(reload);
 </script>
+
+<style scoped>
+.studies-section-body {
+  padding: 20px 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+</style>
 

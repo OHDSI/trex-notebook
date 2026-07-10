@@ -11,6 +11,6 @@ describe('KernelStatusIndicator', () => {
   it('shows kernel name when provided', () => {
     render(KernelStatusIndicator, { props: { status: 'busy', kernelName: 'Pyodide' } })
     expect(screen.getByText('Pyodide')).toBeInTheDocument()
-    expect(screen.getByText('Running...')).toBeInTheDocument()
+    expect(screen.getByText('Running…')).toBeInTheDocument()
   })
 })

@@ -16,7 +16,7 @@ export const TruncatableText = defineComponent({
     )
     return () =>
       h('div', [
-        h('pre', { class: cx('whitespace-pre-wrap font-mono text-sm', props.class) }, display.value),
+        h('pre', { class: cx('whitespace-pre-wrap font-mono text-xs leading-relaxed', props.class) }, display.value),
         truncated.value
           ? h(
               'button',
@@ -88,7 +88,7 @@ function imageSrc(mimeType: string, content: unknown): string {
           <template v-if="output.data[mime] !== undefined && output.data[mime] !== null">
             <div
               v-if="mime === 'text/html'"
-              class="prose prose-sm max-w-none dark:prose-invert"
+              class="prose prose-sm max-w-none dark:prose-invert text-[13px] leading-relaxed prose-headings:font-semibold prose-h1:text-base prose-h2:text-sm prose-h3:text-[13px] prose-code:text-[12px]"
               v-html="String(output.data[mime])"
             />
             <img
