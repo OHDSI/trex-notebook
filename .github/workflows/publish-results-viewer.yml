@@ -20,7 +20,29 @@ jobs:
           node-version: "20"
           registry-url: "https://npm.pkg.github.com"
           scope: "@ohdsi"
+      - uses: docker/setup-buildx-action@v3
+      # The in-browser R runtime (shinylive-export/ + r-packages/) comes from the
+      # Dockerfile's r-builder stage (rocker/r-ver pinned to renv.lock's R);
+      # rv-runtime is a scratch stage exposing just its outputs. With the gha
+      # cache this is a cache hit unless the R inputs (scripts/, shinylive-app/)
+      # changed. Without these assets the published package would be a JS shell
+      # with no viewer runtime — prepublishOnly guards against that.
+      - name: Build shinylive runtime (Dockerfile rv-runtime stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: rv-runtime
+          outputs: type=local,dest=/tmp/rv-runtime
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Stage runtime into package
+        run: |
+          rm -rf shinylive-export r-packages
+          cp -r /tmp/rv-runtime/shinylive-export shinylive-export
+          cp -r /tmp/rv-runtime/r-packages r-packages
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run build:pkg
       - name: Version stamp (prerelease)
         run: npm version --no-git-tag-version "0.2.0-$(date -u +%Y%m%d%H%M%S).g${GITHUB_SHA::7}"

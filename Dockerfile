@@ -110,6 +110,16 @@ RUN mkdir -p r-packages && \
     Rscript scripts/build-shinylive-export.R
 
 # ---------------------------------------------------------------------------
+# Stage 1b: bare r-builder outputs, extractable without the rocker rootfs via
+# `docker buildx build --target rv-runtime --output type=local`. Used by
+# .github/workflows/publish-results-viewer.yml to fold the runtime into the
+# published @ohdsi/results-viewer npm package.
+# ---------------------------------------------------------------------------
+FROM scratch AS rv-runtime
+COPY --from=r-builder /rv/shinylive-export /shinylive-export
+COPY --from=r-builder /rv/r-packages /r-packages
+
+# ---------------------------------------------------------------------------
 # Stage 2: build the JS sub-plugins and the sibyl shell.
 # ---------------------------------------------------------------------------
 FROM node:22 AS web-builder
