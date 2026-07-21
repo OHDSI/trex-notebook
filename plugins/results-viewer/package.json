@@ -16,6 +16,7 @@
     "build": "vite build",
     "build:sibyl": "RESULTS_VIEWER_OUT_DIR=../sibyl/public/plugins/results-viewer vite build",
     "build:pkg": "RESULTS_VIEWER_OUT_DIR=dist vite build",
+    "prepublishOnly": "node scripts/verify-pkg-dist.js",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "test:e2e": "playwright test"
