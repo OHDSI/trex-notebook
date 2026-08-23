@@ -35,3 +35,8 @@ jobs:
           tags: trex-notebook:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # The plugin stages install @ohdsi/atlas-ui from GitHub Packages,
+          # which requires auth even for reads. The Dockerfile mounts this as
+          # the `ghtoken` BuildKit secret; without it every `npm ci` 401s.
+          secrets: |
+            ghtoken=${{ secrets.GITHUB_TOKEN }}
