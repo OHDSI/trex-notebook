@@ -56,6 +56,9 @@
     module = moduleName,
     settings = moduleSettings
   )
+  # Specific class first, base class second, to match Strategus/ParallelLogger
+  # (e.g. c("CohortGeneratorModuleSpecifications", "ModuleSpecifications")).
+  # S3 dispatch keys off class[1], so the specific class must lead.
   class(moduleSpecifications) <- c(paste0(moduleName, "Specifications"), "ModuleSpecifications")
   return(moduleSpecifications)
 }
