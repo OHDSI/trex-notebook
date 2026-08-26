@@ -1,6 +1,13 @@
 # Follow-up: CohortMethod analysis-spec class names & list shapes diverge from Strategus
 
-**Status:** Open — needs fix in `src/kernels/webr/StrategusSpecBuilder.R`
+**Status:** RESOLVED (2026-08-26) in `src/kernels/webr/StrategusSpecBuilder.R`.
+CohortMethod + SCCS argument objects now use class `"args"`; CohortMethod
+`cmAnalysis`/`outcome`/`targetComparatorOutcomes` are lowercase; `cmAnalysisList`,
+`targetComparatorOutcomesList`, and `outcomes` are `unname()`d so they serialize
+as JSON arrays. Covered by `tests/StrategusSpecBuilder-cohortmethod-classes.test.R`
+(and end-to-end with the rD2E serializer). SCCS list-shape was **not** changed —
+`createSelfControlledCaseSeriesModuleSpecifications` wraps a pre-built opaque
+spec object; revisit if SCCS specs are ever assembled from these builders.
 **Found:** 2026-08-26, while hand-patching a generated CohortMethod spec
 (`mario_forest_plot_study_spec.json`) so it would validate on the execution side.
 **Related:** builds on the `attr_class` serialization fix (serializer now emits
