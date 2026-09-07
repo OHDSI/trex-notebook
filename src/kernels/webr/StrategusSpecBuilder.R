@@ -554,7 +554,7 @@ createGetDbCohortMethodDataArgs <- function(covariateSettings = createDefaultCov
     studyEndDate = studyEndDate,
     maxCohortSize = maxCohortSize
   )
-  class(args) <- "GetDbCohortMethodDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -578,7 +578,7 @@ createCreateStudyPopulationArgs <- function(removeSubjectsWithPriorOutcome = TRU
     endAnchor = endAnchor,
     censorAtNewRiskWindow = censorAtNewRiskWindow
   )
-  class(args) <- "CreateStudyPopulationArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -608,7 +608,7 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
     control = control,
     estimator = estimator
   )
-  class(args) <- "CreatePsArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -622,13 +622,13 @@ createTrimByPsArgs <- function(trimFraction = NULL,
     maxWeight = maxWeight,
     trimMethod = trimMethod
   )
-  class(args) <- "TrimByPsArgs"
+  class(args) <- "args"
   return(args)
 }
 
 createTruncateIptwArgs <- function(maxWeight = 10) {
   args <- list(maxWeight = maxWeight)
-  class(args) <- "TruncateIptwArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -646,7 +646,7 @@ createMatchOnPsArgs <- function(caliper = 0.2,
     matchColumns = matchColumns,
     matchCovariateIds = matchCovariateIds
   )
-  class(args) <- "MatchOnPsArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -660,7 +660,7 @@ createStratifyByPsArgs <- function(numberOfStrata = 10,
     stratificationColumns = stratificationColumns,
     stratificationCovariateIds = stratificationCovariateIds
   )
-  class(args) <- "StratifyByPsArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -676,7 +676,7 @@ createComputeCovariateBalanceArgs <- function(subgroupCovariateId = NULL,
     threshold = threshold,
     alpha = alpha
   )
-  class(args) <- "ComputeCovariateBalanceArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -712,7 +712,7 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
     prior = prior,
     control = control
   )
-  class(args) <- "FitOutcomeModelArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -742,7 +742,7 @@ createCmAnalysis <- function(analysisId = 1,
     computeCovariateBalanceArgs = computeCovariateBalanceArgs,
     fitOutcomeModelArgs = fitOutcomeModelArgs
   )
-  class(analysis) <- "CmAnalysis"
+  class(analysis) <- "cmAnalysis"
   return(analysis)
 }
 
@@ -764,7 +764,7 @@ createOutcome <- function(outcomeId,
     riskWindowEnd = riskWindowEnd,
     endAnchor = endAnchor
   )
-  class(outcome) <- "Outcome"
+  class(outcome) <- "outcome"
   return(outcome)
 }
 
@@ -777,12 +777,13 @@ createTargetComparatorOutcomes <- function(targetId,
   tco <- list(
     targetId = targetId,
     comparatorId = comparatorId,
-    outcomes = outcomes,
+    # Strategus expects an unnamed list here so it serializes as a JSON array.
+    outcomes = unname(outcomes),
     nestingCohortId = nestingCohortId,
     excludedCovariateConceptIds = excludedCovariateConceptIds,
     includedCovariateConceptIds = includedCovariateConceptIds
   )
-  class(tco) <- "TargetComparatorOutcomes"
+  class(tco) <- "targetComparatorOutcomes"
   return(tco)
 }
 
@@ -910,7 +911,7 @@ createGetDbSccsDataArgs <- function(nestingCohortId = NULL,
     exposureIds = exposureIds,
     customCovariateIds = customCovariateIds
   )
-  class(args) <- "GetDbSccsDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -929,7 +930,7 @@ createGetDbSccsDataArgs <- function(nestingCohortId = NULL,
     genderConceptIds = genderConceptIds,
     restrictTimeToEraId = restrictTimeToEraId
   )
-  class(args) <- "CreateStudyPopulationArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -949,7 +950,7 @@ createCreateSccsIntervalDataArgs <- function(eraCovariateSettings,
     endOfObservationEraLength = endOfObservationEraLength,
     eventDependentObservation = eventDependentObservation
   )
-  class(args) <- "CreateSccsIntervalDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -959,7 +960,7 @@ createCreateScriIntervalDataArgs <- function(eraCovariateSettings,
     eraCovariateSettings = eraCovariateSettings,
     controlIntervalSettings = controlIntervalSettings
   )
-  class(args) <- "CreateScriIntervalDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -978,7 +979,7 @@ createFitSccsModelArgs <- function(prior = createPrior("laplace", useCrossValida
     profileGrid = profileGrid,
     profileBounds = profileBounds
   )
-  class(args) <- "FitSccsModelArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -2109,8 +2110,9 @@ createCohortMethodModuleSpecifications <- function(cmAnalysisList,
                                                    refitPsForEveryStudyPopulation = TRUE,
                                                    cmDiagnosticThresholds = .createDefaultCmDiagnosticThresholds()) {
   moduleSettings <- list(
-    cmAnalysisList = cmAnalysisList,
-    targetComparatorOutcomesList = targetComparatorOutcomesList,
+    # unname() so these serialize as JSON arrays, not objects, as Strategus expects.
+    cmAnalysisList = unname(cmAnalysisList),
+    targetComparatorOutcomesList = unname(targetComparatorOutcomesList),
     analysesToExclude = analysesToExclude,
     refitPsForEveryOutcome = refitPsForEveryOutcome,
     refitPsForEveryStudyPopulation = refitPsForEveryStudyPopulation,
