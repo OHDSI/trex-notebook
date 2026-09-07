@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:r": "Rscript tests/StrategusSpecBuilder-class-order.test.R",
     "preview": "vite preview"
   },
   "dependencies": {
