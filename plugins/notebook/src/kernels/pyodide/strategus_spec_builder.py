@@ -495,36 +495,60 @@ def create_analysis_details(
 # CohortMethod Builder Functions
 # =============================================================================
 
+# Arguments removed or renamed in CohortMethod 5.5.2-0.0.1 (pinned in the Data2Evidence
+# flow-hades renv.lock). Kept in the signatures so misuse fails here, in the notebook,
+# instead of as an "unused arguments" error from Strategus minutes into a flow run.
+_REMOVED = object()
+
+
+def _removed_arg(fn: str, arg: str, replacement: str) -> None:
+    raise TypeError(
+        f"{fn}({arg}=...) was removed in CohortMethod 5.5.2 "
+        f"(pinned in the Data2Evidence flow-hades renv.lock). {replacement}"
+    )
+
+
 def create_get_db_cohort_method_data_args(
     covariate_settings: Optional[dict] = None,
     remove_duplicate_subjects: str = "keep first, truncate to second",
     first_exposure_only: bool = True,
     washout_period: int = 365,
-    nesting_cohort_id: Optional[int] = None,
+    nesting_cohort_id=_REMOVED,
     restrict_to_common_period: bool = True,
-    min_age: Optional[int] = None,
-    max_age: Optional[int] = None,
-    gender_concept_ids: Optional[list] = None,
+    min_age=_REMOVED,
+    max_age=_REMOVED,
+    gender_concept_ids=_REMOVED,
     study_start_date: str = "",
     study_end_date: str = "",
     max_cohort_size: int = 0
 ) -> dict:
     """Create arguments for getDbCohortMethodData."""
+    if nesting_cohort_id is not _REMOVED:
+        _removed_arg("create_get_db_cohort_method_data_args", "nesting_cohort_id",
+                     "Nesting cohorts are no longer supported by CohortMethod.")
+    if min_age is not _REMOVED:
+        _removed_arg("create_get_db_cohort_method_data_args", "min_age",
+                     "Demographic restrictions were removed from data extraction in "
+                     "5.5.2; apply them in the cohort definition instead.")
+    if max_age is not _REMOVED:
+        _removed_arg("create_get_db_cohort_method_data_args", "max_age",
+                     "Demographic restrictions were removed from data extraction in "
+                     "5.5.2; apply them in the cohort definition instead.")
+    if gender_concept_ids is not _REMOVED:
+        _removed_arg("create_get_db_cohort_method_data_args", "gender_concept_ids",
+                     "Demographic restrictions were removed from data extraction in "
+                     "5.5.2; apply them in the cohort definition instead.")
     if covariate_settings is None:
         covariate_settings = create_default_covariate_settings()
     return {
-        "covariateSettings": covariate_settings,
-        "removeDuplicateSubjects": remove_duplicate_subjects,
-        "firstExposureOnly": first_exposure_only,
-        "washoutPeriod": washout_period,
-        "nestingCohortId": nesting_cohort_id,
-        "restrictToCommonPeriod": restrict_to_common_period,
-        "minAge": min_age,
-        "maxAge": max_age,
-        "genderConceptIds": gender_concept_ids,
         "studyStartDate": study_start_date,
         "studyEndDate": study_end_date,
+        "firstExposureOnly": first_exposure_only,
+        "removeDuplicateSubjects": remove_duplicate_subjects,
+        "restrictToCommonPeriod": restrict_to_common_period,
+        "washoutPeriod": washout_period,
         "maxCohortSize": max_cohort_size,
+        "covariateSettings": covariate_settings,
         "_class": "args"
     }
 
@@ -538,10 +562,18 @@ def create_create_study_population_args(
     start_anchor: str = "cohort start",
     risk_window_end: int = 0,
     end_anchor: str = "cohort end",
-    censor_at_new_risk_window: bool = False
+    censor_at_new_risk_window: bool = False,
+    first_exposure_only: bool = False,
+    restrict_to_common_period: bool = False,
+    washout_period: int = 0,
+    remove_duplicate_subjects: str = "keep all"
 ) -> dict:
     """Create arguments for CohortMethod createStudyPopulation."""
     return {
+        "firstExposureOnly": first_exposure_only,
+        "restrictToCommonPeriod": restrict_to_common_period,
+        "washoutPeriod": washout_period,
+        "removeDuplicateSubjects": remove_duplicate_subjects,
         "removeSubjectsWithPriorOutcome": remove_subjects_with_prior_outcome,
         "priorOutcomeLookback": prior_outcome_lookback,
         "minDaysAtRisk": min_days_at_risk,
@@ -572,33 +604,45 @@ def create_create_ps_args(
         control = create_control(noise_level="silent", cv_type="auto", seed=1,
                                  reset_coefficients=True, tolerance=2e-07,
                                  cv_repetitions=10, starting_variance=0.01)
-    return {
-        "excludeCovariateIds": exclude_covariate_ids or [],
-        "includeCovariateIds": include_covariate_ids or [],
+    args = {
         "maxCohortSizeForFitting": max_cohort_size_for_fitting,
         "errorOnHighCorrelation": error_on_high_correlation,
         "stopOnError": stop_on_error,
         "prior": prior,
         "control": control,
         "estimator": estimator,
-        "_class": "args"
     }
+    if exclude_covariate_ids:
+        args["excludeCovariateIds"] = exclude_covariate_ids
+    if include_covariate_ids:
+        args["includeCovariateIds"] = include_covariate_ids
+    args["_class"] = "args"
+    return args
 
 
 def create_trim_by_ps_args(
     trim_fraction: Optional[float] = None,
-    equipoise_bounds: Optional[list] = None,
-    max_weight: Optional[float] = None,
-    trim_method: str = "symmetric"
+    equipoise_bounds=_REMOVED,
+    max_weight=_REMOVED,
+    trim_method=_REMOVED
 ) -> dict:
     """Create arguments for trimByPs."""
-    return {
-        "trimFraction": trim_fraction,
-        "equipoiseBounds": equipoise_bounds,
-        "maxWeight": max_weight,
-        "trimMethod": trim_method,
-        "_class": "args"
-    }
+    if equipoise_bounds is not _REMOVED:
+        _removed_arg("create_trim_by_ps_args", "equipoise_bounds",
+                     "5.5.2 splits trimming; the equipoise and IPTW variants are not "
+                     "available in the notebook builder; set the corresponding "
+                     "create_cm_analysis() slot by hand.")
+    if max_weight is not _REMOVED:
+        _removed_arg("create_trim_by_ps_args", "max_weight",
+                     "5.5.2 splits trimming; the equipoise and IPTW variants are not "
+                     "available in the notebook builder; set the corresponding "
+                     "create_cm_analysis() slot by hand.")
+    if trim_method is not _REMOVED:
+        _removed_arg("create_trim_by_ps_args", "trim_method",
+                     "5.5.2 splits trimming; the equipoise and IPTW variants are not "
+                     "available in the notebook builder; set the corresponding "
+                     "create_cm_analysis() slot by hand.")
+    return {"trimFraction": trim_fraction, "_class": "args"}
 
 
 def create_truncate_iptw_args(max_weight: float = 10) -> dict:
@@ -611,53 +655,72 @@ def create_match_on_ps_args(
     caliper_scale: str = "standardized logit",
     max_ratio: int = 1,
     allow_reverse_match: bool = False,
-    match_columns: list = None,
-    match_covariate_ids: list = None
+    match_columns=_REMOVED,
+    match_covariate_ids=_REMOVED,
+    stratification_columns: list = None
 ) -> dict:
     """Create arguments for matchOnPs."""
-    return {
+    if match_columns is not _REMOVED:
+        _removed_arg("create_match_on_ps_args", "match_columns",
+                     "Renamed in 5.5.2: use stratification_columns.")
+    if match_covariate_ids is not _REMOVED:
+        _removed_arg("create_match_on_ps_args", "match_covariate_ids",
+                     "Renamed in 5.5.2: use stratification_columns.")
+    args = {
         "caliper": caliper,
         "caliperScale": caliper_scale,
         "maxRatio": max_ratio,
         "allowReverseMatch": allow_reverse_match,
-        "matchColumns": match_columns or [],
-        "matchCovariateIds": match_covariate_ids or [],
-        "_class": "args"
     }
+    if stratification_columns:
+        args["stratificationColumns"] = stratification_columns
+    args["_class"] = "args"
+    return args
 
 
 def create_stratify_by_ps_args(
     number_of_strata: int = 10,
     base_selection: str = "all",
     stratification_columns: list = None,
-    stratification_covariate_ids: list = None
+    stratification_covariate_ids=_REMOVED
 ) -> dict:
     """Create arguments for stratifyByPs."""
-    return {
+    if stratification_covariate_ids is not _REMOVED:
+        _removed_arg("create_stratify_by_ps_args", "stratification_covariate_ids",
+                     "Renamed in 5.5.2: use stratification_columns.")
+    args = {
         "numberOfStrata": number_of_strata,
         "baseSelection": base_selection,
-        "stratificationColumns": stratification_columns or [],
-        "stratificationCovariateIds": stratification_covariate_ids or [],
-        "_class": "args"
     }
+    if stratification_columns:
+        args["stratificationColumns"] = stratification_columns
+    args["_class"] = "args"
+    return args
 
 
 def create_compute_covariate_balance_args(
     subgroup_covariate_id: Optional[int] = None,
     max_cohort_size: int = 250000,
     covariate_filter: Optional[list] = None,
-    threshold: float = 0.1,
-    alpha: float = 0.05
+    threshold=_REMOVED,
+    alpha=_REMOVED
 ) -> dict:
     """Create arguments for computeCovariateBalance."""
-    return {
-        "subgroupCovariateId": subgroup_covariate_id,
-        "maxCohortSize": max_cohort_size,
-        "covariateFilter": covariate_filter,
-        "threshold": threshold,
-        "alpha": alpha,
-        "_class": "args"
-    }
+    if threshold is not _REMOVED:
+        _removed_arg("create_compute_covariate_balance_args", "threshold",
+                     "Removed in 5.5.2; configure on create_cm_diagnostic_thresholds() "
+                     "instead.")
+    if alpha is not _REMOVED:
+        _removed_arg("create_compute_covariate_balance_args", "alpha",
+                     "Removed in 5.5.2; configure on create_cm_diagnostic_thresholds() "
+                     "instead.")
+    args = {"maxCohortSize": max_cohort_size}
+    if subgroup_covariate_id is not None:
+        args["subgroupCovariateId"] = subgroup_covariate_id
+    if covariate_filter is not None:
+        args["covariateFilter"] = covariate_filter
+    args["_class"] = "args"
+    return args
 
 
 def create_fit_outcome_model_args(
@@ -665,8 +728,8 @@ def create_fit_outcome_model_args(
     stratified: bool = False,
     use_covariates: bool = False,
     inverse_pt_weighting: bool = False,
-    bootstrap_ci: bool = False,
-    bootstrap_replicates: int = 200,
+    bootstrap_ci=_REMOVED,
+    bootstrap_replicates=_REMOVED,
     interaction_covariate_ids: list = None,
     exclude_covariate_ids: list = None,
     include_covariate_ids: list = None,
@@ -676,6 +739,12 @@ def create_fit_outcome_model_args(
     control: Optional[dict] = None
 ) -> dict:
     """Create arguments for fitOutcomeModel."""
+    if bootstrap_ci is not _REMOVED:
+        _removed_arg("create_fit_outcome_model_args", "bootstrap_ci",
+                     "Removed in 5.5.2; use profile_grid / profile_bounds.")
+    if bootstrap_replicates is not _REMOVED:
+        _removed_arg("create_fit_outcome_model_args", "bootstrap_replicates",
+                     "Removed in 5.5.2; use profile_grid / profile_bounds.")
     if profile_bounds is None:
         profile_bounds = [math.log(0.1), math.log(10)]
     if prior is None:
@@ -683,22 +752,25 @@ def create_fit_outcome_model_args(
     if control is None:
         control = create_control(cv_type="auto", starting_variance=0.01,
                                  tolerance=2e-07, noise_level="silent")
-    return {
+    args = {
         "modelType": model_type,
         "stratified": stratified,
         "useCovariates": use_covariates,
         "inversePtWeighting": inverse_pt_weighting,
-        "bootstrapCi": bootstrap_ci,
-        "bootstrapReplicates": bootstrap_replicates,
-        "interactionCovariateIds": interaction_covariate_ids or [],
-        "excludeCovariateIds": exclude_covariate_ids or [],
-        "includeCovariateIds": include_covariate_ids or [],
-        "profileGrid": profile_grid,
         "profileBounds": profile_bounds,
         "prior": prior,
         "control": control,
-        "_class": "args"
     }
+    if interaction_covariate_ids:
+        args["interactionCovariateIds"] = interaction_covariate_ids
+    if exclude_covariate_ids:
+        args["excludeCovariateIds"] = exclude_covariate_ids
+    if include_covariate_ids:
+        args["includeCovariateIds"] = include_covariate_ids
+    if profile_grid is not None:
+        args["profileGrid"] = profile_grid
+    args["_class"] = "args"
+    return args
 
 
 def create_cm_analysis(
@@ -708,29 +780,50 @@ def create_cm_analysis(
     create_study_pop_args: dict = None,
     create_ps_args: Optional[dict] = None,
     trim_by_ps_args: Optional[dict] = None,
+    trim_by_ps_to_equipoise_args: Optional[dict] = None,
+    trim_by_iptw_args: Optional[dict] = None,
     truncate_iptw_args: Optional[dict] = None,
     match_on_ps_args: Optional[dict] = None,
+    match_on_ps_and_covariates_args: Optional[dict] = None,
     stratify_by_ps_args: Optional[dict] = None,
+    stratify_by_ps_and_covariates_args: Optional[dict] = None,
     compute_shared_covariate_balance_args: Optional[dict] = None,
     compute_covariate_balance_args: Optional[dict] = None,
     fit_outcome_model_args: Optional[dict] = None
 ) -> dict:
     """Create a CohortMethod analysis specification."""
-    return {
+    analysis = {
         "analysisId": analysis_id,
         "description": description,
         "getDbCohortMethodDataArgs": get_db_cohort_method_data_args,
         "createStudyPopArgs": create_study_pop_args,
-        "createPsArgs": create_ps_args,
-        "trimByPsArgs": trim_by_ps_args,
-        "truncateIptwArgs": truncate_iptw_args,
-        "matchOnPsArgs": match_on_ps_args,
-        "stratifyByPsArgs": stratify_by_ps_args,
-        "computeSharedCovariateBalanceArgs": compute_shared_covariate_balance_args,
-        "computeCovariateBalanceArgs": compute_covariate_balance_args,
-        "fitOutcomeModelArgs": fit_outcome_model_args,
-        "_class": "cmAnalysis"
     }
+    if create_ps_args is not None:
+        analysis["createPsArgs"] = create_ps_args
+    if trim_by_ps_args is not None:
+        analysis["trimByPsArgs"] = trim_by_ps_args
+    if trim_by_ps_to_equipoise_args is not None:
+        analysis["trimByPsToEquipoiseArgs"] = trim_by_ps_to_equipoise_args
+    if trim_by_iptw_args is not None:
+        analysis["trimByIptwArgs"] = trim_by_iptw_args
+    if truncate_iptw_args is not None:
+        analysis["truncateIptwArgs"] = truncate_iptw_args
+    if match_on_ps_args is not None:
+        analysis["matchOnPsArgs"] = match_on_ps_args
+    if match_on_ps_and_covariates_args is not None:
+        analysis["matchOnPsAndCovariatesArgs"] = match_on_ps_and_covariates_args
+    if stratify_by_ps_args is not None:
+        analysis["stratifyByPsArgs"] = stratify_by_ps_args
+    if stratify_by_ps_and_covariates_args is not None:
+        analysis["stratifyByPsAndCovariatesArgs"] = stratify_by_ps_and_covariates_args
+    if compute_shared_covariate_balance_args is not None:
+        analysis["computeSharedCovariateBalanceArgs"] = compute_shared_covariate_balance_args
+    if compute_covariate_balance_args is not None:
+        analysis["computeCovariateBalanceArgs"] = compute_covariate_balance_args
+    if fit_outcome_model_args is not None:
+        analysis["fitOutcomeModelArgs"] = fit_outcome_model_args
+    analysis["_class"] = "cmAnalysis"
+    return analysis
 
 
 def create_outcome(
@@ -744,57 +837,75 @@ def create_outcome(
     end_anchor: Optional[str] = None
 ) -> dict:
     """Create an outcome definition for CohortMethod."""
-    return {
+    outcome = {
         "outcomeId": outcome_id,
         "outcomeOfInterest": outcome_of_interest,
         "trueEffectSize": true_effect_size if true_effect_size is not None else math.nan,
-        "priorOutcomeLookback": prior_outcome_lookback,
-        "riskWindowStart": risk_window_start,
-        "startAnchor": start_anchor,
-        "riskWindowEnd": risk_window_end,
-        "endAnchor": end_anchor,
-        "_class": "outcome"
     }
+    if prior_outcome_lookback is not None:
+        outcome["priorOutcomeLookback"] = prior_outcome_lookback
+    if risk_window_start is not None:
+        outcome["riskWindowStart"] = risk_window_start
+    if start_anchor is not None:
+        outcome["startAnchor"] = start_anchor
+    if risk_window_end is not None:
+        outcome["riskWindowEnd"] = risk_window_end
+    if end_anchor is not None:
+        outcome["endAnchor"] = end_anchor
+    outcome["_class"] = "outcome"
+    return outcome
 
 
 def create_target_comparator_outcomes(
     target_id: int,
     comparator_id: int,
     outcomes: list,
-    nesting_cohort_id: Optional[int] = None,
+    nesting_cohort_id=_REMOVED,
     excluded_covariate_concept_ids: list = None,
     included_covariate_concept_ids: list = None
 ) -> dict:
     """Create a target-comparator-outcomes specification."""
-    return {
+    if nesting_cohort_id is not _REMOVED:
+        _removed_arg("create_target_comparator_outcomes", "nesting_cohort_id",
+                     "Nesting cohorts are no longer supported by CohortMethod.")
+    tco = {
         "targetId": target_id,
         "comparatorId": comparator_id,
         "outcomes": outcomes,
-        "nestingCohortId": nesting_cohort_id,
-        "excludedCovariateConceptIds": excluded_covariate_concept_ids or [],
-        "includedCovariateConceptIds": included_covariate_concept_ids or [],
-        "_class": "targetComparatorOutcomes"
     }
+    if excluded_covariate_concept_ids:
+        tco["excludedCovariateConceptIds"] = excluded_covariate_concept_ids
+    if included_covariate_concept_ids:
+        tco["includedCovariateConceptIds"] = included_covariate_concept_ids
+    tco["_class"] = "targetComparatorOutcomes"
+    return tco
 
 
 def create_cm_diagnostic_thresholds(
     mdrr_threshold: float = 10,
     ease_threshold: float = 0.25,
     sdm_threshold: float = 0.1,
-    sdm_alpha: Optional[float] = None,
+    sdm_alpha=_REMOVED,
     equipoise_threshold: float = 0.2,
-    generalizability_sdm_threshold: float = 999
+    generalizability_sdm_threshold: float = 999,
+    attrition_fraction_threshold: Optional[float] = None
 ) -> dict:
     """Create CohortMethod diagnostic thresholds."""
-    return {
+    if sdm_alpha is not _REMOVED:
+        _removed_arg("create_cm_diagnostic_thresholds", "sdm_alpha",
+                     "Removed in 5.5.2; use sdm_threshold, or "
+                     "attrition_fraction_threshold for attrition.")
+    thresholds = {
         "mdrrThreshold": mdrr_threshold,
         "easeThreshold": ease_threshold,
         "sdmThreshold": sdm_threshold,
-        "sdmAlpha": sdm_alpha,
         "equipoiseThreshold": equipoise_threshold,
         "generalizabilitySdmThreshold": generalizability_sdm_threshold,
-        "_class": "CmDiagnosticThresholds"
     }
+    if attrition_fraction_threshold is not None:
+        thresholds["attritionFractionThreshold"] = attrition_fraction_threshold
+    thresholds["_class"] = "CmDiagnosticThresholds"
+    return thresholds
 
 
 # =============================================================================
