@@ -525,7 +525,7 @@ def create_get_db_cohort_method_data_args(
         "studyStartDate": study_start_date,
         "studyEndDate": study_end_date,
         "maxCohortSize": max_cohort_size,
-        "_class": "GetDbCohortMethodDataArgs"
+        "_class": "args"
     }
 
 
@@ -551,7 +551,7 @@ def create_create_study_population_args(
         "riskWindowEnd": risk_window_end,
         "endAnchor": end_anchor,
         "censorAtNewRiskWindow": censor_at_new_risk_window,
-        "_class": "CreateStudyPopulationArgs"
+        "_class": "args"
     }
 
 
@@ -581,7 +581,7 @@ def create_create_ps_args(
         "prior": prior,
         "control": control,
         "estimator": estimator,
-        "_class": "CreatePsArgs"
+        "_class": "args"
     }
 
 
@@ -597,13 +597,13 @@ def create_trim_by_ps_args(
         "equipoiseBounds": equipoise_bounds,
         "maxWeight": max_weight,
         "trimMethod": trim_method,
-        "_class": "TrimByPsArgs"
+        "_class": "args"
     }
 
 
 def create_truncate_iptw_args(max_weight: float = 10) -> dict:
     """Create arguments for truncateIptw."""
-    return {"maxWeight": max_weight, "_class": "TruncateIptwArgs"}
+    return {"maxWeight": max_weight, "_class": "args"}
 
 
 def create_match_on_ps_args(
@@ -622,7 +622,7 @@ def create_match_on_ps_args(
         "allowReverseMatch": allow_reverse_match,
         "matchColumns": match_columns or [],
         "matchCovariateIds": match_covariate_ids or [],
-        "_class": "MatchOnPsArgs"
+        "_class": "args"
     }
 
 
@@ -638,7 +638,7 @@ def create_stratify_by_ps_args(
         "baseSelection": base_selection,
         "stratificationColumns": stratification_columns or [],
         "stratificationCovariateIds": stratification_covariate_ids or [],
-        "_class": "StratifyByPsArgs"
+        "_class": "args"
     }
 
 
@@ -656,7 +656,7 @@ def create_compute_covariate_balance_args(
         "covariateFilter": covariate_filter,
         "threshold": threshold,
         "alpha": alpha,
-        "_class": "ComputeCovariateBalanceArgs"
+        "_class": "args"
     }
 
 
@@ -697,7 +697,7 @@ def create_fit_outcome_model_args(
         "profileBounds": profile_bounds,
         "prior": prior,
         "control": control,
-        "_class": "FitOutcomeModelArgs"
+        "_class": "args"
     }
 
 
@@ -729,7 +729,7 @@ def create_cm_analysis(
         "computeSharedCovariateBalanceArgs": compute_shared_covariate_balance_args,
         "computeCovariateBalanceArgs": compute_covariate_balance_args,
         "fitOutcomeModelArgs": fit_outcome_model_args,
-        "_class": "CmAnalysis"
+        "_class": "cmAnalysis"
     }
 
 
@@ -753,7 +753,7 @@ def create_outcome(
         "startAnchor": start_anchor,
         "riskWindowEnd": risk_window_end,
         "endAnchor": end_anchor,
-        "_class": "Outcome"
+        "_class": "outcome"
     }
 
 
@@ -773,7 +773,7 @@ def create_target_comparator_outcomes(
         "nestingCohortId": nesting_cohort_id,
         "excludedCovariateConceptIds": excluded_covariate_concept_ids or [],
         "includedCovariateConceptIds": included_covariate_concept_ids or [],
-        "_class": "TargetComparatorOutcomes"
+        "_class": "targetComparatorOutcomes"
     }
 
 
@@ -2171,7 +2171,7 @@ def create_cohort_generator_module_specifications(
         "settings": {
             "generateStats": generate_stats
         },
-        "_class": ("ModuleSpecifications", "CohortGeneratorModuleSpecifications")
+        "_class": ("CohortGeneratorModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2211,7 +2211,7 @@ def create_cohort_diagnostics_module_specifications(
             "minCharacterizationMean": min_characterization_mean,
             "irWashoutPeriod": ir_washout_period
         },
-        "_class": ("ModuleSpecifications", "CohortDiagnosticsModuleSpecifications")
+        "_class": ("CohortDiagnosticsModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2224,7 +2224,7 @@ def create_cohort_incidence_module_specifications(
         "settings": {
             "irDesign": ir_design
         },
-        "_class": ("ModuleSpecifications", "CohortIncidenceModuleSpecifications")
+        "_class": ("CohortIncidenceModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2250,7 +2250,7 @@ def create_cohort_method_module_specifications(
             "refitPsForEveryStudyPopulation": refit_ps_for_every_study_population,
             "cmDiagnosticThresholds": cm_diagnostic_thresholds
         },
-        "_class": ("ModuleSpecifications", "CohortMethodModuleSpecifications")
+        "_class": ("CohortMethodModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2302,7 +2302,7 @@ def create_characterization_module_specifications(
             "covariateSettings": covariate_settings,
             "caseCovariateSettings": case_covariate_settings
         },
-        "_class": ("ModuleSpecifications", "CharacterizationModuleSpecifications")
+        "_class": ("CharacterizationModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2317,7 +2317,7 @@ def create_patient_level_prediction_module_specifications(
             "modelDesignList": model_design_list,
             "skipDiagnostics": skip_diagnostics
         },
-        "_class": ("ModuleSpecifications", "PatientLevelPredictionModuleSpecifications")
+        "_class": ("PatientLevelPredictionModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2330,7 +2330,7 @@ def create_patient_level_prediction_validation_module_specifications(
         "settings": {
             "validationList": validation_list
         },
-        "_class": ("ModuleSpecifications", "PatientLevelPredictionValidationModuleSpecifications")
+        "_class": ("PatientLevelPredictionValidationModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2343,7 +2343,7 @@ def create_self_controlled_case_series_module_specifications(
         "settings": {
             "sccsAnalysesSpecifications": sccs_analyses_specifications
         },
-        "_class": ("ModuleSpecifications", "SelfControlledCaseSeriesModuleSpecifications")
+        "_class": ("SelfControlledCaseSeriesModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2361,7 +2361,7 @@ def create_evidence_synthesis_module_specifications(
             "evidenceSynthesisAnalysisList": evidence_synthesis_analysis_list,
             "esDiagnosticThresholds": es_diagnostic_thresholds
         },
-        "_class": ("ModuleSpecifications", "EvidenceSynthesisModuleSpecifications")
+        "_class": ("EvidenceSynthesisModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2404,7 +2404,7 @@ def create_treatment_patterns_module_specifications(
             "overlapMethod": overlap_method,
             "concatTargets": concat_targets
         },
-        "_class": ("ModuleSpecifications", "TreatmentPatternsModuleSpecifications")
+        "_class": ("TreatmentPatternsModuleSpecifications", "ModuleSpecifications")
     }
 
 
@@ -2445,7 +2445,7 @@ def create_cohort_survival_module_specifications(
             "restrictedMeanFollowUp": restricted_mean_follow_up,
             "minimumSurvivalDays": minimum_survival_days
         },
-        "_class": ("ModuleSpecifications", "CohortSurvivalModuleSpecifications")
+        "_class": ("CohortSurvivalModuleSpecifications", "ModuleSpecifications")
     }
 
 
