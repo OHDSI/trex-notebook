@@ -525,6 +525,14 @@ createAnalysisDetails <- function(analysisId,
 # CohortMethod Builder Functions
 # =============================================================================
 
+# Arguments removed or renamed in CohortMethod 5.5.2-0.0.1 (pinned in the Data2Evidence
+# flow-hades renv.lock). Kept in the signatures so misuse fails here, in the notebook,
+# instead of as an "unused arguments" error from Strategus minutes into a flow run.
+.cmRemovedArg <- function(fn, arg, replacement) {
+  stop(sprintf("%s(%s = ...) was removed in CohortMethod 5.5.2 (pinned in the Data2Evidence flow-hades renv.lock). %s",
+               fn, arg, replacement), call. = FALSE)
+}
+
 createGetDbCohortMethodDataArgs <- function(covariateSettings = createDefaultCovariateSettings(),
                                             removeDuplicateSubjects = "keep first, truncate to second",
                                             firstExposureOnly = TRUE,
@@ -537,19 +545,31 @@ createGetDbCohortMethodDataArgs <- function(covariateSettings = createDefaultCov
                                             studyStartDate = "",
                                             studyEndDate = "",
                                             maxCohortSize = 0) {
+  if (!missing(nestingCohortId)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "nestingCohortId",
+                  "Nesting cohorts are no longer supported by CohortMethod.")
+  }
+  if (!missing(minAge)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "minAge",
+                  "Demographic restrictions were removed from data extraction in 5.5.2; apply them in the cohort definition instead.")
+  }
+  if (!missing(maxAge)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "maxAge",
+                  "Demographic restrictions were removed from data extraction in 5.5.2; apply them in the cohort definition instead.")
+  }
+  if (!missing(genderConceptIds)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "genderConceptIds",
+                  "Demographic restrictions were removed from data extraction in 5.5.2; apply them in the cohort definition instead.")
+  }
   args <- list(
-    covariateSettings = covariateSettings,
-    removeDuplicateSubjects = removeDuplicateSubjects,
-    firstExposureOnly = firstExposureOnly,
-    washoutPeriod = washoutPeriod,
-    nestingCohortId = nestingCohortId,
-    restrictToCommonPeriod = restrictToCommonPeriod,
-    minAge = minAge,
-    maxAge = maxAge,
-    genderConceptIds = genderConceptIds,
     studyStartDate = studyStartDate,
     studyEndDate = studyEndDate,
-    maxCohortSize = maxCohortSize
+    firstExposureOnly = firstExposureOnly,
+    removeDuplicateSubjects = removeDuplicateSubjects,
+    restrictToCommonPeriod = restrictToCommonPeriod,
+    washoutPeriod = washoutPeriod,
+    maxCohortSize = maxCohortSize,
+    covariateSettings = covariateSettings
   )
   class(args) <- "args"
   return(args)
@@ -563,8 +583,16 @@ createCreateStudyPopulationArgs <- function(removeSubjectsWithPriorOutcome = TRU
                                             startAnchor = "cohort start",
                                             riskWindowEnd = 0,
                                             endAnchor = "cohort end",
-                                            censorAtNewRiskWindow = FALSE) {
+                                            censorAtNewRiskWindow = FALSE,
+                                            firstExposureOnly = FALSE,
+                                            restrictToCommonPeriod = FALSE,
+                                            washoutPeriod = 0,
+                                            removeDuplicateSubjects = "keep all") {
   args <- list(
+    firstExposureOnly = firstExposureOnly,
+    restrictToCommonPeriod = restrictToCommonPeriod,
+    washoutPeriod = washoutPeriod,
+    removeDuplicateSubjects = removeDuplicateSubjects,
     removeSubjectsWithPriorOutcome = removeSubjectsWithPriorOutcome,
     priorOutcomeLookback = priorOutcomeLookback,
     minDaysAtRisk = minDaysAtRisk,
@@ -596,8 +624,6 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
                                                        startingVariance = 0.01),
                                estimator = "att") {
   args <- list(
-    excludeCovariateIds = excludeCovariateIds,
-    includeCovariateIds = includeCovariateIds,
     maxCohortSizeForFitting = maxCohortSizeForFitting,
     errorOnHighCorrelation = errorOnHighCorrelation,
     stopOnError = stopOnError,
@@ -605,6 +631,12 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
     control = control,
     estimator = estimator
   )
+  if (length(excludeCovariateIds) > 0) {
+    args$excludeCovariateIds <- excludeCovariateIds
+  }
+  if (length(includeCovariateIds) > 0) {
+    args$includeCovariateIds <- includeCovariateIds
+  }
   class(args) <- "args"
   return(args)
 }
@@ -612,13 +644,20 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
 createTrimByPsArgs <- function(trimFraction = NULL,
                                equipoiseBounds = NULL,
                                maxWeight = NULL,
-                               trimMethod = "symmetric") {
-  args <- list(
-    trimFraction = trimFraction,
-    equipoiseBounds = equipoiseBounds,
-    maxWeight = maxWeight,
-    trimMethod = trimMethod
-  )
+                               trimMethod = NULL) {
+  if (!missing(equipoiseBounds)) {
+    .cmRemovedArg("createTrimByPsArgs", "equipoiseBounds",
+                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+  }
+  if (!missing(maxWeight)) {
+    .cmRemovedArg("createTrimByPsArgs", "maxWeight",
+                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+  }
+  if (!missing(trimMethod)) {
+    .cmRemovedArg("createTrimByPsArgs", "trimMethod",
+                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+  }
+  args <- list(trimFraction = trimFraction)
   class(args) <- "args"
   return(args)
 }
@@ -633,16 +672,26 @@ createMatchOnPsArgs <- function(caliper = 0.2,
                                 caliperScale = "standardized logit",
                                 maxRatio = 1,
                                 allowReverseMatch = FALSE,
-                                matchColumns = c(),
-                                matchCovariateIds = c()) {
+                                matchColumns = NULL,
+                                matchCovariateIds = NULL,
+                                stratificationColumns = c()) {
+  if (!missing(matchColumns)) {
+    .cmRemovedArg("createMatchOnPsArgs", "matchColumns",
+                  "Renamed in 5.5.2: use stratificationColumns.")
+  }
+  if (!missing(matchCovariateIds)) {
+    .cmRemovedArg("createMatchOnPsArgs", "matchCovariateIds",
+                  "Renamed in 5.5.2: use stratificationColumns.")
+  }
   args <- list(
     caliper = caliper,
     caliperScale = caliperScale,
     maxRatio = maxRatio,
-    allowReverseMatch = allowReverseMatch,
-    matchColumns = matchColumns,
-    matchCovariateIds = matchCovariateIds
+    allowReverseMatch = allowReverseMatch
   )
+  if (length(stratificationColumns) > 0) {
+    args$stratificationColumns <- stratificationColumns
+  }
   class(args) <- "args"
   return(args)
 }
@@ -650,13 +699,18 @@ createMatchOnPsArgs <- function(caliper = 0.2,
 createStratifyByPsArgs <- function(numberOfStrata = 10,
                                    baseSelection = "all",
                                    stratificationColumns = c(),
-                                   stratificationCovariateIds = c()) {
+                                   stratificationCovariateIds = NULL) {
+  if (!missing(stratificationCovariateIds)) {
+    .cmRemovedArg("createStratifyByPsArgs", "stratificationCovariateIds",
+                  "Renamed in 5.5.2: use stratificationColumns.")
+  }
   args <- list(
     numberOfStrata = numberOfStrata,
-    baseSelection = baseSelection,
-    stratificationColumns = stratificationColumns,
-    stratificationCovariateIds = stratificationCovariateIds
+    baseSelection = baseSelection
   )
+  if (length(stratificationColumns) > 0) {
+    args$stratificationColumns <- stratificationColumns
+  }
   class(args) <- "args"
   return(args)
 }
@@ -664,15 +718,23 @@ createStratifyByPsArgs <- function(numberOfStrata = 10,
 createComputeCovariateBalanceArgs <- function(subgroupCovariateId = NULL,
                                              maxCohortSize = 250000,
                                              covariateFilter = NULL,
-                                             threshold = 0.1,
-                                             alpha = 0.05) {
-  args <- list(
-    subgroupCovariateId = subgroupCovariateId,
-    maxCohortSize = maxCohortSize,
-    covariateFilter = covariateFilter,
-    threshold = threshold,
-    alpha = alpha
-  )
+                                             threshold = NULL,
+                                             alpha = NULL) {
+  if (!missing(threshold)) {
+    .cmRemovedArg("createComputeCovariateBalanceArgs", "threshold",
+                  "Removed in 5.5.2; configure on createCmDiagnosticThresholds() instead.")
+  }
+  if (!missing(alpha)) {
+    .cmRemovedArg("createComputeCovariateBalanceArgs", "alpha",
+                  "Removed in 5.5.2; configure on createCmDiagnosticThresholds() instead.")
+  }
+  args <- list(maxCohortSize = maxCohortSize)
+  if (!is.null(subgroupCovariateId)) {
+    args$subgroupCovariateId <- subgroupCovariateId
+  }
+  if (!is.null(covariateFilter)) {
+    args$covariateFilter <- covariateFilter
+  }
   class(args) <- "args"
   return(args)
 }
@@ -681,8 +743,8 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
                                      stratified = FALSE,
                                      useCovariates = FALSE,
                                      inversePtWeighting = FALSE,
-                                     bootstrapCi = FALSE,
-                                     bootstrapReplicates = 200,
+                                     bootstrapCi = NULL,
+                                     bootstrapReplicates = NULL,
                                      interactionCovariateIds = c(),
                                      excludeCovariateIds = c(),
                                      includeCovariateIds = c(),
@@ -694,21 +756,35 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
                                                              startingVariance = 0.01,
                                                              tolerance = 2e-07,
                                                              noiseLevel = "silent")) {
+  if (!missing(bootstrapCi)) {
+    .cmRemovedArg("createFitOutcomeModelArgs", "bootstrapCi",
+                  "Removed in 5.5.2; use profileGrid / profileBounds.")
+  }
+  if (!missing(bootstrapReplicates)) {
+    .cmRemovedArg("createFitOutcomeModelArgs", "bootstrapReplicates",
+                  "Removed in 5.5.2; use profileGrid / profileBounds.")
+  }
   args <- list(
     modelType = modelType,
     stratified = stratified,
     useCovariates = useCovariates,
     inversePtWeighting = inversePtWeighting,
-    bootstrapCi = bootstrapCi,
-    bootstrapReplicates = bootstrapReplicates,
-    interactionCovariateIds = interactionCovariateIds,
-    excludeCovariateIds = excludeCovariateIds,
-    includeCovariateIds = includeCovariateIds,
-    profileGrid = profileGrid,
     profileBounds = profileBounds,
     prior = prior,
     control = control
   )
+  if (length(interactionCovariateIds) > 0) {
+    args$interactionCovariateIds <- interactionCovariateIds
+  }
+  if (length(excludeCovariateIds) > 0) {
+    args$excludeCovariateIds <- excludeCovariateIds
+  }
+  if (length(includeCovariateIds) > 0) {
+    args$includeCovariateIds <- includeCovariateIds
+  }
+  if (!is.null(profileGrid)) {
+    args$profileGrid <- profileGrid
+  }
   class(args) <- "args"
   return(args)
 }
@@ -729,16 +805,20 @@ createCmAnalysis <- function(analysisId = 1,
     analysisId = analysisId,
     description = description,
     getDbCohortMethodDataArgs = getDbCohortMethodDataArgs,
-    createStudyPopArgs = createStudyPopArgs,
-    createPsArgs = createPsArgs,
-    trimByPsArgs = trimByPsArgs,
-    truncateIptwArgs = truncateIptwArgs,
-    matchOnPsArgs = matchOnPsArgs,
-    stratifyByPsArgs = stratifyByPsArgs,
-    computeSharedCovariateBalanceArgs = computeSharedCovariateBalanceArgs,
-    computeCovariateBalanceArgs = computeCovariateBalanceArgs,
-    fitOutcomeModelArgs = fitOutcomeModelArgs
+    createStudyPopArgs = createStudyPopArgs
   )
+  if (!is.null(createPsArgs)) analysis$createPsArgs <- createPsArgs
+  if (!is.null(trimByPsArgs)) analysis$trimByPsArgs <- trimByPsArgs
+  if (!is.null(truncateIptwArgs)) analysis$truncateIptwArgs <- truncateIptwArgs
+  if (!is.null(matchOnPsArgs)) analysis$matchOnPsArgs <- matchOnPsArgs
+  if (!is.null(stratifyByPsArgs)) analysis$stratifyByPsArgs <- stratifyByPsArgs
+  if (!is.null(computeSharedCovariateBalanceArgs)) {
+    analysis$computeSharedCovariateBalanceArgs <- computeSharedCovariateBalanceArgs
+  }
+  if (!is.null(computeCovariateBalanceArgs)) {
+    analysis$computeCovariateBalanceArgs <- computeCovariateBalanceArgs
+  }
+  if (!is.null(fitOutcomeModelArgs)) analysis$fitOutcomeModelArgs <- fitOutcomeModelArgs
   class(analysis) <- "cmAnalysis"
   return(analysis)
 }
@@ -754,13 +834,13 @@ createOutcome <- function(outcomeId,
   outcome <- list(
     outcomeId = outcomeId,
     outcomeOfInterest = outcomeOfInterest,
-    trueEffectSize = trueEffectSize,
-    priorOutcomeLookback = priorOutcomeLookback,
-    riskWindowStart = riskWindowStart,
-    startAnchor = startAnchor,
-    riskWindowEnd = riskWindowEnd,
-    endAnchor = endAnchor
+    trueEffectSize = trueEffectSize
   )
+  if (!is.null(priorOutcomeLookback)) outcome$priorOutcomeLookback <- priorOutcomeLookback
+  if (!is.null(riskWindowStart)) outcome$riskWindowStart <- riskWindowStart
+  if (!is.null(startAnchor)) outcome$startAnchor <- startAnchor
+  if (!is.null(riskWindowEnd)) outcome$riskWindowEnd <- riskWindowEnd
+  if (!is.null(endAnchor)) outcome$endAnchor <- endAnchor
   class(outcome) <- "outcome"
   return(outcome)
 }
@@ -771,14 +851,21 @@ createTargetComparatorOutcomes <- function(targetId,
                                            nestingCohortId = NULL,
                                            excludedCovariateConceptIds = c(),
                                            includedCovariateConceptIds = c()) {
+  if (!missing(nestingCohortId)) {
+    .cmRemovedArg("createTargetComparatorOutcomes", "nestingCohortId",
+                  "Nesting cohorts are no longer supported by CohortMethod.")
+  }
   tco <- list(
     targetId = targetId,
     comparatorId = comparatorId,
-    outcomes = unname(outcomes),
-    nestingCohortId = nestingCohortId,
-    excludedCovariateConceptIds = excludedCovariateConceptIds,
-    includedCovariateConceptIds = includedCovariateConceptIds
+    outcomes = unname(outcomes)
   )
+  if (length(excludedCovariateConceptIds) > 0) {
+    tco$excludedCovariateConceptIds <- excludedCovariateConceptIds
+  }
+  if (length(includedCovariateConceptIds) > 0) {
+    tco$includedCovariateConceptIds <- includedCovariateConceptIds
+  }
   class(tco) <- "targetComparatorOutcomes"
   return(tco)
 }
@@ -788,15 +875,22 @@ createCmDiagnosticThresholds <- function(mdrrThreshold = 10,
                                          sdmThreshold = 0.1,
                                          sdmAlpha = NULL,
                                          equipoiseThreshold = 0.2,
-                                         generalizabilitySdmThreshold = 999) {
+                                         generalizabilitySdmThreshold = 999,
+                                         attritionFractionThreshold = NULL) {
+  if (!missing(sdmAlpha)) {
+    .cmRemovedArg("createCmDiagnosticThresholds", "sdmAlpha",
+                  "Removed in 5.5.2; use sdmThreshold, or attritionFractionThreshold for attrition.")
+  }
   thresholds <- list(
     mdrrThreshold = mdrrThreshold,
     easeThreshold = easeThreshold,
     sdmThreshold = sdmThreshold,
-    sdmAlpha = sdmAlpha,
     equipoiseThreshold = equipoiseThreshold,
     generalizabilitySdmThreshold = generalizabilitySdmThreshold
   )
+  if (!is.null(attritionFractionThreshold)) {
+    thresholds$attritionFractionThreshold <- attritionFractionThreshold
+  }
   class(thresholds) <- "CmDiagnosticThresholds"
   return(thresholds)
 }
