@@ -172,6 +172,11 @@ fitOutcomeModelArgs         modelType, stratified, useCovariates, inversePtWeigh
                             profileBounds, prior, control
 cmAnalysis                  analysisId, description, getDbCohortMethodDataArgs,
                             createStudyPopArgs   (+ any slot actually supplied)
+   full 16-parameter signature, in package order:
+     analysisId, description, getDbCohortMethodDataArgs, createStudyPopArgs, createPsArgs,
+     trimByPsArgs, trimByPsToEquipoiseArgs, trimByIptwArgs, truncateIptwArgs, matchOnPsArgs,
+     matchOnPsAndCovariatesArgs, stratifyByPsArgs, stratifyByPsAndCovariatesArgs,
+     computeSharedCovariateBalanceArgs, computeCovariateBalanceArgs, fitOutcomeModelArgs
 outcome                     outcomeId, outcomeOfInterest, trueEffectSize
 targetComparatorOutcomes    targetId, comparatorId, outcomes
 cmDiagnosticThresholds      mdrrThreshold, easeThreshold, sdmThreshold, equipoiseThreshold,

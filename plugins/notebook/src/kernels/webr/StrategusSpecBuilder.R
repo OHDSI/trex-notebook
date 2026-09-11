@@ -795,9 +795,13 @@ createCmAnalysis <- function(analysisId = 1,
                              createStudyPopArgs,
                              createPsArgs = NULL,
                              trimByPsArgs = NULL,
+                             trimByPsToEquipoiseArgs = NULL,
+                             trimByIptwArgs = NULL,
                              truncateIptwArgs = NULL,
                              matchOnPsArgs = NULL,
+                             matchOnPsAndCovariatesArgs = NULL,
                              stratifyByPsArgs = NULL,
+                             stratifyByPsAndCovariatesArgs = NULL,
                              computeSharedCovariateBalanceArgs = NULL,
                              computeCovariateBalanceArgs = NULL,
                              fitOutcomeModelArgs = NULL) {
@@ -809,9 +813,13 @@ createCmAnalysis <- function(analysisId = 1,
   )
   if (!is.null(createPsArgs)) analysis$createPsArgs <- createPsArgs
   if (!is.null(trimByPsArgs)) analysis$trimByPsArgs <- trimByPsArgs
+  if (!is.null(trimByPsToEquipoiseArgs)) analysis$trimByPsToEquipoiseArgs <- trimByPsToEquipoiseArgs
+  if (!is.null(trimByIptwArgs)) analysis$trimByIptwArgs <- trimByIptwArgs
   if (!is.null(truncateIptwArgs)) analysis$truncateIptwArgs <- truncateIptwArgs
   if (!is.null(matchOnPsArgs)) analysis$matchOnPsArgs <- matchOnPsArgs
+  if (!is.null(matchOnPsAndCovariatesArgs)) analysis$matchOnPsAndCovariatesArgs <- matchOnPsAndCovariatesArgs
   if (!is.null(stratifyByPsArgs)) analysis$stratifyByPsArgs <- stratifyByPsArgs
+  if (!is.null(stratifyByPsAndCovariatesArgs)) analysis$stratifyByPsAndCovariatesArgs <- stratifyByPsAndCovariatesArgs
   if (!is.null(computeSharedCovariateBalanceArgs)) {
     analysis$computeSharedCovariateBalanceArgs <- computeSharedCovariateBalanceArgs
   }
