@@ -8,10 +8,58 @@ const baseline = JSON.parse(
   readFileSync(join(__dirname, '../fixtures/strategus-baseline.json'), 'utf-8')
 )
 
-function pickScopedModules(spec: any) {
-  return spec.moduleSpecifications.filter((m: any) =>
+// Extracts the moduleSpecifications we care about, plus a structural (not
+// content-level) view of sharedResources. The baseline's sharedResources
+// (plugins/notebook/tests/fixtures/strategus-baseline.json) embeds real
+// cohort definitions pulled from the Strategus R package's own OMOP test
+// fixtures (CohortGenerator::getCohortDefinitionSet() reading
+// testdata/Cohorts.csv, testdata/cohorts/*.json, testdata/sql/*.sql — see
+// generate-strategus-baseline.R) — e.g. actual "Celecoxib"/"Diclofenac"
+// cohort expressions with real OMOP concept IDs. Reproducing that exact
+// content from this test would mean vendoring those package fixtures, which
+// is disproportionate for this verification harness. Instead we compare the
+// *shape* of sharedResources — the set of cohortIds present and the field
+// names on each cohort definition entry — which is enough to catch a
+// structural drift (e.g. a renamed/missing field) without requiring the
+// synthetic test cohorts to carry identical names/content to the baseline's.
+function pickScoped(spec: any) {
+  const moduleSpecifications = spec.moduleSpecifications.filter((m: any) =>
     ['CohortGeneratorModule', 'CohortMethodModule', 'PatientLevelPredictionModule'].includes(m.module)
   )
+  const sharedResourcesShape = (spec.sharedResources ?? []).map((sr: any) => ({
+    keys: Object.keys(sr).sort(),
+    cohortDefinitions: (sr.cohortDefinitions ?? [])
+      .map((cd: any) => ({ cohortId: cd.cohortId, keys: Object.keys(cd).sort() }))
+      .sort((a: any, b: any) => a.cohortId - b.cohortId),
+  }))
+  return { moduleSpecifications, sharedResourcesShape }
+}
+
+// PatientLevelPrediction's createDefaultSplitSetting() (invoked internally by
+// create_model_design()'s default splitSettings) randomly generates a seed
+// when one isn't explicitly supplied — mirroring StrategusSpecBuilder.R's
+// createDefaultSplitSetting() and generate-strategus-baseline.R, which also
+// leaves splitSettings unspecified — so modelDesign.splitSettings.seed is
+// inherently non-reproducible across the R baseline and the Pyodide-generated
+// spec and can't be part of an exact-equality check. Note:
+// set_lasso_logistic_regression()'s modelSettings.param does NOT contain a
+// seed field (confirmed against the baseline fixture) — only
+// splitSettings.seed is random here. We strip that one field out (after
+// confirming it's the expected type) before comparing everything else with
+// toEqual.
+function extractAndStripRandomSeeds(spec: any): { seeds: unknown[]; stripped: any } {
+  const clone = JSON.parse(JSON.stringify(spec))
+  const seeds: unknown[] = []
+  const plpModule = clone.moduleSpecifications.find((m: any) => m.module === 'PatientLevelPredictionModule')
+  if (plpModule) {
+    for (const modelDesign of plpModule.settings.modelDesignList) {
+      if (modelDesign.splitSettings && 'seed' in modelDesign.splitSettings) {
+        seeds.push(modelDesign.splitSettings.seed)
+        delete modelDesign.splitSettings.seed
+      }
+    }
+  }
+  return { seeds, stripped: clone }
 }
 
 async function collect(iter: AsyncIterable<KernelOutput>): Promise<KernelOutput[]> {
@@ -29,7 +77,10 @@ describe('Strategus spec baseline — Pyodide', () => {
   }, 60000)
 
   afterAll(async () => {
-    await kernel.disconnect()
+    // If beforeAll threw (e.g. the known "Worker is not defined" blocker),
+    // kernel may be unset or already unusable; don't let a second,
+    // unrelated disconnect error mask the real failure.
+    await kernel?.disconnect().catch(() => {})
   })
 
   it('matches the R baseline for CohortGenerator, CohortMethod, and PLP specs', async () => {
@@ -66,8 +117,14 @@ from strategus_spec_builder import (
     to_json,
 )
 
+# IDs mirror the target/comparator/outcome cohorts used below (1/2/3); the
+# baseline's sharedResources instead embeds real Strategus package OMOP test
+# cohorts, so only the shared-resource *shape* (cohortIds + field names) is
+# compared, not this synthetic content (see pickScoped()'s comment).
 cohort_definition_set = [
     {"cohortId": 1, "cohortName": "target", "sql": "", "json": {}},
+    {"cohortId": 2, "cohortName": "comparator", "sql": "", "json": {}},
+    {"cohortId": 3, "cohortName": "outcome", "sql": "", "json": {}},
 ]
 
 cohort_shared_resource = create_cohort_shared_resource_specifications(cohort_definition_set)
@@ -155,12 +212,39 @@ spec = add_module_specifications(spec, plp_spec)
 print(to_json(spec, pretty=False))
 `
     const outputs = await collect(kernel.execute(code, 'python'))
+
+    // Surface any real Python-side failure (error outputs, or stderr stream
+    // text) before attempting to parse stdout as JSON, so a genuine failure
+    // reports its actual message instead of an opaque "Unexpected end of
+    // JSON input".
+    const errorOutputs = outputs.filter(
+      (o: any) => o.type === 'error' || (o.type === 'stream' && o.name === 'stderr')
+    )
+    expect(errorOutputs).toEqual([])
+
     const stdout = outputs
       .filter((o) => o.type === 'stream' && o.name === 'stdout')
       .map((o: any) => o.text)
       .join('')
     const generated = JSON.parse(stdout.trim())
 
-    expect(pickScopedModules(generated)).toEqual(pickScopedModules(baseline))
+    const generatedScoped = pickScoped(generated)
+    const baselineScoped = pickScoped(baseline)
+
+    const { seeds: generatedSeeds, stripped: generatedStripped } = extractAndStripRandomSeeds(generatedScoped)
+    const { seeds: baselineSeeds, stripped: baselineStripped } = extractAndStripRandomSeeds(baselineScoped)
+
+    // Random seeds can't match exactly (they're generated fresh each run / each fixture
+    // build) — just confirm they exist and are numbers on both sides.
+    expect(generatedSeeds.length).toBe(baselineSeeds.length)
+    for (const seed of generatedSeeds) {
+      expect(typeof seed).toBe('number')
+    }
+    for (const seed of baselineSeeds) {
+      expect(typeof seed).toBe('number')
+    }
+
+    // Everything else must match exactly.
+    expect(generatedStripped).toEqual(baselineStripped)
   }, 60000)
 })

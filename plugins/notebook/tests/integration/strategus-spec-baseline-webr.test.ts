@@ -8,19 +8,43 @@ const baseline = JSON.parse(
   readFileSync(join(__dirname, '../fixtures/strategus-baseline.json'), 'utf-8')
 )
 
-function pickScopedModules(spec: any) {
-  return spec.moduleSpecifications.filter((m: any) =>
+// Extracts the moduleSpecifications we care about, plus a structural (not
+// content-level) view of sharedResources. The baseline's sharedResources
+// (plugins/notebook/tests/fixtures/strategus-baseline.json) embeds real
+// cohort definitions pulled from the Strategus R package's own OMOP test
+// fixtures (CohortGenerator::getCohortDefinitionSet() reading
+// testdata/Cohorts.csv, testdata/cohorts/*.json, testdata/sql/*.sql — see
+// generate-strategus-baseline.R) — e.g. actual "Celecoxib"/"Diclofenac"
+// cohort expressions with real OMOP concept IDs. Reproducing that exact
+// content from this test would mean vendoring those package fixtures, which
+// is disproportionate for this verification harness. Instead we compare the
+// *shape* of sharedResources — the set of cohortIds present and the field
+// names on each cohort definition entry — which is enough to catch a
+// structural drift (e.g. a renamed/missing field) without requiring the
+// synthetic test cohorts to carry identical names/content to the baseline's.
+function pickScoped(spec: any) {
+  const moduleSpecifications = spec.moduleSpecifications.filter((m: any) =>
     ['CohortGeneratorModule', 'CohortMethodModule', 'PatientLevelPredictionModule'].includes(m.module)
   )
+  const sharedResourcesShape = (spec.sharedResources ?? []).map((sr: any) => ({
+    keys: Object.keys(sr).sort(),
+    cohortDefinitions: (sr.cohortDefinitions ?? [])
+      .map((cd: any) => ({ cohortId: cd.cohortId, keys: Object.keys(cd).sort() }))
+      .sort((a: any, b: any) => a.cohortId - b.cohortId),
+  }))
+  return { moduleSpecifications, sharedResourcesShape }
 }
 
-// PatientLevelPrediction's setLassoLogisticRegression() and createDefaultSplitSetting()
-// both randomly generate a seed when one isn't explicitly supplied (see
-// StrategusSpecBuilder.R:1493 and :1319, and generate-strategus-baseline.R which also
-// calls both with no seed argument). This makes those two fields inherently
-// non-reproducible across the R baseline and the WebR-generated spec, so they cannot be
-// part of an exact-equality check. We strip them out (after confirming they are the
-// expected type/shape) before comparing everything else with toEqual.
+// PatientLevelPrediction's createDefaultSplitSetting() randomly generates a
+// seed when one isn't explicitly supplied (see StrategusSpecBuilder.R:1319,
+// and generate-strategus-baseline.R which also calls it with no seed
+// argument), so modelDesign.splitSettings.seed is inherently non-reproducible
+// across the R baseline and the WebR-generated spec and can't be part of an
+// exact-equality check. Note: setLassoLogisticRegression()'s
+// modelSettings.param does NOT contain a seed field (confirmed against the
+// baseline fixture) — only splitSettings.seed is random here. We strip that
+// one field out (after confirming it's the expected type) before comparing
+// everything else with toEqual.
 function extractAndStripRandomSeeds(spec: any): { seeds: unknown[]; stripped: any } {
   const clone = JSON.parse(JSON.stringify(spec))
   const seeds: unknown[] = []
@@ -30,11 +54,6 @@ function extractAndStripRandomSeeds(spec: any): { seeds: unknown[]; stripped: an
       if (modelDesign.splitSettings && 'seed' in modelDesign.splitSettings) {
         seeds.push(modelDesign.splitSettings.seed)
         delete modelDesign.splitSettings.seed
-      }
-      const modelSettings = modelDesign.modelSettings
-      if (modelSettings && modelSettings.param && 'seed' in modelSettings.param) {
-        seeds.push(modelSettings.param.seed)
-        delete modelSettings.param.seed
       }
     }
   }
@@ -56,7 +75,10 @@ describe('Strategus spec baseline — WebR', () => {
   }, 60000)
 
   afterAll(async () => {
-    await kernel.disconnect()
+    // If beforeAll threw (e.g. the known "Worker is not defined" blocker),
+    // kernel may be unset or already unusable; don't let a second,
+    // unrelated disconnect error mask the real failure.
+    await kernel?.disconnect().catch(() => {})
   })
 
   it('matches the R baseline for CohortGenerator, CohortMethod, and PLP specs', async () => {
@@ -78,12 +100,16 @@ describe('Strategus spec baseline — WebR', () => {
 # StrategusSpecBuilder.R itself), so install it explicitly before use.
 if (!requireNamespace("jsonlite", quietly = TRUE)) webr::install("jsonlite")
 
-# .isCohortDefinitionSet() requires a data frame with cohortId/cohortName/sql/json columns
+# .isCohortDefinitionSet() requires a data frame with cohortId/cohortName/sql/json columns.
+# IDs mirror the target/comparator/outcome cohorts used below (1/2/3); the
+# baseline's sharedResources instead embeds real Strategus package OMOP test
+# cohorts, so only the shared-resource *shape* (cohortIds + field names) is
+# compared, not this synthetic content (see pickScoped()'s comment).
 cohortDefinitionSet <- data.frame(
-  cohortId = 1,
-  cohortName = "target",
-  sql = "",
-  json = "{}",
+  cohortId = c(1, 2, 3),
+  cohortName = c("target", "comparator", "outcome"),
+  sql = c("", "", ""),
+  json = c("{}", "{}", "{}"),
   stringsAsFactors = FALSE
 )
 cohortSharedResource <- createCohortSharedResourceSpecifications(cohortDefinitionSet)
@@ -176,17 +202,23 @@ stripClasses <- function(x) {
 cat(jsonlite::toJSON(stripClasses(spec), auto_unbox = TRUE, pretty = FALSE, null = "null"))
 `
     const outputs = await collect(kernel.execute(code, 'r'))
+
+    // Surface any real R-side failure (error outputs, or stderr stream text)
+    // before attempting to parse stdout as JSON, so a genuine failure reports
+    // its actual message instead of an opaque "Unexpected end of JSON input".
+    const errorOutputs = outputs.filter(
+      (o: any) => o.type === 'error' || (o.type === 'stream' && o.name === 'stderr')
+    )
+    expect(errorOutputs).toEqual([])
+
     const stdout = outputs
       .filter((o) => o.type === 'stream' && o.name === 'stdout')
       .map((o: any) => o.text)
       .join('')
-    if (!stdout.trim()) {
-      console.error('DEBUG outputs:', JSON.stringify(outputs, null, 2))
-    }
     const generated = JSON.parse(stdout.trim())
 
-    const generatedScoped = { moduleSpecifications: pickScopedModules(generated) }
-    const baselineScoped = { moduleSpecifications: pickScopedModules(baseline) }
+    const generatedScoped = pickScoped(generated)
+    const baselineScoped = pickScoped(baseline)
 
     const { seeds: generatedSeeds, stripped: generatedStripped } = extractAndStripRandomSeeds(generatedScoped)
     const { seeds: baselineSeeds, stripped: baselineStripped } = extractAndStripRandomSeeds(baselineScoped)
