@@ -1227,6 +1227,15 @@ createSccsAnalysesSpecifications <- function(sccsAnalysisList,
 # PatientLevelPrediction Builder Functions
 # =============================================================================
 
+# Functions removed from PatientLevelPrediction 6.5.0 (pinned in the Data2Evidence
+# flow-hades renv.lock). Kept as stubs so misuse fails here, in the notebook,
+# instead of as an "unused arguments"/"could not find function" error from
+# Strategus minutes into a flow run.
+.plpRemovedFunction <- function(fn, replacement) {
+  stop(sprintf("%s() was removed in PatientLevelPrediction 6.5.0 (pinned in the Data2Evidence flow-hades renv.lock). %s",
+               fn, replacement), call. = FALSE)
+}
+
 createStudyPopulationSettings <- function(binary = TRUE,
                                           includeAllOutcomes = TRUE,
                                           firstExposureOnly = FALSE,
@@ -1334,7 +1343,9 @@ createUnivariateFeatureSelection <- function(k = 100) {
 }
 
 createRandomForestFeatureSelection <- function(ntrees = 2000, maxDepth = 17) {
-  featureEngineeringSettings <- list(ntrees = ntrees, maxDepth = maxDepth)
+  # PatientLevelPrediction 6.5.0 names this object field max_depth (snake_case),
+  # not maxDepth -- the argument name stays maxDepth for signature compatibility.
+  featureEngineeringSettings <- list(ntrees = ntrees, max_depth = maxDepth)
   attr(featureEngineeringSettings, "fun") <- "randomForestFeatureSelection"
   class(featureEngineeringSettings) <- "featureEngineeringSettings"
   return(featureEngineeringSettings)
@@ -1345,15 +1356,8 @@ createHyperparameterSettings <- function(search = "grid",
                                          sampleSize = NULL,
                                          randomSeed = NULL,
                                          generator = NULL) {
-  result <- list(
-    search = search,
-    tuningMetric = tuningMetric,
-    sampleSize = sampleSize,
-    randomSeed = randomSeed,
-    generator = generator
-  )
-  class(result) <- "hyperparameterSettings"
-  return(result)
+  .plpRemovedFunction("createHyperparameterSettings",
+                      "hyperparameterSettings was removed from createModelDesign() in PatientLevelPrediction 6.5.0; there is no replacement.")
 }
 
 createCohortCovariateSettings <- function(cohortName,
@@ -1395,7 +1399,6 @@ createModelDesign <- function(targetId = NULL,
                               preprocessSettings = NULL,
                               modelSettings = NULL,
                               splitSettings = createDefaultSplitSetting(),
-                              hyperparameterSettings = createHyperparameterSettings(),
                               runCovariateSummary = TRUE) {
   if (is.null(featureEngineeringSettings)) {
     featureEngineeringSettings <- list(createFeatureEngineeringSettings(type = "none"))
@@ -1406,6 +1409,18 @@ createModelDesign <- function(targetId = NULL,
   if (is.null(preprocessSettings)) {
     preprocessSettings <- createPreprocessSettings(minFraction = 0.001, normalize = TRUE)
   }
+
+  # runSplitData/runSampleData/runFeatureEngineering/runPreprocessData/runModelDevelopment
+  # are not exposed as createModelDesign() arguments in PatientLevelPrediction 6.5.0;
+  # only runCovariateSummary is. The other five are always TRUE inside executeSettings.
+  executeSettings <- list(
+    runSplitData = TRUE,
+    runSampleData = TRUE,
+    runFeatureEngineering = TRUE,
+    runPreprocessData = TRUE,
+    runModelDevelopment = TRUE,
+    runCovariateSummary = runCovariateSummary
+  )
 
   settings <- list(
     targetId = targetId,
@@ -1418,8 +1433,7 @@ createModelDesign <- function(targetId = NULL,
     preprocessSettings = preprocessSettings,
     modelSettings = modelSettings,
     splitSettings = splitSettings,
-    hyperparameterSettings = hyperparameterSettings,
-    runCovariateSummary = runCovariateSummary
+    executeSettings = executeSettings
   )
   class(settings) <- "modelDesign"
   return(settings)
@@ -1473,7 +1487,11 @@ setLassoLogisticRegression <- function(variance = 0.01,
     threads = threads, tolerance = tolerance, cvRepetitions = 1,
     maxIterations = maxIterations, saveType = "RtoJson", predict = "predictCyclops"
   )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
+  # PatientLevelPrediction 6.5.0's modelSettings object carries only fitFunction
+  # and param; the settings metadata lives as an attribute on param, not as a
+  # third top-level field.
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitCyclopsModel", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1489,24 +1507,8 @@ setRidgeRegression <- function(variance = 0.01,
                                 tolerance = 2e-06,
                                 maxIterations = 3000,
                                 priorCoefs = NULL) {
-  if (is.null(seed)) seed <- as.integer(sample(100000000, 1))
-  param <- list(
-    priorParams = list(priorType = "normal", forceIntercept = forceIntercept,
-                       variance = variance, exclude = noShrinkage),
-    includeCovariateIds = includeCovariateIds,
-    upperLimit = upperLimit, lowerLimit = lowerLimit, priorCoefs = priorCoefs
-  )
-  settings <- list(
-    modelName = "ridgeLogisticRegression", modelType = "binary",
-    cyclopsModelType = "logistic", priorfunction = "Cyclops::createPrior",
-    selectorType = "byPid", crossValidationInPrior = TRUE,
-    addIntercept = TRUE, useControl = TRUE, seed = seed,
-    threads = threads, tolerance = tolerance, cvRepetitions = 1,
-    maxIterations = maxIterations, saveType = "RtoJson", predict = "predictCyclops"
-  )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
-  class(result) <- "modelSettings"
-  return(result)
+  .plpRemovedFunction("setRidgeRegression",
+                      "Removed in PatientLevelPrediction 6.5.0; use setLassoLogisticRegression() instead.")
 }
 
 setCoxModel <- function(variance = 0.01,
@@ -1532,7 +1534,8 @@ setCoxModel <- function(variance = 0.01,
     cvRepetitions = 1, maxIterations = maxIterations,
     saveType = "RtoJson", predict = "predictCyclops"
   )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitCyclopsModel", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1561,7 +1564,8 @@ setIterativeHardThresholding <- function(K = 10,
     modelName = "iterativeHardThresholding", modelType = "binary",
     seed = seed, saveType = "RtoJson", predict = "predictCyclops"
   )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitCyclopsModel", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1586,7 +1590,8 @@ setGradientBoostingMachine <- function(ntrees = c(100, 300),
     modelType = "binary", seed = seed, modelName = "gradientBoostingMachine",
     saveType = "xgboost", predict = "predictXgboost"
   )
-  result <- list(fitFunction = "fitXgboost", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitXgboost", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1615,7 +1620,8 @@ setLightGBM <- function(nthread = 20,
     modelType = "binary", seed = seed, modelName = "lightGBM",
     saveType = "lightgbm", predict = "predictLightGBM"
   )
-  result <- list(fitFunction = "fitLightGBM", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitLightGBM", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1632,7 +1638,8 @@ setAdaBoost <- function(nEstimators = list(10, 50, 200),
     pythonModule = "sklearn.ensemble", pythonClass = "AdaBoostClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1660,7 +1667,8 @@ setDecisionTree <- function(criterion = list("gini"),
     pythonModule = "sklearn.tree", pythonClass = "DecisionTreeClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1702,7 +1710,8 @@ setMLP <- function(hiddenLayerSizes = list(c(100), c(20)),
     pythonModule = "sklearn.neural_network", pythonClass = "MLPClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1714,7 +1723,8 @@ setNaiveBayes <- function() {
     pythonModule = "sklearn.naive_bayes", pythonClass = "GaussianNB",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1747,7 +1757,8 @@ setRandomForest <- function(ntrees = list(100, 500),
     pythonModule = "sklearn.ensemble", pythonClass = "RandomForestClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1773,7 +1784,8 @@ setSVM <- function(C = list(1, 0.9, 2, 0.1),
     pythonModule = "sklearn.svm", pythonClass = "SVC",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -2334,13 +2346,10 @@ createCharacterizationModuleSpecifications <- function(targetIds,
 #' @title Create PatientLevelPrediction Module Specifications
 #' @description Creates module specifications for the PatientLevelPrediction module.
 #' @param modelDesignList List of model designs from PatientLevelPrediction.
-#' @param skipDiagnostics Whether to skip diagnostics.
 #' @return An object of class `ModuleSpecifications`.
-createPatientLevelPredictionModuleSpecifications <- function(modelDesignList,
-                                                             skipDiagnostics = FALSE) {
+createPatientLevelPredictionModuleSpecifications <- function(modelDesignList) {
   moduleSettings <- list(
-    modelDesignList = modelDesignList,
-    skipDiagnostics = skipDiagnostics
+    modelDesignList = modelDesignList
   )
   return(.createModuleSpecifications("PatientLevelPredictionModule", moduleSettings))
 }
@@ -2349,10 +2358,13 @@ createPatientLevelPredictionModuleSpecifications <- function(modelDesignList,
 #' @title Create PatientLevelPrediction Validation Module Specifications
 #' @description Creates module specifications for the PLP Validation module.
 #' @param validationList List of validation designs from PatientLevelPrediction.
+#' @param logLevel Logging verbosity for the validation module.
 #' @return An object of class `ModuleSpecifications`.
-createPatientLevelPredictionValidationModuleSpecifications <- function(validationList) {
+createPatientLevelPredictionValidationModuleSpecifications <- function(validationList,
+                                                                       logLevel = "INFO") {
   moduleSettings <- list(
-    validationList = validationList
+    validationList = validationList,
+    logLevel = logLevel
   )
   return(.createModuleSpecifications("PatientLevelPredictionValidationModule", moduleSettings))
 }

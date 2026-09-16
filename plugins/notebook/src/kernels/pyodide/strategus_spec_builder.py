@@ -1272,6 +1272,17 @@ def create_sccs_analyses_specifications(
 # PatientLevelPrediction Builder Functions
 # =============================================================================
 
+# Functions removed from PatientLevelPrediction 6.5.0 (pinned in the Data2Evidence
+# flow-hades renv.lock). Kept as stubs so misuse fails here, in the notebook,
+# instead of as an "unexpected keyword argument"/AttributeError from Strategus
+# minutes into a flow run.
+def _plp_removed_function(fn: str, replacement: str) -> None:
+    raise TypeError(
+        f"{fn}() was removed in PatientLevelPrediction 6.5.0 "
+        f"(pinned in the Data2Evidence flow-hades renv.lock). {replacement}"
+    )
+
+
 def create_study_population_settings(
     binary: bool = True,
     include_all_outcomes: bool = True,
@@ -1397,9 +1408,11 @@ def create_univariate_feature_selection(k: int = 100) -> dict:
 
 def create_random_forest_feature_selection(ntrees: int = 2000, max_depth: int = 17) -> dict:
     """Create random forest feature selection settings."""
+    # PatientLevelPrediction 6.5.0 names this object field max_depth (snake_case),
+    # not maxDepth.
     return {
         "ntrees": ntrees,
-        "maxDepth": max_depth,
+        "max_depth": max_depth,
         "_fun": "randomForestFeatureSelection",
         "_class": "featureEngineeringSettings"
     }
@@ -1413,14 +1426,11 @@ def create_hyperparameter_settings(
     generator: Any = None
 ) -> dict:
     """Create PLP hyperparameter settings."""
-    return {
-        "search": search,
-        "tuningMetric": tuning_metric,
-        "sampleSize": sample_size,
-        "randomSeed": random_seed,
-        "generator": generator,
-        "_class": "hyperparameterSettings"
-    }
+    _plp_removed_function(
+        "create_hyperparameter_settings",
+        "hyperparameterSettings was removed from createModelDesign() in "
+        "PatientLevelPrediction 6.5.0; there is no replacement."
+    )
 
 
 def create_cohort_covariate_settings(
@@ -1465,7 +1475,6 @@ def create_model_design(
     preprocess_settings: Optional[dict] = None,
     model_settings: Optional[dict] = None,
     split_settings: Optional[dict] = None,
-    hyperparameter_settings: Optional[dict] = None,
     run_covariate_summary: bool = True
 ) -> dict:
     """Create a PLP model design."""
@@ -1483,8 +1492,18 @@ def create_model_design(
         preprocess_settings = create_preprocess_settings()
     if split_settings is None:
         split_settings = create_default_split_setting()
-    if hyperparameter_settings is None:
-        hyperparameter_settings = create_hyperparameter_settings()
+    # run_split_data/run_sample_data/run_feature_engineering/run_preprocess_data/
+    # run_model_development are not exposed as createModelDesign() arguments in
+    # PatientLevelPrediction 6.5.0; only run_covariate_summary is. The other five
+    # are always True inside executeSettings.
+    execute_settings = {
+        "runSplitData": True,
+        "runSampleData": True,
+        "runFeatureEngineering": True,
+        "runPreprocessData": True,
+        "runModelDevelopment": True,
+        "runCovariateSummary": run_covariate_summary
+    }
     return {
         "targetId": target_id,
         "outcomeId": outcome_id,
@@ -1496,8 +1515,7 @@ def create_model_design(
         "preprocessSettings": preprocess_settings,
         "modelSettings": model_settings,
         "splitSettings": split_settings,
-        "hyperparameterSettings": hyperparameter_settings,
-        "runCovariateSummary": run_covariate_summary,
+        "executeSettings": execute_settings,
         "_class": "modelDesign"
     }
 
@@ -1541,10 +1559,13 @@ def _make_cyclops_model_settings(model_name, model_type, cyclops_model_type,
         "cvRepetitions": 1, "maxIterations": max_iterations,
         "saveType": "RtoJson", "predict": "predictCyclops"
     }
+    # PatientLevelPrediction 6.5.0's modelSettings object carries only fitFunction
+    # and param; the settings metadata lives as an attribute on param (mirrored
+    # here as the "_settings" key), not as a third top-level field.
+    param = {**param, "_settings": settings}
     return {
         "fitFunction": "fitCyclopsModel",
         "param": param,
-        "settings": settings,
         "_class": "modelSettings"
     }
 
@@ -1583,19 +1604,9 @@ def set_ridge_regression(
     prior_coefs: Any = None
 ) -> dict:
     """Create settings for ridge regression."""
-    import random as _random
-    if seed is None:
-        seed = _random.randint(1, 100000000)
-    param = {
-        "priorParams": {"priorType": "normal", "forceIntercept": force_intercept,
-                        "variance": variance, "exclude": no_shrinkage or [0]},
-        "includeCovariateIds": include_covariate_ids or [],
-        "upperLimit": upper_limit, "lowerLimit": lower_limit,
-        "priorCoefs": prior_coefs
-    }
-    return _make_cyclops_model_settings(
-        "ridgeLogisticRegression", "binary", "logistic", "normal",
-        param, seed, threads, tolerance, max_iterations
+    _plp_removed_function(
+        "set_ridge_regression",
+        "Removed in PatientLevelPrediction 6.5.0; use set_lasso_logistic_regression() instead."
     )
 
 
@@ -1641,24 +1652,31 @@ def set_iterative_hard_thresholding(
         "tolerance": tolerance, "maxIterations": max_iterations,
         "threshold": threshold, "delta": delta
     }
+    param = {
+        **param,
+        "_settings": {"modelName": "iterativeHardThresholding", "modelType": "binary",
+                      "seed": seed, "saveType": "RtoJson", "predict": "predictCyclops"}
+    }
     return {
         "fitFunction": "fitCyclopsModel",
         "param": param,
-        "settings": {"modelName": "iterativeHardThresholding", "modelType": "binary",
-                     "seed": seed, "saveType": "RtoJson", "predict": "predictCyclops"},
         "_class": "modelSettings"
     }
 
 
 def _make_sklearn_model_settings(model_name, python_module, python_class, param, seed):
     """Internal helper for sklearn-based model settings."""
-    return {
-        "param": param,
-        "settings": {
+    param = {
+        **param,
+        "_settings": {
             "modelType": "binary", "seed": seed, "modelName": model_name,
             "pythonModule": python_module, "pythonClass": python_class,
             "saveType": "saveLoadSklearn", "predict": "predictSklearn"
-        },
+        }
+    }
+    return {
+        "fitFunction": "fitSklearn",
+        "param": param,
         "_class": "modelSettings"
     }
 
@@ -1683,12 +1701,15 @@ def set_gradient_boosting_machine(
         "scalePosWeight": scale_pos_weight,
         "lambda": lambda_, "alpha": alpha, "seed": [seed]
     }
+    param = {
+        **param,
+        "_settings": {"modelType": "binary", "seed": seed,
+                      "modelName": "gradientBoostingMachine",
+                      "saveType": "xgboost", "predict": "predictXgboost"}
+    }
     return {
         "fitFunction": "fitXgboost",
         "param": param,
-        "settings": {"modelType": "binary", "seed": seed,
-                     "modelName": "gradientBoostingMachine",
-                     "saveType": "xgboost", "predict": "predictXgboost"},
         "_class": "modelSettings"
     }
 
@@ -1716,12 +1737,15 @@ def set_light_gbm(
         "scalePosWeight": scale_pos_weight,
         "isUnbalance": is_unbalance, "seed": [seed]
     }
+    param = {
+        **param,
+        "_settings": {"modelType": "binary", "seed": seed,
+                      "modelName": "lightGBM",
+                      "saveType": "lightgbm", "predict": "predictLightGBM"}
+    }
     return {
         "fitFunction": "fitLightGBM",
         "param": param,
-        "settings": {"modelType": "binary", "seed": seed,
-                     "modelName": "lightGBM",
-                     "saveType": "lightgbm", "predict": "predictLightGBM"},
         "_class": "modelSettings"
     }
 
@@ -2488,28 +2512,28 @@ def create_characterization_module_specifications(
 
 
 def create_patient_level_prediction_module_specifications(
-    model_design_list: list,
-    skip_diagnostics: bool = False
+    model_design_list: list
 ) -> dict:
     """Create PatientLevelPrediction module specifications."""
     return {
         "module": "PatientLevelPredictionModule",
         "settings": {
-            "modelDesignList": model_design_list,
-            "skipDiagnostics": skip_diagnostics
+            "modelDesignList": model_design_list
         },
         "_class": ("PatientLevelPredictionModuleSpecifications", "ModuleSpecifications")
     }
 
 
 def create_patient_level_prediction_validation_module_specifications(
-    validation_list: list
+    validation_list: list,
+    log_level: str = "INFO"
 ) -> dict:
     """Create PatientLevelPrediction Validation module specifications."""
     return {
         "module": "PatientLevelPredictionValidationModule",
         "settings": {
-            "validationList": validation_list
+            "validationList": validation_list,
+            "logLevel": log_level
         },
         "_class": ("PatientLevelPredictionValidationModuleSpecifications", "ModuleSpecifications")
     }
