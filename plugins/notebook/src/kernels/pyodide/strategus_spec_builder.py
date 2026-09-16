@@ -20,16 +20,36 @@ Dependencies:
 Based on Strategus v1.4.1
 
 HADES Package Version Tracking (for maintenance):
-    - CohortMethod 5.4.0
-    - CohortDiagnostics 3.3.0
-    - FeatureExtraction 3.7.0
-    - Characterization 2.0.0
-    - Cyclops 3.6.0
-    - SelfControlledCaseSeries (latest)
-    - PatientLevelPrediction (latest)
-    - EvidenceSynthesis (latest)
-    - CohortIncidence (latest)
-    - CohortSurvival (darwin-eu)
+    Versions this branch was verified against, read first-hand from the installed
+    packages in the running `alp-dataflow-gen-worker` container (see
+    docs/superpowers/specs/2026-09-10-hades-object-field-sets-evidence.md for the exact
+    command and raw output; docs/superpowers/specs/2026-09-10-strategus-spec-builder-hades-alignment-design.md
+    for the design and scope):
+    - CohortMethod            5.5.2  (VERIFIED - cmAnalysis args, ps/trim/match/stratify
+                                      args, fitOutcomeModelArgs, getDbCohortMethodDataArgs)
+    - FeatureExtraction       3.11.0 (VERIFIED - covariate settings field names, incl.
+                                      temporal and gender-only variants)
+    - Cyclops                 3.6.0  (VERIFIED - control and prior field names)
+    - PatientLevelPrediction  6.5.0  (VERIFIED - restrictPlpDataSettings,
+                                      populationSettings, preprocessSettings,
+                                      splitSettings, executeSettings,
+                                      lassoLogisticRegression modelSettings)
+    - Strategus               1.4.0  (VERIFIED - S3 class names / array shapes on module
+                                      specifications)
+    - SelfControlledCaseSeries 6.1.0 (PARTIALLY VERIFIED - class values only: the five
+                                      `*Args` R6 constructors' leaf class names were
+                                      checked and match this file as-is; their
+                                      argument/field names were NOT diffed against the
+                                      builder)
+
+    NOT verified against the installed package on this branch - do not assume alignment:
+    - Characterization, CohortGenerator, TreatmentPatterns (see the design doc's
+      "Out of scope, with reasons" section for why each was excluded)
+
+    This block is prose, not code - nothing enforces it against the actual package
+    contents. Re-verify it (using the docker command in the evidence file above) whenever
+    the flow's `renv.lock` (`plugins/flows/hades/renv.lock` in Data2Evidence) changes any
+    of these package versions.
 
 Note: Default settings are inlined from the HADES packages listed above.
 If HADES package defaults change, this file may need updates.
