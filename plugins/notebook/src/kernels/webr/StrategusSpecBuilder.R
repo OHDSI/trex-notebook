@@ -464,13 +464,52 @@ createDefaultCovariateSettings <- function(includedCovariateConceptIds = c(),
   # must stay present as a zero-length vector -- which is how FeatureExtraction itself
   # represents it, serialising to [].
   .keepEmpty <- function(x) if (is.null(x)) vector() else x
-  # Inlined default — covers common demographics + condition/drug/procedure covariates
-  settings <- .getDefaultCharacterizationCovariateSettings()
+  # Inlined to match FeatureExtraction::createDefaultCovariateSettings()'s actual default
+  # analyses (verified against FeatureExtraction 3.11.0) -- this is a distinct set from
+  # .getDefaultCharacterizationCovariateSettings(), which backs the Characterization module.
+  settings <- list(
+    temporal = FALSE,
+    temporalSequence = FALSE,
+    DemographicsGender = TRUE,
+    DemographicsAgeGroup = TRUE,
+    DemographicsRace = TRUE,
+    DemographicsEthnicity = TRUE,
+    DemographicsIndexYear = TRUE,
+    DemographicsIndexMonth = TRUE,
+    ConditionGroupEraLongTerm = TRUE,
+    ConditionGroupEraShortTerm = TRUE,
+    DrugGroupEraLongTerm = TRUE,
+    DrugGroupEraShortTerm = TRUE,
+    DrugGroupEraOverlapping = TRUE,
+    ProcedureOccurrenceLongTerm = TRUE,
+    ProcedureOccurrenceShortTerm = TRUE,
+    DeviceExposureLongTerm = TRUE,
+    DeviceExposureShortTerm = TRUE,
+    MeasurementLongTerm = TRUE,
+    MeasurementShortTerm = TRUE,
+    MeasurementRangeGroupLongTerm = TRUE,
+    MeasurementRangeGroupShortTerm = TRUE,
+    MeasurementValueAsConceptLongTerm = TRUE,
+    MeasurementValueAsConceptShortTerm = TRUE,
+    ObservationLongTerm = TRUE,
+    ObservationShortTerm = TRUE,
+    ObservationValueAsConceptLongTerm = TRUE,
+    ObservationValueAsConceptShortTerm = TRUE,
+    CharlsonIndex = TRUE,
+    Dcsi = TRUE,
+    Chads2 = TRUE,
+    Chads2Vasc = TRUE,
+    shortTermStartDays = -30,
+    mediumTermStartDays = -180,
+    endDays = 0,
+    longTermStartDays = -365
+  )
   settings$includedCovariateConceptIds <- .keepEmpty(includedCovariateConceptIds)
   settings$addDescendantsToInclude <- addDescendantsToInclude
   settings$excludedCovariateConceptIds <- .keepEmpty(excludedCovariateConceptIds)
   settings$addDescendantsToExclude <- addDescendantsToExclude
   settings$includedCovariateIds <- .keepEmpty(includedCovariateIds)
+  class(settings) <- "covariateSettings"
   attr(settings, "fun") <- "getDbDefaultCovariateData"
   return(settings)
 }
@@ -591,7 +630,7 @@ createGetDbCohortMethodDataArgs <- function(covariateSettings = createDefaultCov
                                             firstExposureOnly = TRUE,
                                             washoutPeriod = 365,
                                             nestingCohortId = NULL,
-                                            restrictToCommonPeriod = TRUE,
+                                            restrictToCommonPeriod = FALSE,
                                             minAge = NULL,
                                             maxAge = NULL,
                                             genderConceptIds = NULL,
@@ -808,7 +847,11 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
                                      control = createControl(cvType = "auto",
                                                              startingVariance = 0.01,
                                                              tolerance = 2e-07,
-                                                             noiseLevel = "silent")) {
+                                                             noiseLevel = "quiet",
+                                                             cvRepetitions = 10,
+                                                             resetCoefficients = TRUE,
+                                                             seed = 1,
+                                                             selectorType = "auto")) {
   if (!missing(bootstrapCi)) {
     .cmRemovedArg("createFitOutcomeModelArgs", "bootstrapCi",
                   "Removed in 5.5.2; use profileGrid / profileBounds.")
@@ -1429,12 +1472,14 @@ createModelDesign <- function(targetId = NULL,
   }
 
   # runSplitData/runSampleData/runFeatureEngineering/runPreprocessData/runModelDevelopment
-  # are not exposed as createModelDesign() arguments in PatientLevelPrediction 6.5.0;
-  # only runCovariateSummary is. The other five are always TRUE inside executeSettings.
+  # are not exposed as createModelDesign() arguments in PatientLevelPrediction 6.5.0.
+  # createModelDesign() itself hardcodes these six; runSampleData/runFeatureEngineering
+  # default to FALSE (they're only forced TRUE by createExecuteSettings() when explicit
+  # sample/feature-engineering settings are supplied, which this builder never does).
   executeSettings <- list(
     runSplitData = TRUE,
-    runSampleData = TRUE,
-    runFeatureEngineering = TRUE,
+    runSampleData = FALSE,
+    runFeatureEngineering = FALSE,
     runPreprocessData = TRUE,
     runModelDevelopment = TRUE,
     runCovariateSummary = runCovariateSummary
@@ -2304,11 +2349,13 @@ createCohortMethodModuleSpecifications <- function(cmAnalysisList,
   moduleSettings <- list(
     cmAnalysisList = unname(cmAnalysisList),
     targetComparatorOutcomesList = unname(targetComparatorOutcomesList),
-    analysesToExclude = analysesToExclude,
     refitPsForEveryOutcome = refitPsForEveryOutcome,
     refitPsForEveryStudyPopulation = refitPsForEveryStudyPopulation,
     cmDiagnosticThresholds = cmDiagnosticThresholds
   )
+  if (!is.null(analysesToExclude)) {
+    moduleSettings$analysesToExclude <- analysesToExclude
+  }
   return(.createModuleSpecifications("CohortMethodModule", moduleSettings))
 }
 
