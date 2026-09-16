@@ -30,6 +30,8 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:r": "Rscript tests/StrategusSpecBuilder-class-order.test.R && Rscript tests/StrategusSpecBuilder-cohortmethod-classes.test.R && Rscript tests/StrategusSpecBuilder-cohortmethod-args.test.R && Rscript tests/StrategusSpecBuilder-covariate-settings.test.R && Rscript tests/StrategusSpecBuilder-plp.test.R",
+    "test:py": "python3 tests/strategus_spec_builder_classes.test.py && python3 tests/strategus_spec_builder_args.test.py && python3 tests/strategus_spec_builder_covariate_settings.test.py && python3 tests/strategus_spec_builder_plp.test.py",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -14,16 +14,34 @@
 #   - checkmate (available in WebR via CRAN)
 #
 # HADES Package Version Tracking (for maintenance):
-#   - CohortMethod 5.4.0
-#   - CohortDiagnostics 3.3.0
-#   - FeatureExtraction 3.7.0
-#   - Characterization 2.0.0
-#   - Cyclops 3.5.0
-#   - SelfControlledCaseSeries (latest)
-#   - PatientLevelPrediction (latest)
-#   - EvidenceSynthesis (latest)
-#   - CohortIncidence (latest)
-#   - CohortSurvival (darwin-eu)
+#   Versions this branch was verified against, read first-hand from the installed
+#   packages in the running `alp-dataflow-gen-worker` container (see
+#   docs/superpowers/specs/2026-09-10-hades-object-field-sets-evidence.md for the exact
+#   command and raw output; docs/superpowers/specs/2026-09-10-strategus-spec-builder-hades-alignment-design.md
+#   for the design and scope):
+#   - CohortMethod            5.5.2  (VERIFIED — cmAnalysis args, ps/trim/match/stratify args,
+#                                     fitOutcomeModelArgs, getDbCohortMethodDataArgs)
+#   - FeatureExtraction       3.11.0 (VERIFIED — covariate settings field names, incl.
+#                                     temporal and gender-only variants)
+#   - Cyclops                 3.6.0  (VERIFIED — control and prior field names)
+#   - PatientLevelPrediction  6.5.0  (VERIFIED — restrictPlpDataSettings, populationSettings,
+#                                     preprocessSettings, splitSettings, executeSettings,
+#                                     lassoLogisticRegression modelSettings)
+#   - Strategus               1.4.0  (VERIFIED — S3 class names / array shapes on module
+#                                     specifications)
+#   - SelfControlledCaseSeries 6.1.0 (PARTIALLY VERIFIED — class values only: the five
+#                                     `*Args` R6 constructors' leaf class names were checked
+#                                     and match this file as-is; their argument/field names
+#                                     were NOT diffed against the builder)
+#
+#   NOT verified against the installed package on this branch — do not assume alignment:
+#   - Characterization, CohortGenerator, TreatmentPatterns (see the design doc's
+#     "Out of scope, with reasons" section for why each was excluded)
+#
+#   This block is prose, not code — nothing enforces it against the actual package
+#   contents. Re-verify it (using the docker command in the evidence file above) whenever
+#   the flow's `renv.lock` (`plugins/flows/hades/renv.lock` in Data2Evidence) changes any
+#   of these package versions.
 #
 # Note: Default settings are inlined from the HADES packages listed above.
 # If HADES package defaults change, this file may need updates.
@@ -38,7 +56,7 @@
     module = moduleName,
     settings = moduleSettings
   )
-  class(moduleSpecifications) <- c("ModuleSpecifications", paste0(moduleName, "Specifications"))
+  class(moduleSpecifications) <- c(paste0(moduleName, "Specifications"), "ModuleSpecifications")
   return(moduleSpecifications)
 }
 
@@ -98,41 +116,45 @@
 }
 
 # T009: Characterization covariate settings (from FeatureExtraction::createCovariateSettings)
+# NOTE: keys below are FeatureExtraction's prefix-free FIELD names (e.g. "DemographicsGender"),
+# not the use*-prefixed constructor ARGUMENT names — FeatureExtraction's Java createSql() looks
+# these up by exact field name.
 .getDefaultCharacterizationCovariateSettings <- function() {
   settings <- list(
     temporal = FALSE,
     temporalSequence = FALSE,
     # Demographics - all enabled
-    useDemographicsGender = TRUE,
-    useDemographicsAge = TRUE,
-    useDemographicsAgeGroup = TRUE,
-    useDemographicsRace = TRUE,
-    useDemographicsEthnicity = TRUE,
-    useDemographicsIndexYear = TRUE,
-    useDemographicsIndexMonth = TRUE,
-    useDemographicsTimeInCohort = TRUE,
-    useDemographicsPriorObservationTime = TRUE,
-    useDemographicsPostObservationTime = TRUE,
+    DemographicsGender = TRUE,
+    DemographicsAge = TRUE,
+    DemographicsAgeGroup = TRUE,
+    DemographicsRace = TRUE,
+    DemographicsEthnicity = TRUE,
+    DemographicsIndexYear = TRUE,
+    DemographicsIndexMonth = TRUE,
+    DemographicsTimeInCohort = TRUE,
+    DemographicsPriorObservationTime = TRUE,
+    DemographicsPostObservationTime = TRUE,
     # Long term covariates
-    useConditionGroupEraLongTerm = TRUE,
-    useDrugGroupEraOverlapping = TRUE,
-    useDrugGroupEraLongTerm = TRUE,
-    useProcedureOccurrenceLongTerm = TRUE,
-    useMeasurementLongTerm = TRUE,
-    useObservationLongTerm = TRUE,
-    useDeviceExposureLongTerm = TRUE,
-    useVisitConceptCountLongTerm = TRUE,
+    ConditionGroupEraLongTerm = TRUE,
+    DrugGroupEraOverlapping = TRUE,
+    DrugGroupEraLongTerm = TRUE,
+    ProcedureOccurrenceLongTerm = TRUE,
+    MeasurementLongTerm = TRUE,
+    ObservationLongTerm = TRUE,
+    DeviceExposureLongTerm = TRUE,
+    VisitConceptCountLongTerm = TRUE,
     # Short term covariates
-    useConditionGroupEraShortTerm = TRUE,
-    useDrugGroupEraShortTerm = TRUE,
-    useProcedureOccurrenceShortTerm = TRUE,
-    useMeasurementShortTerm = TRUE,
-    useObservationShortTerm = TRUE,
-    useDeviceExposureShortTerm = TRUE,
-    useVisitConceptCountShortTerm = TRUE,
+    ConditionGroupEraShortTerm = TRUE,
+    DrugGroupEraShortTerm = TRUE,
+    ProcedureOccurrenceShortTerm = TRUE,
+    MeasurementShortTerm = TRUE,
+    ObservationShortTerm = TRUE,
+    DeviceExposureShortTerm = TRUE,
+    VisitConceptCountShortTerm = TRUE,
     # Time windows
     endDays = 0,
     longTermStartDays = -365,
+    mediumTermStartDays = -180,
     shortTermStartDays = -30,
     # Concept filtering
     includedCovariateConceptIds = c(),
@@ -163,19 +185,22 @@
 }
 
 # T011: CohortDiagnostics temporal covariate settings (from CohortDiagnostics::getDefaultCovariateSettings)
+# NOTE: keys below are FeatureExtraction's prefix-free FIELD names. useVisitConceptCountStart /
+# useVisitConceptCountOverlap are not accepted by FeatureExtraction 3.11.0 (rejected as unused
+# arguments); the single VisitConceptCount field replaces both. fun is getDbDefaultCovariateData
+# (the worker), not getDbCovariateData (the public entry point) — scoped to this function only.
 .getDefaultTemporalCovariateSettings <- function() {
   settings <- list(
     temporal = TRUE,
     temporalSequence = FALSE,
     # Condition covariates
-    useConditionEraGroupStart = TRUE,
-    useConditionEraGroupOverlap = TRUE,
+    ConditionEraGroupStart = TRUE,
+    ConditionEraGroupOverlap = TRUE,
     # Drug covariates
-    useDrugEraGroupStart = TRUE,
-    useDrugEraGroupOverlap = TRUE,
+    DrugEraGroupStart = TRUE,
+    DrugEraGroupOverlap = TRUE,
     # Visit covariates
-    useVisitConceptCountStart = TRUE,
-    useVisitConceptCountOverlap = TRUE,
+    VisitConceptCount = TRUE,
     # Time windows (mandatory for CohortDiagnostics)
     temporalStartDays = c(-365, -30, -365, -30, 0, 1, 31, -9999),
     temporalEndDays = c(0, 0, -31, -1, 0, 30, 365, 9999),
@@ -187,7 +212,7 @@
     addDescendantsToExclude = FALSE
   )
   class(settings) <- "covariateSettings"
-  attr(settings, "fun") <- "getDbCovariateData"
+  attr(settings, "fun") <- "getDbDefaultCovariateData"
   return(settings)
 }
 
@@ -215,37 +240,60 @@ createPrior <- function(priorType = "laplace",
   return(prior)
 }
 
+# NOTE: Cyclops::createControl()'s object has 23 fields; an incomplete control makes
+# cross-validation collapse with "Expecting a single value: [extent=0]" raised from
+# inside CohortMethod::createPs() several layers from the actual cause. Bisection
+# established no single missing field is responsible -- the complete set is required.
+# cvType is a constructor ARGUMENT of createControl(), not a field of the object, so it
+# is accepted here but deliberately not emitted.
 createControl <- function(maxIterations = 1000,
                           tolerance = 1e-6,
                           convergenceType = "gradient",
                           autoSearch = TRUE,
                           fold = 10,
-                          cvRepetitions = 1,
-                          startingVariance = 0.01,
                           lowerLimit = 0.01,
                           upperLimit = 20,
-                          seed = NULL,
-                          resetCoefficients = FALSE,
+                          gridSteps = 10,
+                          minCVData = 100,
+                          cvRepetitions = 1,
                           noiseLevel = "silent",
                           threads = 1,
-                          cvType = "auto",
-                          selectorType = "byPid") {
+                          seed = NULL,
+                          resetCoefficients = FALSE,
+                          startingVariance = 0.01,
+                          useKKTSwindle = FALSE,
+                          tuneSwindle = 10,
+                          selectorType = "byPid",
+                          initialBound = 2,
+                          maxBoundCount = 5,
+                          algorithm = "ccd",
+                          doItAll = TRUE,
+                          syncCV = FALSE,
+                          cvType = "auto") {
   control <- list(
     maxIterations = maxIterations,
     tolerance = tolerance,
     convergenceType = convergenceType,
     autoSearch = autoSearch,
     fold = fold,
-    cvRepetitions = cvRepetitions,
-    startingVariance = startingVariance,
     lowerLimit = lowerLimit,
     upperLimit = upperLimit,
-    seed = seed,
-    resetCoefficients = resetCoefficients,
+    gridSteps = gridSteps,
+    minCVData = minCVData,
+    cvRepetitions = cvRepetitions,
     noiseLevel = noiseLevel,
     threads = threads,
-    cvType = cvType,
-    selectorType = selectorType
+    seed = seed,
+    resetCoefficients = resetCoefficients,
+    startingVariance = startingVariance,
+    useKKTSwindle = useKKTSwindle,
+    tuneSwindle = tuneSwindle,
+    selectorType = selectorType,
+    initialBound = initialBound,
+    maxBoundCount = maxBoundCount,
+    algorithm = algorithm,
+    doItAll = doItAll,
+    syncCV = syncCV
   )
   class(control) <- "cyclopsControl"
   return(control)
@@ -411,13 +459,57 @@ createDefaultCovariateSettings <- function(includedCovariateConceptIds = c(),
                                             excludedCovariateConceptIds = c(),
                                             addDescendantsToExclude = FALSE,
                                             includedCovariateIds = c()) {
-  # Inlined default — covers common demographics + condition/drug/procedure covariates
-  settings <- .getDefaultCharacterizationCovariateSettings()
-  settings$includedCovariateConceptIds <- includedCovariateConceptIds
+  # `settings$x <- c()` assigns NULL, which DELETES the element. FeatureExtraction's Java
+  # createSql() looks these fields up by name and throws on a missing one, so an empty value
+  # must stay present as a zero-length vector -- which is how FeatureExtraction itself
+  # represents it, serialising to [].
+  .keepEmpty <- function(x) if (is.null(x)) vector() else x
+  # Inlined to match FeatureExtraction::createDefaultCovariateSettings()'s actual default
+  # analyses (verified against FeatureExtraction 3.11.0) -- this is a distinct set from
+  # .getDefaultCharacterizationCovariateSettings(), which backs the Characterization module.
+  settings <- list(
+    temporal = FALSE,
+    temporalSequence = FALSE,
+    DemographicsGender = TRUE,
+    DemographicsAgeGroup = TRUE,
+    DemographicsRace = TRUE,
+    DemographicsEthnicity = TRUE,
+    DemographicsIndexYear = TRUE,
+    DemographicsIndexMonth = TRUE,
+    ConditionGroupEraLongTerm = TRUE,
+    ConditionGroupEraShortTerm = TRUE,
+    DrugGroupEraLongTerm = TRUE,
+    DrugGroupEraShortTerm = TRUE,
+    DrugGroupEraOverlapping = TRUE,
+    ProcedureOccurrenceLongTerm = TRUE,
+    ProcedureOccurrenceShortTerm = TRUE,
+    DeviceExposureLongTerm = TRUE,
+    DeviceExposureShortTerm = TRUE,
+    MeasurementLongTerm = TRUE,
+    MeasurementShortTerm = TRUE,
+    MeasurementRangeGroupLongTerm = TRUE,
+    MeasurementRangeGroupShortTerm = TRUE,
+    MeasurementValueAsConceptLongTerm = TRUE,
+    MeasurementValueAsConceptShortTerm = TRUE,
+    ObservationLongTerm = TRUE,
+    ObservationShortTerm = TRUE,
+    ObservationValueAsConceptLongTerm = TRUE,
+    ObservationValueAsConceptShortTerm = TRUE,
+    CharlsonIndex = TRUE,
+    Dcsi = TRUE,
+    Chads2 = TRUE,
+    Chads2Vasc = TRUE,
+    shortTermStartDays = -30,
+    mediumTermStartDays = -180,
+    endDays = 0,
+    longTermStartDays = -365
+  )
+  settings$includedCovariateConceptIds <- .keepEmpty(includedCovariateConceptIds)
   settings$addDescendantsToInclude <- addDescendantsToInclude
-  settings$excludedCovariateConceptIds <- excludedCovariateConceptIds
+  settings$excludedCovariateConceptIds <- .keepEmpty(excludedCovariateConceptIds)
   settings$addDescendantsToExclude <- addDescendantsToExclude
-  settings$includedCovariateIds <- includedCovariateIds
+  settings$includedCovariateIds <- .keepEmpty(includedCovariateIds)
+  class(settings) <- "covariateSettings"
   attr(settings, "fun") <- "getDbDefaultCovariateData"
   return(settings)
 }
@@ -525,33 +617,53 @@ createAnalysisDetails <- function(analysisId,
 # CohortMethod Builder Functions
 # =============================================================================
 
+# Arguments removed or renamed in CohortMethod 5.5.2-0.0.1 (pinned in the Data2Evidence
+# flow-hades renv.lock). Kept in the signatures so misuse fails here, in the notebook,
+# instead of as an "unused arguments" error from Strategus minutes into a flow run.
+.cmRemovedArg <- function(fn, arg, replacement) {
+  stop(sprintf("%s(%s = ...) was removed in CohortMethod 5.5.2 (pinned in the Data2Evidence flow-hades renv.lock). %s",
+               fn, arg, replacement), call. = FALSE)
+}
+
 createGetDbCohortMethodDataArgs <- function(covariateSettings = createDefaultCovariateSettings(),
                                             removeDuplicateSubjects = "keep first, truncate to second",
                                             firstExposureOnly = TRUE,
                                             washoutPeriod = 365,
                                             nestingCohortId = NULL,
-                                            restrictToCommonPeriod = TRUE,
+                                            restrictToCommonPeriod = FALSE,
                                             minAge = NULL,
                                             maxAge = NULL,
                                             genderConceptIds = NULL,
                                             studyStartDate = "",
                                             studyEndDate = "",
                                             maxCohortSize = 0) {
+  if (!missing(nestingCohortId)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "nestingCohortId",
+                  "Nesting cohorts are no longer supported by CohortMethod.")
+  }
+  if (!missing(minAge)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "minAge",
+                  "Demographic restrictions were removed from data extraction in 5.5.2; apply them in the cohort definition instead.")
+  }
+  if (!missing(maxAge)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "maxAge",
+                  "Demographic restrictions were removed from data extraction in 5.5.2; apply them in the cohort definition instead.")
+  }
+  if (!missing(genderConceptIds)) {
+    .cmRemovedArg("createGetDbCohortMethodDataArgs", "genderConceptIds",
+                  "Demographic restrictions were removed from data extraction in 5.5.2; apply them in the cohort definition instead.")
+  }
   args <- list(
-    covariateSettings = covariateSettings,
-    removeDuplicateSubjects = removeDuplicateSubjects,
-    firstExposureOnly = firstExposureOnly,
-    washoutPeriod = washoutPeriod,
-    nestingCohortId = nestingCohortId,
-    restrictToCommonPeriod = restrictToCommonPeriod,
-    minAge = minAge,
-    maxAge = maxAge,
-    genderConceptIds = genderConceptIds,
     studyStartDate = studyStartDate,
     studyEndDate = studyEndDate,
-    maxCohortSize = maxCohortSize
+    firstExposureOnly = firstExposureOnly,
+    removeDuplicateSubjects = removeDuplicateSubjects,
+    restrictToCommonPeriod = restrictToCommonPeriod,
+    washoutPeriod = washoutPeriod,
+    maxCohortSize = maxCohortSize,
+    covariateSettings = covariateSettings
   )
-  class(args) <- "GetDbCohortMethodDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -563,8 +675,16 @@ createCreateStudyPopulationArgs <- function(removeSubjectsWithPriorOutcome = TRU
                                             startAnchor = "cohort start",
                                             riskWindowEnd = 0,
                                             endAnchor = "cohort end",
-                                            censorAtNewRiskWindow = FALSE) {
+                                            censorAtNewRiskWindow = FALSE,
+                                            firstExposureOnly = FALSE,
+                                            restrictToCommonPeriod = FALSE,
+                                            washoutPeriod = 0,
+                                            removeDuplicateSubjects = "keep all") {
   args <- list(
+    firstExposureOnly = firstExposureOnly,
+    restrictToCommonPeriod = restrictToCommonPeriod,
+    washoutPeriod = washoutPeriod,
+    removeDuplicateSubjects = removeDuplicateSubjects,
     removeSubjectsWithPriorOutcome = removeSubjectsWithPriorOutcome,
     priorOutcomeLookback = priorOutcomeLookback,
     minDaysAtRisk = minDaysAtRisk,
@@ -575,7 +695,7 @@ createCreateStudyPopulationArgs <- function(removeSubjectsWithPriorOutcome = TRU
     endAnchor = endAnchor,
     censorAtNewRiskWindow = censorAtNewRiskWindow
   )
-  class(args) <- "CreateStudyPopulationArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -596,8 +716,6 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
                                                        startingVariance = 0.01),
                                estimator = "att") {
   args <- list(
-    excludeCovariateIds = excludeCovariateIds,
-    includeCovariateIds = includeCovariateIds,
     maxCohortSizeForFitting = maxCohortSizeForFitting,
     errorOnHighCorrelation = errorOnHighCorrelation,
     stopOnError = stopOnError,
@@ -605,27 +723,40 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
     control = control,
     estimator = estimator
   )
-  class(args) <- "CreatePsArgs"
+  if (length(excludeCovariateIds) > 0) {
+    args$excludeCovariateIds <- excludeCovariateIds
+  }
+  if (length(includeCovariateIds) > 0) {
+    args$includeCovariateIds <- includeCovariateIds
+  }
+  class(args) <- "args"
   return(args)
 }
 
 createTrimByPsArgs <- function(trimFraction = NULL,
                                equipoiseBounds = NULL,
                                maxWeight = NULL,
-                               trimMethod = "symmetric") {
-  args <- list(
-    trimFraction = trimFraction,
-    equipoiseBounds = equipoiseBounds,
-    maxWeight = maxWeight,
-    trimMethod = trimMethod
-  )
-  class(args) <- "TrimByPsArgs"
+                               trimMethod = NULL) {
+  if (!missing(equipoiseBounds)) {
+    .cmRemovedArg("createTrimByPsArgs", "equipoiseBounds",
+                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+  }
+  if (!missing(maxWeight)) {
+    .cmRemovedArg("createTrimByPsArgs", "maxWeight",
+                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+  }
+  if (!missing(trimMethod)) {
+    .cmRemovedArg("createTrimByPsArgs", "trimMethod",
+                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+  }
+  args <- list(trimFraction = trimFraction)
+  class(args) <- "args"
   return(args)
 }
 
 createTruncateIptwArgs <- function(maxWeight = 10) {
   args <- list(maxWeight = maxWeight)
-  class(args) <- "TruncateIptwArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -633,47 +764,70 @@ createMatchOnPsArgs <- function(caliper = 0.2,
                                 caliperScale = "standardized logit",
                                 maxRatio = 1,
                                 allowReverseMatch = FALSE,
-                                matchColumns = c(),
-                                matchCovariateIds = c()) {
+                                matchColumns = NULL,
+                                matchCovariateIds = NULL,
+                                stratificationColumns = c()) {
+  if (!missing(matchColumns)) {
+    .cmRemovedArg("createMatchOnPsArgs", "matchColumns",
+                  "Renamed in 5.5.2: use stratificationColumns.")
+  }
+  if (!missing(matchCovariateIds)) {
+    .cmRemovedArg("createMatchOnPsArgs", "matchCovariateIds",
+                  "Renamed in 5.5.2: use stratificationColumns.")
+  }
   args <- list(
     caliper = caliper,
     caliperScale = caliperScale,
     maxRatio = maxRatio,
-    allowReverseMatch = allowReverseMatch,
-    matchColumns = matchColumns,
-    matchCovariateIds = matchCovariateIds
+    allowReverseMatch = allowReverseMatch
   )
-  class(args) <- "MatchOnPsArgs"
+  if (length(stratificationColumns) > 0) {
+    args$stratificationColumns <- stratificationColumns
+  }
+  class(args) <- "args"
   return(args)
 }
 
 createStratifyByPsArgs <- function(numberOfStrata = 10,
                                    baseSelection = "all",
                                    stratificationColumns = c(),
-                                   stratificationCovariateIds = c()) {
+                                   stratificationCovariateIds = NULL) {
+  if (!missing(stratificationCovariateIds)) {
+    .cmRemovedArg("createStratifyByPsArgs", "stratificationCovariateIds",
+                  "Renamed in 5.5.2: use stratificationColumns.")
+  }
   args <- list(
     numberOfStrata = numberOfStrata,
-    baseSelection = baseSelection,
-    stratificationColumns = stratificationColumns,
-    stratificationCovariateIds = stratificationCovariateIds
+    baseSelection = baseSelection
   )
-  class(args) <- "StratifyByPsArgs"
+  if (length(stratificationColumns) > 0) {
+    args$stratificationColumns <- stratificationColumns
+  }
+  class(args) <- "args"
   return(args)
 }
 
 createComputeCovariateBalanceArgs <- function(subgroupCovariateId = NULL,
                                              maxCohortSize = 250000,
                                              covariateFilter = NULL,
-                                             threshold = 0.1,
-                                             alpha = 0.05) {
-  args <- list(
-    subgroupCovariateId = subgroupCovariateId,
-    maxCohortSize = maxCohortSize,
-    covariateFilter = covariateFilter,
-    threshold = threshold,
-    alpha = alpha
-  )
-  class(args) <- "ComputeCovariateBalanceArgs"
+                                             threshold = NULL,
+                                             alpha = NULL) {
+  if (!missing(threshold)) {
+    .cmRemovedArg("createComputeCovariateBalanceArgs", "threshold",
+                  "Removed in 5.5.2; configure on createCmDiagnosticThresholds() instead.")
+  }
+  if (!missing(alpha)) {
+    .cmRemovedArg("createComputeCovariateBalanceArgs", "alpha",
+                  "Removed in 5.5.2; configure on createCmDiagnosticThresholds() instead.")
+  }
+  args <- list(maxCohortSize = maxCohortSize)
+  if (!is.null(subgroupCovariateId)) {
+    args$subgroupCovariateId <- subgroupCovariateId
+  }
+  if (!is.null(covariateFilter)) {
+    args$covariateFilter <- covariateFilter
+  }
+  class(args) <- "args"
   return(args)
 }
 
@@ -681,8 +835,8 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
                                      stratified = FALSE,
                                      useCovariates = FALSE,
                                      inversePtWeighting = FALSE,
-                                     bootstrapCi = FALSE,
-                                     bootstrapReplicates = 200,
+                                     bootstrapCi = NULL,
+                                     bootstrapReplicates = NULL,
                                      interactionCovariateIds = c(),
                                      excludeCovariateIds = c(),
                                      includeCovariateIds = c(),
@@ -693,24 +847,57 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
                                      control = createControl(cvType = "auto",
                                                              startingVariance = 0.01,
                                                              tolerance = 2e-07,
-                                                             noiseLevel = "silent")) {
+                                                             noiseLevel = "quiet",
+                                                             cvRepetitions = 10,
+                                                             resetCoefficients = TRUE,
+                                                             seed = 1,
+                                                             selectorType = "auto")) {
+  if (!missing(bootstrapCi)) {
+    .cmRemovedArg("createFitOutcomeModelArgs", "bootstrapCi",
+                  "Removed in 5.5.2; use profileGrid / profileBounds.")
+  }
+  if (!missing(bootstrapReplicates)) {
+    .cmRemovedArg("createFitOutcomeModelArgs", "bootstrapReplicates",
+                  "Removed in 5.5.2; use profileGrid / profileBounds.")
+  }
   args <- list(
     modelType = modelType,
     stratified = stratified,
     useCovariates = useCovariates,
     inversePtWeighting = inversePtWeighting,
-    bootstrapCi = bootstrapCi,
-    bootstrapReplicates = bootstrapReplicates,
-    interactionCovariateIds = interactionCovariateIds,
-    excludeCovariateIds = excludeCovariateIds,
-    includeCovariateIds = includeCovariateIds,
-    profileGrid = profileGrid,
     profileBounds = profileBounds,
     prior = prior,
     control = control
   )
-  class(args) <- "FitOutcomeModelArgs"
+  if (length(interactionCovariateIds) > 0) {
+    args$interactionCovariateIds <- interactionCovariateIds
+  }
+  if (length(excludeCovariateIds) > 0) {
+    args$excludeCovariateIds <- excludeCovariateIds
+  }
+  if (length(includeCovariateIds) > 0) {
+    args$includeCovariateIds <- includeCovariateIds
+  }
+  if (!is.null(profileGrid)) {
+    args$profileGrid <- profileGrid
+  }
+  class(args) <- "args"
   return(args)
+}
+
+# createCmAnalysis's 16-parameter order matches CohortMethod 5.5.2 exactly, so a legacy
+# positional call site can silently bind an object into the wrong *Args slot (all are
+# NULL-defaulted with no type check on their own). This asserts every *Args slot supplied
+# carries the class the matching create*Args()/createGetDbCohortMethodDataArgs()/
+# createCreateStudyPopArgs() constructor stamps ("args"), so a misplaced object raises here
+# instead of silently producing a structurally valid but semantically wrong spec.
+.assertArgsClass <- function(value, slotName) {
+  if (!is.null(value) && !inherits(value, "args")) {
+    stop(sprintf(
+      "createCmAnalysis(%s = ...) must be an object created by the matching create*Args() constructor (class \"args\"); got class %s instead. This usually means a positional call bound the wrong object into this slot.",
+      slotName, paste(class(value), collapse = "/")
+    ), call. = FALSE)
+  }
 }
 
 createCmAnalysis <- function(analysisId = 1,
@@ -719,27 +906,53 @@ createCmAnalysis <- function(analysisId = 1,
                              createStudyPopArgs,
                              createPsArgs = NULL,
                              trimByPsArgs = NULL,
+                             trimByPsToEquipoiseArgs = NULL,
+                             trimByIptwArgs = NULL,
                              truncateIptwArgs = NULL,
                              matchOnPsArgs = NULL,
+                             matchOnPsAndCovariatesArgs = NULL,
                              stratifyByPsArgs = NULL,
+                             stratifyByPsAndCovariatesArgs = NULL,
                              computeSharedCovariateBalanceArgs = NULL,
                              computeCovariateBalanceArgs = NULL,
                              fitOutcomeModelArgs = NULL) {
+  .assertArgsClass(getDbCohortMethodDataArgs, "getDbCohortMethodDataArgs")
+  .assertArgsClass(createStudyPopArgs, "createStudyPopArgs")
+  .assertArgsClass(createPsArgs, "createPsArgs")
+  .assertArgsClass(trimByPsArgs, "trimByPsArgs")
+  .assertArgsClass(trimByPsToEquipoiseArgs, "trimByPsToEquipoiseArgs")
+  .assertArgsClass(trimByIptwArgs, "trimByIptwArgs")
+  .assertArgsClass(truncateIptwArgs, "truncateIptwArgs")
+  .assertArgsClass(matchOnPsArgs, "matchOnPsArgs")
+  .assertArgsClass(matchOnPsAndCovariatesArgs, "matchOnPsAndCovariatesArgs")
+  .assertArgsClass(stratifyByPsArgs, "stratifyByPsArgs")
+  .assertArgsClass(stratifyByPsAndCovariatesArgs, "stratifyByPsAndCovariatesArgs")
+  .assertArgsClass(computeSharedCovariateBalanceArgs, "computeSharedCovariateBalanceArgs")
+  .assertArgsClass(computeCovariateBalanceArgs, "computeCovariateBalanceArgs")
+  .assertArgsClass(fitOutcomeModelArgs, "fitOutcomeModelArgs")
   analysis <- list(
     analysisId = analysisId,
     description = description,
     getDbCohortMethodDataArgs = getDbCohortMethodDataArgs,
-    createStudyPopArgs = createStudyPopArgs,
-    createPsArgs = createPsArgs,
-    trimByPsArgs = trimByPsArgs,
-    truncateIptwArgs = truncateIptwArgs,
-    matchOnPsArgs = matchOnPsArgs,
-    stratifyByPsArgs = stratifyByPsArgs,
-    computeSharedCovariateBalanceArgs = computeSharedCovariateBalanceArgs,
-    computeCovariateBalanceArgs = computeCovariateBalanceArgs,
-    fitOutcomeModelArgs = fitOutcomeModelArgs
+    createStudyPopArgs = createStudyPopArgs
   )
-  class(analysis) <- "CmAnalysis"
+  if (!is.null(createPsArgs)) analysis$createPsArgs <- createPsArgs
+  if (!is.null(trimByPsArgs)) analysis$trimByPsArgs <- trimByPsArgs
+  if (!is.null(trimByPsToEquipoiseArgs)) analysis$trimByPsToEquipoiseArgs <- trimByPsToEquipoiseArgs
+  if (!is.null(trimByIptwArgs)) analysis$trimByIptwArgs <- trimByIptwArgs
+  if (!is.null(truncateIptwArgs)) analysis$truncateIptwArgs <- truncateIptwArgs
+  if (!is.null(matchOnPsArgs)) analysis$matchOnPsArgs <- matchOnPsArgs
+  if (!is.null(matchOnPsAndCovariatesArgs)) analysis$matchOnPsAndCovariatesArgs <- matchOnPsAndCovariatesArgs
+  if (!is.null(stratifyByPsArgs)) analysis$stratifyByPsArgs <- stratifyByPsArgs
+  if (!is.null(stratifyByPsAndCovariatesArgs)) analysis$stratifyByPsAndCovariatesArgs <- stratifyByPsAndCovariatesArgs
+  if (!is.null(computeSharedCovariateBalanceArgs)) {
+    analysis$computeSharedCovariateBalanceArgs <- computeSharedCovariateBalanceArgs
+  }
+  if (!is.null(computeCovariateBalanceArgs)) {
+    analysis$computeCovariateBalanceArgs <- computeCovariateBalanceArgs
+  }
+  if (!is.null(fitOutcomeModelArgs)) analysis$fitOutcomeModelArgs <- fitOutcomeModelArgs
+  class(analysis) <- "cmAnalysis"
   return(analysis)
 }
 
@@ -754,14 +967,14 @@ createOutcome <- function(outcomeId,
   outcome <- list(
     outcomeId = outcomeId,
     outcomeOfInterest = outcomeOfInterest,
-    trueEffectSize = trueEffectSize,
-    priorOutcomeLookback = priorOutcomeLookback,
-    riskWindowStart = riskWindowStart,
-    startAnchor = startAnchor,
-    riskWindowEnd = riskWindowEnd,
-    endAnchor = endAnchor
+    trueEffectSize = trueEffectSize
   )
-  class(outcome) <- "Outcome"
+  if (!is.null(priorOutcomeLookback)) outcome$priorOutcomeLookback <- priorOutcomeLookback
+  if (!is.null(riskWindowStart)) outcome$riskWindowStart <- riskWindowStart
+  if (!is.null(startAnchor)) outcome$startAnchor <- startAnchor
+  if (!is.null(riskWindowEnd)) outcome$riskWindowEnd <- riskWindowEnd
+  if (!is.null(endAnchor)) outcome$endAnchor <- endAnchor
+  class(outcome) <- "outcome"
   return(outcome)
 }
 
@@ -771,15 +984,22 @@ createTargetComparatorOutcomes <- function(targetId,
                                            nestingCohortId = NULL,
                                            excludedCovariateConceptIds = c(),
                                            includedCovariateConceptIds = c()) {
+  if (!missing(nestingCohortId)) {
+    .cmRemovedArg("createTargetComparatorOutcomes", "nestingCohortId",
+                  "Nesting cohorts are no longer supported by CohortMethod.")
+  }
   tco <- list(
     targetId = targetId,
     comparatorId = comparatorId,
-    outcomes = outcomes,
-    nestingCohortId = nestingCohortId,
-    excludedCovariateConceptIds = excludedCovariateConceptIds,
-    includedCovariateConceptIds = includedCovariateConceptIds
+    outcomes = unname(outcomes)
   )
-  class(tco) <- "TargetComparatorOutcomes"
+  if (length(excludedCovariateConceptIds) > 0) {
+    tco$excludedCovariateConceptIds <- excludedCovariateConceptIds
+  }
+  if (length(includedCovariateConceptIds) > 0) {
+    tco$includedCovariateConceptIds <- includedCovariateConceptIds
+  }
+  class(tco) <- "targetComparatorOutcomes"
   return(tco)
 }
 
@@ -788,15 +1008,22 @@ createCmDiagnosticThresholds <- function(mdrrThreshold = 10,
                                          sdmThreshold = 0.1,
                                          sdmAlpha = NULL,
                                          equipoiseThreshold = 0.2,
-                                         generalizabilitySdmThreshold = 999) {
+                                         generalizabilitySdmThreshold = 999,
+                                         attritionFractionThreshold = NULL) {
+  if (!missing(sdmAlpha)) {
+    .cmRemovedArg("createCmDiagnosticThresholds", "sdmAlpha",
+                  "Removed in 5.5.2; use sdmThreshold, or attritionFractionThreshold for attrition.")
+  }
   thresholds <- list(
     mdrrThreshold = mdrrThreshold,
     easeThreshold = easeThreshold,
     sdmThreshold = sdmThreshold,
-    sdmAlpha = sdmAlpha,
     equipoiseThreshold = equipoiseThreshold,
     generalizabilitySdmThreshold = generalizabilitySdmThreshold
   )
+  if (!is.null(attritionFractionThreshold)) {
+    thresholds$attritionFractionThreshold <- attritionFractionThreshold
+  }
   class(thresholds) <- "CmDiagnosticThresholds"
   return(thresholds)
 }
@@ -1061,6 +1288,15 @@ createSccsAnalysesSpecifications <- function(sccsAnalysisList,
 # PatientLevelPrediction Builder Functions
 # =============================================================================
 
+# Functions removed from PatientLevelPrediction 6.5.0 (pinned in the Data2Evidence
+# flow-hades renv.lock). Kept as stubs so misuse fails here, in the notebook,
+# instead of as an "unused arguments"/"could not find function" error from
+# Strategus minutes into a flow run.
+.plpRemovedFunction <- function(fn, replacement) {
+  stop(sprintf("%s() was removed in PatientLevelPrediction 6.5.0 (pinned in the Data2Evidence flow-hades renv.lock). %s",
+               fn, replacement), call. = FALSE)
+}
+
 createStudyPopulationSettings <- function(binary = TRUE,
                                           includeAllOutcomes = TRUE,
                                           firstExposureOnly = FALSE,
@@ -1168,7 +1404,9 @@ createUnivariateFeatureSelection <- function(k = 100) {
 }
 
 createRandomForestFeatureSelection <- function(ntrees = 2000, maxDepth = 17) {
-  featureEngineeringSettings <- list(ntrees = ntrees, maxDepth = maxDepth)
+  # PatientLevelPrediction 6.5.0 names this object field max_depth (snake_case),
+  # not maxDepth -- the argument name stays maxDepth for signature compatibility.
+  featureEngineeringSettings <- list(ntrees = ntrees, max_depth = maxDepth)
   attr(featureEngineeringSettings, "fun") <- "randomForestFeatureSelection"
   class(featureEngineeringSettings) <- "featureEngineeringSettings"
   return(featureEngineeringSettings)
@@ -1179,15 +1417,8 @@ createHyperparameterSettings <- function(search = "grid",
                                          sampleSize = NULL,
                                          randomSeed = NULL,
                                          generator = NULL) {
-  result <- list(
-    search = search,
-    tuningMetric = tuningMetric,
-    sampleSize = sampleSize,
-    randomSeed = randomSeed,
-    generator = generator
-  )
-  class(result) <- "hyperparameterSettings"
-  return(result)
+  .plpRemovedFunction("createHyperparameterSettings",
+                      "hyperparameterSettings was removed from createModelDesign() in PatientLevelPrediction 6.5.0; there is no replacement.")
 }
 
 createCohortCovariateSettings <- function(cohortName,
@@ -1229,7 +1460,6 @@ createModelDesign <- function(targetId = NULL,
                               preprocessSettings = NULL,
                               modelSettings = NULL,
                               splitSettings = createDefaultSplitSetting(),
-                              hyperparameterSettings = createHyperparameterSettings(),
                               runCovariateSummary = TRUE) {
   if (is.null(featureEngineeringSettings)) {
     featureEngineeringSettings <- list(createFeatureEngineeringSettings(type = "none"))
@@ -1240,6 +1470,20 @@ createModelDesign <- function(targetId = NULL,
   if (is.null(preprocessSettings)) {
     preprocessSettings <- createPreprocessSettings(minFraction = 0.001, normalize = TRUE)
   }
+
+  # runSplitData/runSampleData/runFeatureEngineering/runPreprocessData/runModelDevelopment
+  # are not exposed as createModelDesign() arguments in PatientLevelPrediction 6.5.0.
+  # createModelDesign() itself hardcodes these six; runSampleData/runFeatureEngineering
+  # default to FALSE (they're only forced TRUE by createExecuteSettings() when explicit
+  # sample/feature-engineering settings are supplied, which this builder never does).
+  executeSettings <- list(
+    runSplitData = TRUE,
+    runSampleData = FALSE,
+    runFeatureEngineering = FALSE,
+    runPreprocessData = TRUE,
+    runModelDevelopment = TRUE,
+    runCovariateSummary = runCovariateSummary
+  )
 
   settings <- list(
     targetId = targetId,
@@ -1252,8 +1496,7 @@ createModelDesign <- function(targetId = NULL,
     preprocessSettings = preprocessSettings,
     modelSettings = modelSettings,
     splitSettings = splitSettings,
-    hyperparameterSettings = hyperparameterSettings,
-    runCovariateSummary = runCovariateSummary
+    executeSettings = executeSettings
   )
   class(settings) <- "modelDesign"
   return(settings)
@@ -1307,7 +1550,11 @@ setLassoLogisticRegression <- function(variance = 0.01,
     threads = threads, tolerance = tolerance, cvRepetitions = 1,
     maxIterations = maxIterations, saveType = "RtoJson", predict = "predictCyclops"
   )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
+  # PatientLevelPrediction 6.5.0's modelSettings object carries only fitFunction
+  # and param; the settings metadata lives as an attribute on param, not as a
+  # third top-level field.
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitCyclopsModel", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1323,24 +1570,8 @@ setRidgeRegression <- function(variance = 0.01,
                                 tolerance = 2e-06,
                                 maxIterations = 3000,
                                 priorCoefs = NULL) {
-  if (is.null(seed)) seed <- as.integer(sample(100000000, 1))
-  param <- list(
-    priorParams = list(priorType = "normal", forceIntercept = forceIntercept,
-                       variance = variance, exclude = noShrinkage),
-    includeCovariateIds = includeCovariateIds,
-    upperLimit = upperLimit, lowerLimit = lowerLimit, priorCoefs = priorCoefs
-  )
-  settings <- list(
-    modelName = "ridgeLogisticRegression", modelType = "binary",
-    cyclopsModelType = "logistic", priorfunction = "Cyclops::createPrior",
-    selectorType = "byPid", crossValidationInPrior = TRUE,
-    addIntercept = TRUE, useControl = TRUE, seed = seed,
-    threads = threads, tolerance = tolerance, cvRepetitions = 1,
-    maxIterations = maxIterations, saveType = "RtoJson", predict = "predictCyclops"
-  )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
-  class(result) <- "modelSettings"
-  return(result)
+  .plpRemovedFunction("setRidgeRegression",
+                      "Removed in PatientLevelPrediction 6.5.0; use setLassoLogisticRegression() instead.")
 }
 
 setCoxModel <- function(variance = 0.01,
@@ -1366,7 +1597,8 @@ setCoxModel <- function(variance = 0.01,
     cvRepetitions = 1, maxIterations = maxIterations,
     saveType = "RtoJson", predict = "predictCyclops"
   )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitCyclopsModel", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1395,7 +1627,8 @@ setIterativeHardThresholding <- function(K = 10,
     modelName = "iterativeHardThresholding", modelType = "binary",
     seed = seed, saveType = "RtoJson", predict = "predictCyclops"
   )
-  result <- list(fitFunction = "fitCyclopsModel", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitCyclopsModel", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1420,7 +1653,8 @@ setGradientBoostingMachine <- function(ntrees = c(100, 300),
     modelType = "binary", seed = seed, modelName = "gradientBoostingMachine",
     saveType = "xgboost", predict = "predictXgboost"
   )
-  result <- list(fitFunction = "fitXgboost", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitXgboost", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1449,7 +1683,8 @@ setLightGBM <- function(nthread = 20,
     modelType = "binary", seed = seed, modelName = "lightGBM",
     saveType = "lightgbm", predict = "predictLightGBM"
   )
-  result <- list(fitFunction = "fitLightGBM", param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitLightGBM", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1466,7 +1701,8 @@ setAdaBoost <- function(nEstimators = list(10, 50, 200),
     pythonModule = "sklearn.ensemble", pythonClass = "AdaBoostClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1494,7 +1730,8 @@ setDecisionTree <- function(criterion = list("gini"),
     pythonModule = "sklearn.tree", pythonClass = "DecisionTreeClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1536,7 +1773,8 @@ setMLP <- function(hiddenLayerSizes = list(c(100), c(20)),
     pythonModule = "sklearn.neural_network", pythonClass = "MLPClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1548,7 +1786,8 @@ setNaiveBayes <- function() {
     pythonModule = "sklearn.naive_bayes", pythonClass = "GaussianNB",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1581,7 +1820,8 @@ setRandomForest <- function(ntrees = list(100, 500),
     pythonModule = "sklearn.ensemble", pythonClass = "RandomForestClassifier",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -1607,7 +1847,8 @@ setSVM <- function(C = list(1, 0.9, 2, 0.1),
     pythonModule = "sklearn.svm", pythonClass = "SVC",
     saveType = "saveLoadSklearn", predict = "predictSklearn"
   )
-  result <- list(param = param, settings = settings)
+  attr(param, "settings") <- settings
+  result <- list(fitFunction = "fitSklearn", param = param)
   class(result) <- "modelSettings"
   return(result)
 }
@@ -2106,13 +2347,15 @@ createCohortMethodModuleSpecifications <- function(cmAnalysisList,
                                                    refitPsForEveryStudyPopulation = TRUE,
                                                    cmDiagnosticThresholds = .createDefaultCmDiagnosticThresholds()) {
   moduleSettings <- list(
-    cmAnalysisList = cmAnalysisList,
-    targetComparatorOutcomesList = targetComparatorOutcomesList,
-    analysesToExclude = analysesToExclude,
+    cmAnalysisList = unname(cmAnalysisList),
+    targetComparatorOutcomesList = unname(targetComparatorOutcomesList),
     refitPsForEveryOutcome = refitPsForEveryOutcome,
     refitPsForEveryStudyPopulation = refitPsForEveryStudyPopulation,
     cmDiagnosticThresholds = cmDiagnosticThresholds
   )
+  if (!is.null(analysesToExclude)) {
+    moduleSettings$analysesToExclude <- analysesToExclude
+  }
   return(.createModuleSpecifications("CohortMethodModule", moduleSettings))
 }
 
@@ -2168,13 +2411,10 @@ createCharacterizationModuleSpecifications <- function(targetIds,
 #' @title Create PatientLevelPrediction Module Specifications
 #' @description Creates module specifications for the PatientLevelPrediction module.
 #' @param modelDesignList List of model designs from PatientLevelPrediction.
-#' @param skipDiagnostics Whether to skip diagnostics.
 #' @return An object of class `ModuleSpecifications`.
-createPatientLevelPredictionModuleSpecifications <- function(modelDesignList,
-                                                             skipDiagnostics = FALSE) {
+createPatientLevelPredictionModuleSpecifications <- function(modelDesignList) {
   moduleSettings <- list(
-    modelDesignList = modelDesignList,
-    skipDiagnostics = skipDiagnostics
+    modelDesignList = modelDesignList
   )
   return(.createModuleSpecifications("PatientLevelPredictionModule", moduleSettings))
 }
@@ -2183,10 +2423,13 @@ createPatientLevelPredictionModuleSpecifications <- function(modelDesignList,
 #' @title Create PatientLevelPrediction Validation Module Specifications
 #' @description Creates module specifications for the PLP Validation module.
 #' @param validationList List of validation designs from PatientLevelPrediction.
+#' @param logLevel Logging verbosity for the validation module.
 #' @return An object of class `ModuleSpecifications`.
-createPatientLevelPredictionValidationModuleSpecifications <- function(validationList) {
+createPatientLevelPredictionValidationModuleSpecifications <- function(validationList,
+                                                                       logLevel = "INFO") {
   moduleSettings <- list(
-    validationList = validationList
+    validationList = validationList,
+    logLevel = logLevel
   )
   return(.createModuleSpecifications("PatientLevelPredictionValidationModule", moduleSettings))
 }
