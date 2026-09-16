@@ -789,6 +789,21 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
   return(args)
 }
 
+# createCmAnalysis's 16-parameter order matches CohortMethod 5.5.2 exactly, so a legacy
+# positional call site can silently bind an object into the wrong *Args slot (all are
+# NULL-defaulted with no type check on their own). This asserts every *Args slot supplied
+# carries the class the matching create*Args()/createGetDbCohortMethodDataArgs()/
+# createCreateStudyPopArgs() constructor stamps ("args"), so a misplaced object raises here
+# instead of silently producing a structurally valid but semantically wrong spec.
+.assertArgsClass <- function(value, slotName) {
+  if (!is.null(value) && !inherits(value, "args")) {
+    stop(sprintf(
+      "createCmAnalysis(%s = ...) must be an object created by the matching create*Args() constructor (class \"args\"); got class %s instead. This usually means a positional call bound the wrong object into this slot.",
+      slotName, paste(class(value), collapse = "/")
+    ), call. = FALSE)
+  }
+}
+
 createCmAnalysis <- function(analysisId = 1,
                              description = "",
                              getDbCohortMethodDataArgs,
@@ -805,6 +820,20 @@ createCmAnalysis <- function(analysisId = 1,
                              computeSharedCovariateBalanceArgs = NULL,
                              computeCovariateBalanceArgs = NULL,
                              fitOutcomeModelArgs = NULL) {
+  .assertArgsClass(getDbCohortMethodDataArgs, "getDbCohortMethodDataArgs")
+  .assertArgsClass(createStudyPopArgs, "createStudyPopArgs")
+  .assertArgsClass(createPsArgs, "createPsArgs")
+  .assertArgsClass(trimByPsArgs, "trimByPsArgs")
+  .assertArgsClass(trimByPsToEquipoiseArgs, "trimByPsToEquipoiseArgs")
+  .assertArgsClass(trimByIptwArgs, "trimByIptwArgs")
+  .assertArgsClass(truncateIptwArgs, "truncateIptwArgs")
+  .assertArgsClass(matchOnPsArgs, "matchOnPsArgs")
+  .assertArgsClass(matchOnPsAndCovariatesArgs, "matchOnPsAndCovariatesArgs")
+  .assertArgsClass(stratifyByPsArgs, "stratifyByPsArgs")
+  .assertArgsClass(stratifyByPsAndCovariatesArgs, "stratifyByPsAndCovariatesArgs")
+  .assertArgsClass(computeSharedCovariateBalanceArgs, "computeSharedCovariateBalanceArgs")
+  .assertArgsClass(computeCovariateBalanceArgs, "computeCovariateBalanceArgs")
+  .assertArgsClass(fitOutcomeModelArgs, "fitOutcomeModelArgs")
   analysis <- list(
     analysisId = analysisId,
     description = description,

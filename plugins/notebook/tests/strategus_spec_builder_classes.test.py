@@ -8,9 +8,12 @@ Python lists are already JSON arrays, so there is no unname()-equivalent
 concern here; the corresponding checks just confirm cmAnalysisList,
 targetComparatorOutcomesList and outcomes come back as plain lists.
 
-Deliberately out of scope (not touched here): the SCCS study-population args
-and the CohortIncidence outcome definition, which reuse the literal strings
-"CreateStudyPopulationArgs" and "Outcome" for unrelated objects.
+The five SelfControlledCaseSeries *_args _class values were verified directly against
+the installed SelfControlledCaseSeries package (see milestone-ab-fix-report.md) and
+confirmed to already be correct (their own R6 objects' leaf class, not "args") — so they
+are pinned here as unchanged, not silently left untested. The CohortIncidence outcome
+definition, which reuses the literal string "Outcome" for an unrelated object, remains
+out of scope.
 
 Run: python3 plugins/notebook/tests/strategus_spec_builder_classes.test.py
 """
@@ -129,11 +132,33 @@ ci_spec = sb.create_cohort_incidence_module_specifications()
 check(ci_spec["_class"] == ("CohortIncidenceModuleSpecifications", "ModuleSpecifications"),
       "create_cohort_incidence_module_specifications: _class is specific-first")
 
-# --- Out-of-scope sibling functions must be untouched ---
+# --- SCCS _class values: verified directly against the installed SelfControlledCaseSeries
+# --- package (docker exec into alp-dataflow-gen-worker; see milestone-ab-fix-report.md).
+# --- The package's own objects are R6 ("AbstractSerializableSettings"/"R6"-derived), whose
+# --- primary/leaf class is the CamelCase name already used here — NOT "args". So these five
+# --- are confirmed correct as-is and are deliberately left unchanged.
 
 sccs_args = sb.create_sccs_create_study_population_args()
 check(sccs_args["_class"] == "CreateStudyPopulationArgs",
-      "SCCS create_sccs_create_study_population_args: untouched, still 'CreateStudyPopulationArgs'")
+      "SCCS create_sccs_create_study_population_args: verified against installed package (leaf class 'CreateStudyPopulationArgs'), left unchanged")
+
+check(sb.create_get_db_sccs_data_args()["_class"] == "GetDbSccsDataArgs",
+      "create_get_db_sccs_data_args: verified against installed package (leaf class 'GetDbSccsDataArgs'), left unchanged")
+
+check(
+    sb.create_create_sccs_interval_data_args(era_covariate_settings=[])["_class"] == "CreateSccsIntervalDataArgs",
+    "create_create_sccs_interval_data_args: verified against installed package (leaf class 'CreateSccsIntervalDataArgs'), left unchanged"
+)
+
+check(
+    sb.create_create_scri_interval_data_args(
+        era_covariate_settings=[], control_interval_settings={}
+    )["_class"] == "CreateScriIntervalDataArgs",
+    "create_create_scri_interval_data_args: verified against installed package (leaf class 'CreateScriIntervalDataArgs'), left unchanged"
+)
+
+check(sb.create_fit_sccs_model_args()["_class"] == "FitSccsModelArgs",
+      "create_fit_sccs_model_args: verified against installed package (leaf class 'FitSccsModelArgs'), left unchanged")
 
 ci_outcome = sb.create_outcome_def(id=1)
 check(ci_outcome["_class"] == "Outcome",

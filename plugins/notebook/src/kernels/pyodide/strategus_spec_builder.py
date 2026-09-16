@@ -773,6 +773,24 @@ def create_fit_outcome_model_args(
     return args
 
 
+def _assert_args_class(value, slot_name: str) -> None:
+    """create_cm_analysis's 16-parameter order matches CohortMethod 5.5.2 exactly, so a
+    legacy positional call site can silently bind an object into the wrong *_args slot
+    (all are None-defaulted with no type check on their own). This asserts every *_args
+    slot supplied carries the class the matching create_*_args()/
+    create_get_db_cohort_method_data_args()/create_create_study_population_args()
+    constructor stamps ("args"), so a misplaced object raises here instead of silently
+    producing a structurally valid but semantically wrong spec."""
+    if value is not None and (not isinstance(value, dict) or value.get("_class") != "args"):
+        got_class = value.get("_class") if isinstance(value, dict) else type(value).__name__
+        raise TypeError(
+            f"create_cm_analysis({slot_name}=...) must be an object created by the "
+            f"matching create_*_args() constructor (_class == \"args\"); got {got_class!r} "
+            "instead. This usually means a positional call bound the wrong object into "
+            "this slot."
+        )
+
+
 def create_cm_analysis(
     analysis_id: int = 1,
     description: str = "",
@@ -792,6 +810,20 @@ def create_cm_analysis(
     fit_outcome_model_args: Optional[dict] = None
 ) -> dict:
     """Create a CohortMethod analysis specification."""
+    _assert_args_class(get_db_cohort_method_data_args, "get_db_cohort_method_data_args")
+    _assert_args_class(create_study_pop_args, "create_study_pop_args")
+    _assert_args_class(create_ps_args, "create_ps_args")
+    _assert_args_class(trim_by_ps_args, "trim_by_ps_args")
+    _assert_args_class(trim_by_ps_to_equipoise_args, "trim_by_ps_to_equipoise_args")
+    _assert_args_class(trim_by_iptw_args, "trim_by_iptw_args")
+    _assert_args_class(truncate_iptw_args, "truncate_iptw_args")
+    _assert_args_class(match_on_ps_args, "match_on_ps_args")
+    _assert_args_class(match_on_ps_and_covariates_args, "match_on_ps_and_covariates_args")
+    _assert_args_class(stratify_by_ps_args, "stratify_by_ps_args")
+    _assert_args_class(stratify_by_ps_and_covariates_args, "stratify_by_ps_and_covariates_args")
+    _assert_args_class(compute_shared_covariate_balance_args, "compute_shared_covariate_balance_args")
+    _assert_args_class(compute_covariate_balance_args, "compute_covariate_balance_args")
+    _assert_args_class(fit_outcome_model_args, "fit_outcome_model_args")
     analysis = {
         "analysisId": analysis_id,
         "description": description,

@@ -6,10 +6,11 @@
 # assembled unnamed. Also pins down the handful of classes that were already
 # correct, so a future find-replace doesn't regress them.
 #
-# Deliberately out of scope (not touched here): the SelfControlledCaseSeries
-# study-population args and the CohortIncidence outcome definition, which
-# reuse the literal strings "CreateStudyPopulationArgs" and "Outcome" for
-# unrelated objects.
+# The five SelfControlledCaseSeries *Args class values were verified directly against the
+# installed SelfControlledCaseSeries package (see milestone-ab-fix-report.md) and confirmed
+# to already be correct (their own R6 objects' leaf class, not "args") — so they are pinned
+# here as unchanged, not silently left untested. The CohortIncidence outcome definition,
+# which reuses the literal string "Outcome" for an unrelated object, remains out of scope.
 #
 # Run: Rscript plugins/notebook/tests/StrategusSpecBuilder-cohortmethod-classes.test.R
 
@@ -103,11 +104,37 @@ check(is.null(names(cmSpec$settings$targetComparatorOutcomesList)),
 check(length(cmSpec$settings$cmAnalysisList) == 1 && length(cmSpec$settings$targetComparatorOutcomesList) == 1,
       "createCohortMethodModuleSpecifications: list contents preserved after unname()")
 
-# --- Out-of-scope sibling functions must be untouched ---
+# --- SCCS class values: verified directly against the installed SelfControlledCaseSeries
+# --- package (docker exec into alp-dataflow-gen-worker; see milestone-ab-fix-report.md).
+# --- The package's own objects are R6 ("AbstractSerializableSettings"/"R6"-derived), whose
+# --- primary/leaf class is the CamelCase name already used here — NOT "args". So these five
+# --- are confirmed correct as-is and are deliberately left unchanged.
 
 sccsArgs <- .SelfControlledCaseSeries_createCreateStudyPopulationArgs()
 check(identical(class(sccsArgs), "CreateStudyPopulationArgs"),
-      "SCCS createCreateStudyPopulationArgs: untouched, still 'CreateStudyPopulationArgs'")
+      "SCCS createCreateStudyPopulationArgs: verified against installed package (leaf class 'CreateStudyPopulationArgs'), left unchanged")
+
+check(identical(class(createGetDbSccsDataArgs()), "GetDbSccsDataArgs"),
+      "createGetDbSccsDataArgs: verified against installed package (leaf class 'GetDbSccsDataArgs'), left unchanged")
+
+check(
+  identical(
+    class(createCreateSccsIntervalDataArgs(eraCovariateSettings = list())),
+    "CreateSccsIntervalDataArgs"
+  ),
+  "createCreateSccsIntervalDataArgs: verified against installed package (leaf class 'CreateSccsIntervalDataArgs'), left unchanged"
+)
+
+check(
+  identical(
+    class(createCreateScriIntervalDataArgs(eraCovariateSettings = list(), controlIntervalSettings = list())),
+    "CreateScriIntervalDataArgs"
+  ),
+  "createCreateScriIntervalDataArgs: verified against installed package (leaf class 'CreateScriIntervalDataArgs'), left unchanged"
+)
+
+check(identical(class(createFitSccsModelArgs()), "FitSccsModelArgs"),
+      "createFitSccsModelArgs: verified against installed package (leaf class 'FitSccsModelArgs'), left unchanged")
 
 ciOutcome <- createOutcomeDef(id = 1)
 check(identical(class(ciOutcome), "Outcome"),

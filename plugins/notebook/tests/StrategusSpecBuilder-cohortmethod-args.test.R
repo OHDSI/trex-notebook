@@ -39,22 +39,43 @@ check <- function(condition, message) {
   }
 }
 
-# Asserts that both a keyword call and a positional call landing on `argName`'s original
-# slot raise an error whose message contains "5.5.2". `positionalArgs` is an unnamed list of
-# values filling every slot up to and including argName's position (using each slot's own
-# default where a value doesn't matter) — do.call() matches an unnamed list positionally.
-expect_removed <- function(label, fn, argName, keywordValue, positionalArgs) {
+# Asserts that both a keyword call and a positional call raise an error whose message
+# contains "5.5.2" AND names the specific argument the raised guard is for. `positionalArgs`
+# is an unnamed list of values filling every slot up to and including argName's position
+# (using each slot's own default where a value doesn't matter) — do.call() matches an
+# unnamed list positionally.
+#
+# `positionalGuardArg` names the guard the positional call actually trips. It defaults to
+# `argName`, i.e. "the positional call reaches argName's own guard". But supplying any
+# removed slot positionally — even NULL, even just to fill a later slot — trips THAT slot's
+# guard first if it sits earlier in the signature. Where an earlier removed slot sits before
+# argName, pass that slot's name here instead, so the assertion documents (and checks) the
+# guard that actually fires rather than implying the positional call reaches argName's guard
+# when it cannot.
+expect_removed <- function(label, fn, argName, keywordValue, positionalArgs, positionalGuardArg = argName) {
   kwCall <- setNames(list(keywordValue), argName)
   kwResult <- tryCatch({ do.call(fn, kwCall); NULL }, error = function(e) e)
   check(
-    !is.null(kwResult) && grepl("5.5.2", conditionMessage(kwResult), fixed = TRUE),
-    sprintf("%s: keyword call raises with '5.5.2' message", label)
+    !is.null(kwResult) &&
+      grepl("5.5.2", conditionMessage(kwResult), fixed = TRUE) &&
+      grepl(argName, conditionMessage(kwResult), fixed = TRUE),
+    sprintf("%s: keyword call raises with '5.5.2' message naming '%s'", label, argName)
   )
 
   posResult <- tryCatch({ do.call(fn, positionalArgs); NULL }, error = function(e) e)
+  posDescription <- if (identical(positionalGuardArg, argName)) {
+    sprintf("%s: positional call landing on original slot raises with '5.5.2' message naming '%s'", label, argName)
+  } else {
+    sprintf(
+      "%s: positional call cannot reach '%s' directly — an earlier removed slot ('%s') is filled first, so its guard fires instead; raises with '5.5.2' message naming '%s'",
+      label, argName, positionalGuardArg, positionalGuardArg
+    )
+  }
   check(
-    !is.null(posResult) && grepl("5.5.2", conditionMessage(posResult), fixed = TRUE),
-    sprintf("%s: positional call landing on original slot raises with '5.5.2' message", label)
+    !is.null(posResult) &&
+      grepl("5.5.2", conditionMessage(posResult), fixed = TRUE) &&
+      grepl(positionalGuardArg, conditionMessage(posResult), fixed = TRUE),
+    posDescription
   )
 }
 
@@ -304,19 +325,22 @@ expect_removed(
 expect_removed(
   "createGetDbCohortMethodDataArgs(minAge=...)", createGetDbCohortMethodDataArgs,
   "minAge", 18,
-  list(createDefaultCovariateSettings(), "keep first, truncate to second", TRUE, 365, NULL, TRUE, 18)
+  list(createDefaultCovariateSettings(), "keep first, truncate to second", TRUE, 365, NULL, TRUE, 18),
+  positionalGuardArg = "nestingCohortId"
 )
 
 expect_removed(
   "createGetDbCohortMethodDataArgs(maxAge=...)", createGetDbCohortMethodDataArgs,
   "maxAge", 65,
-  list(createDefaultCovariateSettings(), "keep first, truncate to second", TRUE, 365, NULL, TRUE, NULL, 65)
+  list(createDefaultCovariateSettings(), "keep first, truncate to second", TRUE, 365, NULL, TRUE, NULL, 65),
+  positionalGuardArg = "nestingCohortId"
 )
 
 expect_removed(
   "createGetDbCohortMethodDataArgs(genderConceptIds=...)", createGetDbCohortMethodDataArgs,
   "genderConceptIds", 8507,
-  list(createDefaultCovariateSettings(), "keep first, truncate to second", TRUE, 365, NULL, TRUE, NULL, NULL, 8507)
+  list(createDefaultCovariateSettings(), "keep first, truncate to second", TRUE, 365, NULL, TRUE, NULL, NULL, 8507),
+  positionalGuardArg = "nestingCohortId"
 )
 
 # --- createTrimByPsArgs: equipoiseBounds(2), maxWeight(3), trimMethod(4) ---
@@ -330,13 +354,15 @@ expect_removed(
 expect_removed(
   "createTrimByPsArgs(maxWeight=...)", createTrimByPsArgs,
   "maxWeight", 10,
-  list(NULL, NULL, 10)
+  list(NULL, NULL, 10),
+  positionalGuardArg = "equipoiseBounds"
 )
 
 expect_removed(
   "createTrimByPsArgs(trimMethod=...)", createTrimByPsArgs,
   "trimMethod", "one-sided",
-  list(NULL, NULL, NULL, "one-sided")
+  list(NULL, NULL, NULL, "one-sided"),
+  positionalGuardArg = "equipoiseBounds"
 )
 
 # --- createMatchOnPsArgs: matchColumns(5), matchCovariateIds(6) ---
@@ -350,7 +376,8 @@ expect_removed(
 expect_removed(
   "createMatchOnPsArgs(matchCovariateIds=...)", createMatchOnPsArgs,
   "matchCovariateIds", 123,
-  list(0.2, "standardized logit", 1, FALSE, NULL, 123)
+  list(0.2, "standardized logit", 1, FALSE, NULL, 123),
+  positionalGuardArg = "matchColumns"
 )
 
 # --- createStratifyByPsArgs: stratificationCovariateIds(4) ---
@@ -372,7 +399,8 @@ expect_removed(
 expect_removed(
   "createComputeCovariateBalanceArgs(alpha=...)", createComputeCovariateBalanceArgs,
   "alpha", 0.05,
-  list(NULL, 250000, NULL, NULL, 0.05)
+  list(NULL, 250000, NULL, NULL, 0.05),
+  positionalGuardArg = "threshold"
 )
 
 # --- createFitOutcomeModelArgs: bootstrapCi(5), bootstrapReplicates(6) ---
@@ -386,7 +414,8 @@ expect_removed(
 expect_removed(
   "createFitOutcomeModelArgs(bootstrapReplicates=...)", createFitOutcomeModelArgs,
   "bootstrapReplicates", 100,
-  list("cox", FALSE, FALSE, FALSE, NULL, 100)
+  list("cox", FALSE, FALSE, FALSE, NULL, 100),
+  positionalGuardArg = "bootstrapCi"
 )
 
 # --- createCmDiagnosticThresholds: sdmAlpha(4) ---
@@ -403,6 +432,59 @@ expect_removed(
   "createTargetComparatorOutcomes(nestingCohortId=...)", createTargetComparatorOutcomes,
   "nestingCohortId", 99,
   list(1, 2, list(), 99)
+)
+
+# =============================================================================
+# createCmAnalysis: every *Args slot is type-checked (class "args"). Four slots
+# (trimByPsToEquipoiseArgs, trimByIptwArgs, matchOnPsAndCovariatesArgs,
+# stratifyByPsAndCovariatesArgs) were inserted mid-signature to match CohortMethod
+# 5.5.2's order, shifting six existing slots. All 14 *Args slots are NULL-defaulted
+# with no type check on their own, so a legacy positional call site could bind an
+# object into the wrong slot and produce a structurally valid but semantically
+# wrong spec, silently. Assert a wrongly-typed value in ANY slot raises, naming
+# that slot, instead.
+# =============================================================================
+
+wrongTypedArgsObject <- structure(list(foo = 1), class = "outcome")
+
+expect_cm_analysis_slot_type_error <- function(slotName) {
+  callArgs <- list(
+    getDbCohortMethodDataArgs = createGetDbCohortMethodDataArgs(),
+    createStudyPopArgs = createCreateStudyPopulationArgs()
+  )
+  callArgs[[slotName]] <- wrongTypedArgsObject
+  result <- tryCatch({ do.call(createCmAnalysis, callArgs); NULL }, error = function(e) e)
+  check(
+    !is.null(result) && grepl(slotName, conditionMessage(result), fixed = TRUE),
+    sprintf("createCmAnalysis(%s = <wrong class>): raises, naming '%s'", slotName, slotName)
+  )
+}
+
+for (slotName in c(
+  "getDbCohortMethodDataArgs", "createStudyPopArgs", "createPsArgs", "trimByPsArgs",
+  "trimByPsToEquipoiseArgs", "trimByIptwArgs", "truncateIptwArgs", "matchOnPsArgs",
+  "matchOnPsAndCovariatesArgs", "stratifyByPsArgs", "stratifyByPsAndCovariatesArgs",
+  "computeSharedCovariateBalanceArgs", "computeCovariateBalanceArgs", "fitOutcomeModelArgs"
+)) {
+  expect_cm_analysis_slot_type_error(slotName)
+}
+
+check(
+  is.null(tryCatch({
+    createCmAnalysis(
+      getDbCohortMethodDataArgs = createGetDbCohortMethodDataArgs(),
+      createStudyPopArgs = createCreateStudyPopulationArgs(),
+      createPsArgs = createCreatePsArgs(),
+      trimByPsArgs = createTrimByPsArgs(),
+      truncateIptwArgs = createTruncateIptwArgs(),
+      matchOnPsArgs = createMatchOnPsArgs(),
+      stratifyByPsArgs = createStratifyByPsArgs(),
+      computeCovariateBalanceArgs = createComputeCovariateBalanceArgs(),
+      fitOutcomeModelArgs = createFitOutcomeModelArgs()
+    )
+    NULL
+  }, error = function(e) e)),
+  "createCmAnalysis: correctly-typed slots (class 'args') do not raise"
 )
 
 # =============================================================================
