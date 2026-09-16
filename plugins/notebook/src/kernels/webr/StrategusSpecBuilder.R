@@ -18,7 +18,7 @@
 #   - CohortDiagnostics 3.3.0
 #   - FeatureExtraction 3.7.0
 #   - Characterization 2.0.0
-#   - Cyclops 3.5.0
+#   - Cyclops 3.6.0
 #   - SelfControlledCaseSeries (latest)
 #   - PatientLevelPrediction (latest)
 #   - EvidenceSynthesis (latest)
@@ -222,37 +222,60 @@ createPrior <- function(priorType = "laplace",
   return(prior)
 }
 
+# NOTE: Cyclops::createControl()'s object has 23 fields; an incomplete control makes
+# cross-validation collapse with "Expecting a single value: [extent=0]" raised from
+# inside CohortMethod::createPs() several layers from the actual cause. Bisection
+# established no single missing field is responsible -- the complete set is required.
+# cvType is a constructor ARGUMENT of createControl(), not a field of the object, so it
+# is accepted here but deliberately not emitted.
 createControl <- function(maxIterations = 1000,
                           tolerance = 1e-6,
                           convergenceType = "gradient",
                           autoSearch = TRUE,
                           fold = 10,
-                          cvRepetitions = 1,
-                          startingVariance = 0.01,
                           lowerLimit = 0.01,
                           upperLimit = 20,
-                          seed = NULL,
-                          resetCoefficients = FALSE,
+                          gridSteps = 10,
+                          minCVData = 100,
+                          cvRepetitions = 1,
                           noiseLevel = "silent",
                           threads = 1,
-                          cvType = "auto",
-                          selectorType = "byPid") {
+                          seed = NULL,
+                          resetCoefficients = FALSE,
+                          startingVariance = 0.01,
+                          useKKTSwindle = FALSE,
+                          tuneSwindle = 10,
+                          selectorType = "byPid",
+                          initialBound = 2,
+                          maxBoundCount = 5,
+                          algorithm = "ccd",
+                          doItAll = TRUE,
+                          syncCV = FALSE,
+                          cvType = "auto") {
   control <- list(
     maxIterations = maxIterations,
     tolerance = tolerance,
     convergenceType = convergenceType,
     autoSearch = autoSearch,
     fold = fold,
-    cvRepetitions = cvRepetitions,
-    startingVariance = startingVariance,
     lowerLimit = lowerLimit,
     upperLimit = upperLimit,
-    seed = seed,
-    resetCoefficients = resetCoefficients,
+    gridSteps = gridSteps,
+    minCVData = minCVData,
+    cvRepetitions = cvRepetitions,
     noiseLevel = noiseLevel,
     threads = threads,
-    cvType = cvType,
-    selectorType = selectorType
+    seed = seed,
+    resetCoefficients = resetCoefficients,
+    startingVariance = startingVariance,
+    useKKTSwindle = useKKTSwindle,
+    tuneSwindle = tuneSwindle,
+    selectorType = selectorType,
+    initialBound = initialBound,
+    maxBoundCount = maxBoundCount,
+    algorithm = algorithm,
+    doItAll = doItAll,
+    syncCV = syncCV
   )
   class(control) <- "cyclopsControl"
   return(control)

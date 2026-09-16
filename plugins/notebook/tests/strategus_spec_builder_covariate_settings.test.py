@@ -181,6 +181,92 @@ check(
 )
 
 # =============================================================================
+# create_control — complete Cyclops 3.6.0 23-field control object, exact
+# order, cv_type accepted but not emitted, _class cyclopsControl
+# =============================================================================
+
+CYCLOPS_CONTROL_FIELDS = [
+    "maxIterations", "tolerance", "convergenceType", "autoSearch", "fold",
+    "lowerLimit", "upperLimit", "gridSteps", "minCVData", "cvRepetitions",
+    "noiseLevel", "threads", "seed", "resetCoefficients", "startingVariance",
+    "useKKTSwindle", "tuneSwindle", "selectorType", "initialBound",
+    "maxBoundCount", "algorithm", "doItAll", "syncCV",
+]
+
+control = sb.create_control()
+control_keys = [k for k in control if k != "_class"]
+
+check(
+    set(control_keys) == set(CYCLOPS_CONTROL_FIELDS) and len(control_keys) == 23,
+    "create_control(): emits exactly the 23 Cyclops 3.6.0 control fields",
+)
+
+check(
+    control_keys == CYCLOPS_CONTROL_FIELDS,
+    "create_control(): field order matches Cyclops 3.6.0 exactly",
+)
+
+check(
+    "cvType" not in control,
+    "create_control(): cvType is NOT emitted into the object",
+)
+
+check(
+    control.get("_class") == "cyclopsControl",
+    "create_control(): class is cyclopsControl",
+)
+
+# cv_type must still be accepted as a constructor argument without error
+control_with_cv_type = sb.create_control(cv_type="auto")
+check(
+    "cvType" not in control_with_cv_type,
+    "create_control(cv_type='auto'): accepted as an argument without error, still not emitted",
+)
+
+# Existing default VALUES must not change, even though they differ from
+# Cyclops' own package defaults (deliberate project policy).
+check(
+    control["selectorType"] == "byPid",
+    "create_control(): selectorType default VALUE unchanged ('byPid')",
+)
+
+check(
+    control["startingVariance"] == 0.01,
+    "create_control(): startingVariance default VALUE unchanged (0.01)",
+)
+
+# New-field default VALUES take Cyclops' own package defaults.
+check(
+    control["gridSteps"] == 10
+    and control["minCVData"] == 100
+    and control["useKKTSwindle"] is False
+    and control["tuneSwindle"] == 10
+    and control["initialBound"] == 2
+    and control["maxBoundCount"] == 5
+    and control["algorithm"] == "ccd"
+    and control["doItAll"] is True
+    and control["syncCV"] is False,
+    "create_control(): new-field default VALUES match Cyclops' own package defaults",
+)
+
+# =============================================================================
+# create_prior — regression: still exactly 7 fields (change nothing)
+# =============================================================================
+
+CYCLOPS_PRIOR_FIELDS = {
+    "priorType", "variance", "exclude", "graph", "neighborhood",
+    "useCrossValidation", "forceIntercept",
+}
+
+prior = sb.create_prior()
+prior_keys = {k for k in prior if k != "_class"}
+
+check(
+    prior_keys == CYCLOPS_PRIOR_FIELDS and len(prior_keys) == 7,
+    "create_prior(): still emits exactly the 7 Cyclops fields (regression)",
+)
+
+# =============================================================================
 
 if FAILURES > 0:
     print(f"\n{FAILURES} check(s) FAILED.")

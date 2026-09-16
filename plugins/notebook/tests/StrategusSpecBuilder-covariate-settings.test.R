@@ -171,6 +171,90 @@ check(
 )
 
 # =============================================================================
+# createControl — complete Cyclops 3.6.0 23-field control object, exact order,
+# cvType accepted but not emitted, class cyclopsControl
+# =============================================================================
+
+CYCLOPS_CONTROL_FIELDS <- c(
+  "maxIterations", "tolerance", "convergenceType", "autoSearch", "fold",
+  "lowerLimit", "upperLimit", "gridSteps", "minCVData", "cvRepetitions",
+  "noiseLevel", "threads", "seed", "resetCoefficients", "startingVariance",
+  "useKKTSwindle", "tuneSwindle", "selectorType", "initialBound",
+  "maxBoundCount", "algorithm", "doItAll", "syncCV"
+)
+
+control <- createControl()
+
+check(
+  setequal(names(control), CYCLOPS_CONTROL_FIELDS) && length(names(control)) == 23,
+  "createControl(): emits exactly the 23 Cyclops 3.6.0 control fields"
+)
+
+check(
+  identical(names(control), CYCLOPS_CONTROL_FIELDS),
+  "createControl(): field order matches Cyclops 3.6.0 exactly"
+)
+
+check(
+  !("cvType" %in% names(control)),
+  "createControl(): cvType is NOT emitted into the object"
+)
+
+check(
+  identical(class(control), "cyclopsControl"),
+  "createControl(): class is cyclopsControl"
+)
+
+# cvType must still be accepted as a constructor argument without error
+controlWithCvType <- createControl(cvType = "auto")
+check(
+  !("cvType" %in% names(controlWithCvType)),
+  "createControl(cvType = \"auto\"): accepted as an argument without error, still not emitted"
+)
+
+# Existing default VALUES must not change, even though they differ from
+# Cyclops' own package defaults (deliberate project policy).
+check(
+  identical(control$selectorType, "byPid"),
+  "createControl(): selectorType default VALUE unchanged (\"byPid\")"
+)
+
+check(
+  identical(control$startingVariance, 0.01),
+  "createControl(): startingVariance default VALUE unchanged (0.01)"
+)
+
+# New-field default VALUES take Cyclops' own package defaults.
+check(
+  identical(control$gridSteps, 10) &&
+    identical(control$minCVData, 100) &&
+    identical(control$useKKTSwindle, FALSE) &&
+    identical(control$tuneSwindle, 10) &&
+    identical(control$initialBound, 2) &&
+    identical(control$maxBoundCount, 5) &&
+    identical(control$algorithm, "ccd") &&
+    identical(control$doItAll, TRUE) &&
+    identical(control$syncCV, FALSE),
+  "createControl(): new-field default VALUES match Cyclops' own package defaults"
+)
+
+# =============================================================================
+# createPrior — regression: still exactly 7 fields (change nothing)
+# =============================================================================
+
+CYCLOPS_PRIOR_FIELDS <- c(
+  "priorType", "variance", "exclude", "graph", "neighborhood",
+  "useCrossValidation", "forceIntercept"
+)
+
+prior <- createPrior()
+
+check(
+  setequal(names(prior), CYCLOPS_PRIOR_FIELDS) && length(names(prior)) == 7,
+  "createPrior(): still emits exactly the 7 Cyclops fields (regression)"
+)
+
+# =============================================================================
 
 if (failures > 0) {
   cat(sprintf("\n%d check(s) FAILED.\n", failures))

@@ -24,7 +24,7 @@ HADES Package Version Tracking (for maintenance):
     - CohortDiagnostics 3.3.0
     - FeatureExtraction 3.7.0
     - Characterization 2.0.0
-    - Cyclops 3.5.0
+    - Cyclops 3.6.0
     - SelfControlledCaseSeries (latest)
     - PatientLevelPrediction (latest)
     - EvidenceSynthesis (latest)
@@ -279,33 +279,58 @@ def create_control(max_iterations: int = 1000,
                    convergence_type: str = "gradient",
                    auto_search: bool = True,
                    fold: int = 10,
-                   cv_repetitions: int = 1,
-                   starting_variance: float = 0.01,
                    lower_limit: float = 0.01,
                    upper_limit: float = 20,
-                   seed: Optional[int] = None,
-                   reset_coefficients: bool = False,
+                   grid_steps: int = 10,
+                   min_cv_data: int = 100,
+                   cv_repetitions: int = 1,
                    noise_level: str = "silent",
                    threads: int = 1,
-                   cv_type: str = "auto",
-                   selector_type: str = "byPid") -> dict:
-    """Create a Cyclops control specification."""
+                   seed: Optional[int] = None,
+                   reset_coefficients: bool = False,
+                   starting_variance: float = 0.01,
+                   use_kkt_swindle: bool = False,
+                   tune_swindle: int = 10,
+                   selector_type: str = "byPid",
+                   initial_bound: int = 2,
+                   max_bound_count: int = 5,
+                   algorithm: str = "ccd",
+                   do_it_all: bool = True,
+                   sync_cv: bool = False,
+                   cv_type: str = "auto") -> dict:
+    """Create a Cyclops control specification.
+
+    NOTE: Cyclops::createControl()'s object has 23 fields; an incomplete control makes
+    cross-validation collapse with "Expecting a single value: [extent=0]" raised from
+    inside CohortMethod::createPs() several layers from the actual cause. Bisection
+    established no single missing field is responsible -- the complete set is required.
+    cv_type is a constructor ARGUMENT of createControl(), not a field of the object, so
+    it is accepted here but deliberately not emitted.
+    """
     return {
         "maxIterations": max_iterations,
         "tolerance": tolerance,
         "convergenceType": convergence_type,
         "autoSearch": auto_search,
         "fold": fold,
-        "cvRepetitions": cv_repetitions,
-        "startingVariance": starting_variance,
         "lowerLimit": lower_limit,
         "upperLimit": upper_limit,
-        "seed": seed,
-        "resetCoefficients": reset_coefficients,
+        "gridSteps": grid_steps,
+        "minCVData": min_cv_data,
+        "cvRepetitions": cv_repetitions,
         "noiseLevel": noise_level,
         "threads": threads,
-        "cvType": cv_type,
+        "seed": seed,
+        "resetCoefficients": reset_coefficients,
+        "startingVariance": starting_variance,
+        "useKKTSwindle": use_kkt_swindle,
+        "tuneSwindle": tune_swindle,
         "selectorType": selector_type,
+        "initialBound": initial_bound,
+        "maxBoundCount": max_bound_count,
+        "algorithm": algorithm,
+        "doItAll": do_it_all,
+        "syncCV": sync_cv,
         "_class": "cyclopsControl"
     }
 
