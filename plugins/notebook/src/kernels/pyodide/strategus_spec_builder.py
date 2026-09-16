@@ -147,41 +147,48 @@ def _create_default_es_diagnostic_thresholds() -> dict:
 
 
 def _get_default_characterization_covariate_settings() -> dict:
-    """Characterization covariate settings (from FeatureExtraction)."""
+    """Characterization covariate settings (from FeatureExtraction).
+
+    Keys below are FeatureExtraction's prefix-free FIELD names (e.g. "DemographicsGender"),
+    not the use*-prefixed constructor ARGUMENT names — FeatureExtraction's Java createSql()
+    looks these up by exact field name. Python dicts don't drop keys the way `settings$x <-
+    c()` does in R, so the empty-field-preservation fix (task 4c) is R-only.
+    """
     return {
         "temporal": False,
         "temporalSequence": False,
         # Demographics - all enabled
-        "useDemographicsGender": True,
-        "useDemographicsAge": True,
-        "useDemographicsAgeGroup": True,
-        "useDemographicsRace": True,
-        "useDemographicsEthnicity": True,
-        "useDemographicsIndexYear": True,
-        "useDemographicsIndexMonth": True,
-        "useDemographicsTimeInCohort": True,
-        "useDemographicsPriorObservationTime": True,
-        "useDemographicsPostObservationTime": True,
+        "DemographicsGender": True,
+        "DemographicsAge": True,
+        "DemographicsAgeGroup": True,
+        "DemographicsRace": True,
+        "DemographicsEthnicity": True,
+        "DemographicsIndexYear": True,
+        "DemographicsIndexMonth": True,
+        "DemographicsTimeInCohort": True,
+        "DemographicsPriorObservationTime": True,
+        "DemographicsPostObservationTime": True,
         # Long term covariates
-        "useConditionGroupEraLongTerm": True,
-        "useDrugGroupEraOverlapping": True,
-        "useDrugGroupEraLongTerm": True,
-        "useProcedureOccurrenceLongTerm": True,
-        "useMeasurementLongTerm": True,
-        "useObservationLongTerm": True,
-        "useDeviceExposureLongTerm": True,
-        "useVisitConceptCountLongTerm": True,
+        "ConditionGroupEraLongTerm": True,
+        "DrugGroupEraOverlapping": True,
+        "DrugGroupEraLongTerm": True,
+        "ProcedureOccurrenceLongTerm": True,
+        "MeasurementLongTerm": True,
+        "ObservationLongTerm": True,
+        "DeviceExposureLongTerm": True,
+        "VisitConceptCountLongTerm": True,
         # Short term covariates
-        "useConditionGroupEraShortTerm": True,
-        "useDrugGroupEraShortTerm": True,
-        "useProcedureOccurrenceShortTerm": True,
-        "useMeasurementShortTerm": True,
-        "useObservationShortTerm": True,
-        "useDeviceExposureShortTerm": True,
-        "useVisitConceptCountShortTerm": True,
+        "ConditionGroupEraShortTerm": True,
+        "DrugGroupEraShortTerm": True,
+        "ProcedureOccurrenceShortTerm": True,
+        "MeasurementShortTerm": True,
+        "ObservationShortTerm": True,
+        "DeviceExposureShortTerm": True,
+        "VisitConceptCountShortTerm": True,
         # Time windows
         "endDays": 0,
         "longTermStartDays": -365,
+        "mediumTermStartDays": -180,
         "shortTermStartDays": -30,
         # Concept filtering
         "includedCovariateConceptIds": [],
@@ -210,19 +217,25 @@ def _get_default_case_covariate_settings() -> dict:
 
 
 def _get_default_temporal_covariate_settings() -> dict:
-    """CohortDiagnostics temporal covariate settings."""
+    """CohortDiagnostics temporal covariate settings.
+
+    Keys below are FeatureExtraction's prefix-free FIELD names. useVisitConceptCountStart /
+    useVisitConceptCountOverlap are not accepted by FeatureExtraction 3.11.0 (rejected as
+    unused arguments); the single VisitConceptCount field replaces both. _fun is
+    getDbDefaultCovariateData (the worker), not getDbCovariateData (the public entry point)
+    — scoped to this function only.
+    """
     return {
         "temporal": True,
         "temporalSequence": False,
         # Condition covariates
-        "useConditionEraGroupStart": True,
-        "useConditionEraGroupOverlap": True,
+        "ConditionEraGroupStart": True,
+        "ConditionEraGroupOverlap": True,
         # Drug covariates
-        "useDrugEraGroupStart": True,
-        "useDrugEraGroupOverlap": True,
+        "DrugEraGroupStart": True,
+        "DrugEraGroupOverlap": True,
         # Visit covariates
-        "useVisitConceptCountStart": True,
-        "useVisitConceptCountOverlap": True,
+        "VisitConceptCount": True,
         # Time windows (mandatory for CohortDiagnostics)
         "temporalStartDays": [-365, -30, -365, -30, 0, 1, 31, -9999],
         "temporalEndDays": [0, 0, -31, -1, 0, 30, 365, 9999],
@@ -233,7 +246,7 @@ def _get_default_temporal_covariate_settings() -> dict:
         "addDescendantsToInclude": False,
         "addDescendantsToExclude": False,
         "_class": "covariateSettings",
-        "_fun": "getDbCovariateData"
+        "_fun": "getDbDefaultCovariateData"
     }
 
 

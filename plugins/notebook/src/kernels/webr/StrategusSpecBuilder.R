@@ -98,41 +98,45 @@
 }
 
 # T009: Characterization covariate settings (from FeatureExtraction::createCovariateSettings)
+# NOTE: keys below are FeatureExtraction's prefix-free FIELD names (e.g. "DemographicsGender"),
+# not the use*-prefixed constructor ARGUMENT names — FeatureExtraction's Java createSql() looks
+# these up by exact field name.
 .getDefaultCharacterizationCovariateSettings <- function() {
   settings <- list(
     temporal = FALSE,
     temporalSequence = FALSE,
     # Demographics - all enabled
-    useDemographicsGender = TRUE,
-    useDemographicsAge = TRUE,
-    useDemographicsAgeGroup = TRUE,
-    useDemographicsRace = TRUE,
-    useDemographicsEthnicity = TRUE,
-    useDemographicsIndexYear = TRUE,
-    useDemographicsIndexMonth = TRUE,
-    useDemographicsTimeInCohort = TRUE,
-    useDemographicsPriorObservationTime = TRUE,
-    useDemographicsPostObservationTime = TRUE,
+    DemographicsGender = TRUE,
+    DemographicsAge = TRUE,
+    DemographicsAgeGroup = TRUE,
+    DemographicsRace = TRUE,
+    DemographicsEthnicity = TRUE,
+    DemographicsIndexYear = TRUE,
+    DemographicsIndexMonth = TRUE,
+    DemographicsTimeInCohort = TRUE,
+    DemographicsPriorObservationTime = TRUE,
+    DemographicsPostObservationTime = TRUE,
     # Long term covariates
-    useConditionGroupEraLongTerm = TRUE,
-    useDrugGroupEraOverlapping = TRUE,
-    useDrugGroupEraLongTerm = TRUE,
-    useProcedureOccurrenceLongTerm = TRUE,
-    useMeasurementLongTerm = TRUE,
-    useObservationLongTerm = TRUE,
-    useDeviceExposureLongTerm = TRUE,
-    useVisitConceptCountLongTerm = TRUE,
+    ConditionGroupEraLongTerm = TRUE,
+    DrugGroupEraOverlapping = TRUE,
+    DrugGroupEraLongTerm = TRUE,
+    ProcedureOccurrenceLongTerm = TRUE,
+    MeasurementLongTerm = TRUE,
+    ObservationLongTerm = TRUE,
+    DeviceExposureLongTerm = TRUE,
+    VisitConceptCountLongTerm = TRUE,
     # Short term covariates
-    useConditionGroupEraShortTerm = TRUE,
-    useDrugGroupEraShortTerm = TRUE,
-    useProcedureOccurrenceShortTerm = TRUE,
-    useMeasurementShortTerm = TRUE,
-    useObservationShortTerm = TRUE,
-    useDeviceExposureShortTerm = TRUE,
-    useVisitConceptCountShortTerm = TRUE,
+    ConditionGroupEraShortTerm = TRUE,
+    DrugGroupEraShortTerm = TRUE,
+    ProcedureOccurrenceShortTerm = TRUE,
+    MeasurementShortTerm = TRUE,
+    ObservationShortTerm = TRUE,
+    DeviceExposureShortTerm = TRUE,
+    VisitConceptCountShortTerm = TRUE,
     # Time windows
     endDays = 0,
     longTermStartDays = -365,
+    mediumTermStartDays = -180,
     shortTermStartDays = -30,
     # Concept filtering
     includedCovariateConceptIds = c(),
@@ -163,19 +167,22 @@
 }
 
 # T011: CohortDiagnostics temporal covariate settings (from CohortDiagnostics::getDefaultCovariateSettings)
+# NOTE: keys below are FeatureExtraction's prefix-free FIELD names. useVisitConceptCountStart /
+# useVisitConceptCountOverlap are not accepted by FeatureExtraction 3.11.0 (rejected as unused
+# arguments); the single VisitConceptCount field replaces both. fun is getDbDefaultCovariateData
+# (the worker), not getDbCovariateData (the public entry point) — scoped to this function only.
 .getDefaultTemporalCovariateSettings <- function() {
   settings <- list(
     temporal = TRUE,
     temporalSequence = FALSE,
     # Condition covariates
-    useConditionEraGroupStart = TRUE,
-    useConditionEraGroupOverlap = TRUE,
+    ConditionEraGroupStart = TRUE,
+    ConditionEraGroupOverlap = TRUE,
     # Drug covariates
-    useDrugEraGroupStart = TRUE,
-    useDrugEraGroupOverlap = TRUE,
+    DrugEraGroupStart = TRUE,
+    DrugEraGroupOverlap = TRUE,
     # Visit covariates
-    useVisitConceptCountStart = TRUE,
-    useVisitConceptCountOverlap = TRUE,
+    VisitConceptCount = TRUE,
     # Time windows (mandatory for CohortDiagnostics)
     temporalStartDays = c(-365, -30, -365, -30, 0, 1, 31, -9999),
     temporalEndDays = c(0, 0, -31, -1, 0, 30, 365, 9999),
@@ -187,7 +194,7 @@
     addDescendantsToExclude = FALSE
   )
   class(settings) <- "covariateSettings"
-  attr(settings, "fun") <- "getDbCovariateData"
+  attr(settings, "fun") <- "getDbDefaultCovariateData"
   return(settings)
 }
 
@@ -411,13 +418,18 @@ createDefaultCovariateSettings <- function(includedCovariateConceptIds = c(),
                                             excludedCovariateConceptIds = c(),
                                             addDescendantsToExclude = FALSE,
                                             includedCovariateIds = c()) {
+  # `settings$x <- c()` assigns NULL, which DELETES the element. FeatureExtraction's Java
+  # createSql() looks these fields up by name and throws on a missing one, so an empty value
+  # must stay present as a zero-length vector -- which is how FeatureExtraction itself
+  # represents it, serialising to [].
+  .keepEmpty <- function(x) if (is.null(x)) vector() else x
   # Inlined default — covers common demographics + condition/drug/procedure covariates
   settings <- .getDefaultCharacterizationCovariateSettings()
-  settings$includedCovariateConceptIds <- includedCovariateConceptIds
+  settings$includedCovariateConceptIds <- .keepEmpty(includedCovariateConceptIds)
   settings$addDescendantsToInclude <- addDescendantsToInclude
-  settings$excludedCovariateConceptIds <- excludedCovariateConceptIds
+  settings$excludedCovariateConceptIds <- .keepEmpty(excludedCovariateConceptIds)
   settings$addDescendantsToExclude <- addDescendantsToExclude
-  settings$includedCovariateIds <- includedCovariateIds
+  settings$includedCovariateIds <- .keepEmpty(includedCovariateIds)
   attr(settings, "fun") <- "getDbDefaultCovariateData"
   return(settings)
 }
