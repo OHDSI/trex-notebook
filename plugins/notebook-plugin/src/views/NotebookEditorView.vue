@@ -50,19 +50,19 @@ import { ref, watch, onMounted, shallowRef } from "vue";
 import {
   Notebook,
   PyodideKernel,
-  WebRKernel,
   createEmptyNotebook,
 } from "@trex/notebook";
 import type { NotebookData } from "@trex/notebook";
 import { AtlasAlert, AtlasButton, AtlasChip, AtlasIcon, AtlasTextField } from "@ohdsi/atlas-ui";
 import SectionHero from "../components/SectionHero.vue";
 import { useNotebooksStore } from "../store/useNotebooksStore";
+import { RD2EReadyWebRKernel } from "../kernels/RD2EReadyWebRKernel";
 
 const props = defineProps<{ id: string | null }>();
 const emit = defineEmits<{ (e: "back"): void; (e: "saved", id: string): void }>();
 
 const store = useNotebooksStore();
-const kernels = [new PyodideKernel(), new WebRKernel()];
+const kernels = [new PyodideKernel(), new RD2EReadyWebRKernel()];
 
 const ready = ref(false);
 const saving = ref(false);

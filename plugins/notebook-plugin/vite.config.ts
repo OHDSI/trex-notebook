@@ -4,8 +4,16 @@ import vue from '@vitejs/plugin-vue';
 import vuetify from 'vite-plugin-vuetify';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Read rD2E.R at build time; JSON.stringify produces a safely escaped string
+// (avoids the R escape-sequence corruption that ?raw / template literals cause).
+const rD2ESource = readFileSync(
+  path.resolve(__dirname, './src/kernels/rD2E.R'),
+  'utf-8'
+)
 // Default target is the sibyl shell's plugin dir (dev/CI `npm run build`,
 // matching how the plugin is actually consumed at runtime). Standalone
 // package builds (npm publish) set OUT_DIR=dist via `build:pkg`.
@@ -50,6 +58,7 @@ export default defineConfig({
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+    __RD2E_SOURCE__: JSON.stringify(rD2ESource),
   },
   test: {
     environment: 'happy-dom',
