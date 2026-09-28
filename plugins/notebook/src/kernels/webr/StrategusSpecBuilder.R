@@ -1134,7 +1134,7 @@ createGetDbSccsDataArgs <- function(nestingCohortId = NULL,
     exposureIds = exposureIds,
     customCovariateIds = customCovariateIds
   )
-  class(args) <- "GetDbSccsDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -1153,7 +1153,7 @@ createGetDbSccsDataArgs <- function(nestingCohortId = NULL,
     genderConceptIds = genderConceptIds,
     restrictTimeToEraId = restrictTimeToEraId
   )
-  class(args) <- "CreateStudyPopulationArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -1173,7 +1173,7 @@ createCreateSccsIntervalDataArgs <- function(eraCovariateSettings,
     endOfObservationEraLength = endOfObservationEraLength,
     eventDependentObservation = eventDependentObservation
   )
-  class(args) <- "CreateSccsIntervalDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -1183,7 +1183,7 @@ createCreateScriIntervalDataArgs <- function(eraCovariateSettings,
     eraCovariateSettings = eraCovariateSettings,
     controlIntervalSettings = controlIntervalSettings
   )
-  class(args) <- "CreateScriIntervalDataArgs"
+  class(args) <- "args"
   return(args)
 }
 
@@ -1202,7 +1202,7 @@ createFitSccsModelArgs <- function(prior = createPrior("laplace", useCrossValida
     profileGrid = profileGrid,
     profileBounds = profileBounds
   )
-  class(args) <- "FitSccsModelArgs"
+  class(args) <- "args"
   return(args)
 }
 
