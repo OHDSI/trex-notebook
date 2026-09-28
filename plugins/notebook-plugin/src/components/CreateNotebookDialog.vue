@@ -58,6 +58,9 @@ const templateItems = computed(() => [
 ])
 
 async function loadTemplates(): Promise<void> {
+  // Independent of GIT_MIRROR_ENABLED: that flag gates pushing notebooks OUT to
+  // a user's repo, while templates only READ a public, server-configured repo.
+  // Turning mirroring off must not take the template list with it.
   loadingTemplates.value = true
   try {
     templates.value = await getTemplates()
@@ -93,6 +96,9 @@ watch(
       void nextTick(focusAndSelectName)
     }
   },
+  // immediate: the dialog may be mounted already open (the ?new=1 deep link),
+  // and without this it would then never reset its fields or load templates.
+  { immediate: true },
 )
 
 watch(name, () => {

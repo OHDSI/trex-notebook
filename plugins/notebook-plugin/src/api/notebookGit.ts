@@ -4,10 +4,17 @@
 // so there is no server-side seam on the write path; the store calls
 // mirrorNotebook() right after each successful write instead.
 //
-// Path shape: under d2e, trex functions are served at ${origin}/<source> — the
-// same form authToken.ts uses for /trex-token. (The doubled
-// /plugins/<source>/<source> form in the trex-notebook siblings' targets the
-// standalone sibyl host and 404s here; verified against the running stack.)
+// Path shape: this function ships in the @ohdsi/notebook-git plugin, and trex
+// mounts TRUSTED scopes (@trex/, @ohdsi/) under PLUGINS_BASE_PATH/<scope>/ —
+// hence /plugins/ohdsi/<source> rather than the bare ${origin}/<source> that
+// legacy @data2evidence plugins (e.g. /trex-token) keep.
+//
+// The scope is load-bearing, not cosmetic. Trusted plugins are guarded by
+// trex's own auth (authContext + pluginAuthz), which validates the trex-native
+// token authToken.ts already obtains from /trex-token. Untrusted plugins go
+// through d2eAuthn, which verifies against a Logto JWKS that does not exist
+// when D2E_IDP_MODE=trex (no Logto container runs) — that was the cause of the
+// blanket 401s on this API's previous home under @data2evidence/sibyl.
 import { authHeaders, ensureAuthToken } from "./authToken";
 import type {
   MirrorResponse,
@@ -17,24 +24,23 @@ import type {
 } from "./types";
 
 /**
- * Git mirroring is OFF.
+ * Pushing notebooks OUT to a git remote is OFF, because the mirror repo is
+ * configured on the git-integration setup page and nothing configures it yet.
+ * With no repo, a push on every save would fail on every save.
  *
- * Every call to this function currently returns 401 from trex's plugin-function
- * auth, even though /trex/graphql succeeds with the same session — the two take
- * different auth paths, and the trex-native token the function layer wants is
- * not reaching it. That 401 is not containable: Atlas's login-guard.js shows its
- * sign-in dialog on ANY 401 response, so a failing mirror on save (or a
- * diff-check on click) logs the user out of the page mid-edit.
+ * This is a product state, not a bug: the Sync-from-Remote button stays VISIBLE
+ * but disabled so the feature is discoverable and reads as "not configured
+ * yet". Notebooks save to Postgres regardless, which is lossless — the mirror
+ * is a copy, not the system of record.
  *
- * Until that is resolved the notebook saves to Postgres only, which is lossless —
- * the mirror is a copy, not the system of record. Flip this back to true to
- * re-enable pushing on save and to show the Sync-from-Remote button; nothing
- * else needs changing, and the backend routes/tests all remain in place.
+ * Flip to true once the setup page can supply a repo; the backend routes and
+ * their tests are all in place. Note this does NOT gate templates: those only
+ * read a public, server-configured repo (see getTemplates).
  */
 export const GIT_MIRROR_ENABLED = false
 
 export const notebookGitBase = (): string =>
-  `${location.origin}/notebook-git-api`;
+  `${location.origin}/plugins/ohdsi/notebook-git-api`;
 
 async function call<T>(path: string, method: "GET" | "POST"): Promise<T> {
   await ensureAuthToken();

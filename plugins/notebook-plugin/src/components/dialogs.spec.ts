@@ -4,7 +4,9 @@ import CreateNotebookDialog from "./CreateNotebookDialog.vue";
 import NotebookDetailsDialog from "./NotebookDetailsDialog.vue";
 import DeleteNotebookDialog from "./DeleteNotebookDialog.vue";
 
-const notebookGit = vi.hoisted(() => ({ getTemplates: vi.fn() }));
+// These tests exercise the template dropdown, i.e. the ENABLED path. The real
+// flag ships false (see notebookGit.ts); gitMirrorDisabled.spec.ts covers that.
+const notebookGit = vi.hoisted(() => ({ GIT_MIRROR_ENABLED: true, getTemplates: vi.fn() }));
 vi.mock("../api/notebookGit", () => notebookGit);
 
 function actionButtons(w: ReturnType<typeof mount>) {

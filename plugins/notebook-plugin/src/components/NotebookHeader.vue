@@ -30,7 +30,6 @@
       >Save</AtlasButton>
       <AtlasButton tone="danger" variant="secondary" :disabled="!props.activeId" @click="emit('delete')">Delete</AtlasButton>
       <SyncFromRemoteButton
-        v-if="GIT_MIRROR_ENABLED"
         :notebook-id="props.activeId"
         @synced="emit('synced')"
         @feedback="(t, m) => emit('feedback', t, m)"
@@ -51,7 +50,6 @@
 import { computed } from 'vue'
 import { AtlasSelect, AtlasButton, AtlasIconButton, AtlasChip } from '@ohdsi/atlas-ui'
 import SyncFromRemoteButton from './SyncFromRemoteButton.vue'
-import { GIT_MIRROR_ENABLED } from '../api/notebookGit'
 import type { NotebookSummary } from '../api/types'
 
 const props = defineProps<{

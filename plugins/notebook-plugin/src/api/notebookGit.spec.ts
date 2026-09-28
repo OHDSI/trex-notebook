@@ -23,7 +23,9 @@ describe("notebookGit", () => {
   }
 
   it("targets the d2e trex-function route", () => {
-    expect(notebookGitBase()).toBe(`${location.origin}/notebook-git-api`);
+    // Trusted @ohdsi scope: trex mounts these under PLUGINS_BASE_PATH/<scope>/,
+    // which is what lets the route use trex auth instead of the Logto path.
+    expect(notebookGitBase()).toBe(`${location.origin}/plugins/ohdsi/notebook-git-api`);
   });
 
   it("mirrorNotebook POSTs to /:id/mirror with the auth header", async () => {

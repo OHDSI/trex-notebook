@@ -23,6 +23,8 @@ vi.mock("../api/graphqlClient", () => ({
 }));
 
 import NotebookHeader from "./NotebookHeader.vue";
+import CreateNotebookDialog from "./CreateNotebookDialog.vue";
+import SyncFromRemoteButton from "./SyncFromRemoteButton.vue";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 
 const notebooks = [
@@ -54,14 +56,37 @@ describe("with git mirroring disabled", () => {
     expect(s.mirrorWarning).toBeNull();
   });
 
-  it("hides the Sync from Remote button", async () => {
+  it("shows the Sync from Remote button but disables it", async () => {
+    // Shown, not hidden: git is configured on the setup page, so the control
+    // has to stay discoverable and read as "not configured yet".
     const w = mount(NotebookHeader, {
       props: { notebooks, activeId: "n1", canSave: true },
     });
     await flushPromises();
-    const labels = w.findAll("button").map((b) => b.text());
-    expect(labels.some((t) => t.includes("Sync from Remote"))).toBe(false);
+    const sync = w
+      .findAll("button")
+      .find((b) => b.text().includes("Sync from Remote"));
+    expect(sync).toBeDefined();
+    expect(sync!.attributes("disabled")).toBeDefined();
     // the rest of the header is unaffected
+    const labels = w.findAll("button").map((b) => b.text());
     expect(labels).toEqual(expect.arrayContaining(["Export", "Import", "New", "Save"]));
+  });
+
+  it("does not call the git API when the disabled Sync button is clicked", async () => {
+    const { checkRemoteDiff } = await import("../api/notebookGit");
+    const w = mount(SyncFromRemoteButton, { props: { notebookId: "n1" } });
+    await w.find("button").trigger("click");
+    await flushPromises();
+    expect(checkRemoteDiff).not.toHaveBeenCalled();
+  });
+
+  it("still fetches templates, which do not depend on mirroring", async () => {
+    // Templates only READ a public server-configured repo; turning mirroring
+    // off must not take the template list with it.
+    const { getTemplates } = await import("../api/notebookGit");
+    mount(CreateNotebookDialog, { props: { open: true, existingNames: [] } });
+    await flushPromises();
+    expect(getTemplates).toHaveBeenCalled();
   });
 });
