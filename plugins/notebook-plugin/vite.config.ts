@@ -18,16 +18,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // installed version and hand the worker a matching indexUrl. Fail the build
 // loudly rather than shipping a mismatch that only shows up as a dead kernel.
 const pyodideVersion: string = (() => {
-  const require = createRequire(import.meta.url);
-  try {
-    return JSON.parse(
-      readFileSync(require.resolve('pyodide/package.json'), 'utf-8')
-    ).version;
-  } catch (err) {
-    throw new Error(
-      `Could not resolve the installed pyodide version: ${String(err)}`
-    );
+  // pyodide is a dependency of ../notebook (the lib this plugin bundles from
+  // source), NOT of this package — CI installs the two separately, so it lives
+  // in ../notebook/node_modules and resolving from this file alone only works
+  // with a hoisted install. Resolve from the lib first, then fall back.
+  const roots = [
+    path.resolve(__dirname, '../notebook/package.json'),
+    fileURLToPath(import.meta.url),
+  ];
+  for (const root of roots) {
+    try {
+      return JSON.parse(
+        readFileSync(createRequire(root).resolve('pyodide/package.json'), 'utf-8')
+      ).version;
+    } catch {
+      // try the next root
+    }
   }
+  throw new Error(
+    'Could not resolve the installed pyodide version from ' + roots.join(' or ')
+  );
 })();
 
 // rD2E is not a real webR package — it is injected as R source and its import
