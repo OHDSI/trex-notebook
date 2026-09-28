@@ -4,10 +4,22 @@
    inside the Atlas shell, so injecting it restyles the whole host page and
    makes the notebook itself diverge from the React original. The React notebook
    (notebook/src/index.css) imports exactly these two layers for the same reason. */
-@layer base, theme, utilities;
+@layer base, theme;
 
 @import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Utilities are deliberately NOT put in a layer.
+   Atlas's own stylesheet is entirely unlayered and includes
+   `button,input,optgroup,select,textarea{font:inherit}`. Unlayered CSS beats
+   ANY @layer'd CSS regardless of specificity, so while these lived in
+   @layer utilities every Tailwind font-size utility silently lost on our
+   <button>s: "Add Cell", "Run All" and the add-cell row kept the host's font
+   size, and only padding-only changes appeared to work. Unlayered,
+   `.text-[11px]` (0,1,0) beats `button` (0,0,1) in the normal cascade.
+   Safe here: Atlas defines no Tailwind-style utilities of its own, and its
+   Vuetify spacing classes carry !important, so they still win where the names
+   overlap. Preflight is still excluded — that is `base`, not `utilities`. */
+@import "tailwindcss/utilities.css";
 
 /* Scan the embedded notebook component source so its utility classes are emitted. */
 @source "../../notebook/src";

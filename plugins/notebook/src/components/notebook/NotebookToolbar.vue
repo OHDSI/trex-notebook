@@ -75,8 +75,8 @@ function dotClass(st: KernelStatus): string {
   <div :class="cn('flex items-center gap-0.5 rounded-lg border bg-background p-0.5', props.class)">
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Button variant="ghost" size="sm" class="h-7 gap-1 px-2 text-xs">
-          <Plus class="h-3.5 w-3.5" />
+        <Button variant="ghost" size="sm" class="h-6 gap-1 px-2 text-[11px]">
+          <Plus class="h-3 w-3" />
           Add Cell
         </Button>
       </DropdownMenuTrigger>
@@ -96,51 +96,51 @@ function dotClass(st: KernelStatus): string {
       </DropdownMenuContent>
     </DropdownMenu>
 
-    <Separator orientation="vertical" class="mx-1 h-5" />
+    <Separator orientation="vertical" class="mx-1 h-4" />
 
     <Button
       v-if="isExecuting"
       variant="ghost"
       size="sm"
-      class="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+      class="h-6 gap-1 px-2 text-[11px] text-destructive hover:text-destructive"
       @click="emit('interruptExecution')"
     >
-      <Square class="h-3.5 w-3.5" />
+      <Square class="h-3 w-3" />
       Stop
     </Button>
     <Button
       v-else
       variant="ghost"
       size="sm"
-      class="h-7 gap-1 px-2 text-xs"
+      class="h-6 gap-1 px-2 text-[11px]"
       :disabled="kernelStatus !== 'idle'"
       @click="emit('runAllCells')"
     >
-      <Play class="h-3.5 w-3.5" />
+      <Play class="h-3 w-3" />
       Run All
     </Button>
 
-    <Separator orientation="vertical" class="mx-1 h-5" />
+    <Separator orientation="vertical" class="mx-1 h-4" />
 
     <Button
       variant="ghost"
       size="icon"
-      class="h-7 w-7"
+      class="h-6 w-6"
       :disabled="!canUndo"
       title="Undo (Ctrl+Z)"
       @click="emit('undo')"
     >
-      <Undo2 class="h-4 w-4" />
+      <Undo2 class="h-3.5 w-3.5" />
     </Button>
     <Button
       variant="ghost"
       size="icon"
-      class="h-7 w-7"
+      class="h-6 w-6"
       :disabled="!canRedo"
       title="Redo (Ctrl+Shift+Z)"
       @click="emit('redo')"
     >
-      <Redo2 class="h-4 w-4" />
+      <Redo2 class="h-3.5 w-3.5" />
     </Button>
 
     <div class="ml-auto flex items-center gap-2 px-1 text-xs">
@@ -150,7 +150,7 @@ function dotClass(st: KernelStatus): string {
             <Button
               variant="ghost"
               size="sm"
-              class="h-7 gap-1 px-2 text-xs text-muted-foreground"
+              class="h-6 gap-1 px-2 text-[11px] text-muted-foreground"
               :disabled="kernelStatus === 'busy' || isExecuting"
             >
               {{ activeKernel?.name || 'Select Kernel' }}
@@ -179,7 +179,7 @@ function dotClass(st: KernelStatus): string {
           <Separator v-if="i > 0" orientation="vertical" class="h-4" />
           <div class="flex items-center gap-1.5">
             <div :class="dotClass(kernelStatuses?.get(k.id) ?? 'disconnected')" />
-            <span class="whitespace-nowrap text-muted-foreground">
+            <span class="text-[11px] whitespace-nowrap text-muted-foreground">
               {{ k.languages.includes('r') ? 'R' : 'Python' }}
             </span>
           </div>
@@ -191,7 +191,7 @@ function dotClass(st: KernelStatus): string {
           :title="statusHint(kernelStatus)"
         >
           <div :class="dotClass(kernelStatus)" />
-          <span class="whitespace-nowrap text-muted-foreground">{{ statusLabel(kernelStatus) }}</span>
+          <span class="text-[11px] whitespace-nowrap text-muted-foreground">{{ statusLabel(kernelStatus) }}</span>
         </div>
       </template>
     </div>
