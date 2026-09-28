@@ -28,3 +28,34 @@ export interface NotebookPatch {
   content?: NotebookData;
   deletedAt?: string;
 }
+
+// --- git mirror (notebook-git-api) -----------------------------------------
+// Shapes match the React notebook's types.ts so both clients stay comparable.
+
+export interface RemoteDiffCheckResponse {
+  hasDifferences: boolean;
+  reason: string;
+}
+
+export interface OverwriteFromRemoteResponse {
+  message: string;
+  overwritten: boolean;
+  notebookId: string;
+}
+
+export interface MirrorResponse {
+  status: "ok" | "skipped";
+  /** "saved" | "deleted" when status is "ok" */
+  action?: string;
+  /** why it was skipped, e.g. "Git config not set" */
+  reason?: string;
+}
+
+// --- notebook templates (notebook-git-api GET /templates) -------------------
+
+export interface NotebookTemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  content: unknown;
+}

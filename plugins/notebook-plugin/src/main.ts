@@ -9,6 +9,21 @@ import NotebookApp from './NotebookApp.vue';
 
 const CSS_LINK_ID = 'notebook-plugin-styles';
 
+
+// The plugin is mounted under different roots depending on the host: d2e serves
+// it from /atlas/plugins/notebook-plugin, the standalone sibyl host from
+// /plugins/notebook-plugin. Hardcoding either one 404s the stylesheet on the
+// other, and a missing stylesheet is silent — the notebook renders with none of
+// its Tailwind utilities. Derive the directory from this module's own URL so it
+// is correct wherever it is mounted.
+function ownDirUrl(): string {
+  try {
+    return new URL('.', import.meta.url).href.replace(/\/$/, '');
+  } catch {
+    return `${window.location.origin}/plugins/notebook-plugin`;
+  }
+}
+
 function injectPluginCss(uiFilesUrl: string): Promise<void> {
   const existing = document.getElementById(CSS_LINK_ID) as HTMLLinkElement | null;
   if (existing) {
@@ -19,9 +34,7 @@ function injectPluginCss(uiFilesUrl: string): Promise<void> {
           existing.addEventListener('error', () => resolve(), { once: true });
         });
   }
-  const base = uiFilesUrl
-    ? uiFilesUrl.replace(/\/$/, '')
-    : `${window.location.origin}/plugins/notebook-plugin`;
+  const base = uiFilesUrl ? uiFilesUrl.replace(/\/$/, '') : ownDirUrl();
   return new Promise<void>((resolve) => {
     const link = document.createElement('link');
     link.id = CSS_LINK_ID;

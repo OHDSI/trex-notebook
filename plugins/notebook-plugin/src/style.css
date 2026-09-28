@@ -1,4 +1,13 @@
-@import "tailwindcss";
+/* Theme + utilities ONLY — deliberately NOT the full `@import "tailwindcss"`,
+   which also pulls in Tailwind's preflight. Preflight is a GLOBAL element reset
+   (margins, font sizes, headings, buttons, borders); this plugin is mounted
+   inside the Atlas shell, so injecting it restyles the whole host page and
+   makes the notebook itself diverge from the React original. The React notebook
+   (notebook/src/index.css) imports exactly these two layers for the same reason. */
+@layer base, theme, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
 /* Scan the embedded notebook component source so its utility classes are emitted. */
 @source "../../notebook/src";

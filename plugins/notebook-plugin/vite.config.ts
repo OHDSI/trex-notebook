@@ -56,5 +56,11 @@ export default defineConfig({
     globals: false,
     include: ['src/**/*.spec.ts', 'tests/**/*.spec.ts'],
     exclude: ['tests/e2e/**'],
+    // @ohdsi/atlas-ui ships from GitHub Packages and needs NODE_AUTH_TOKEN, so
+    // it is not installed for local/CI unit runs. Component tests resolve it to
+    // minimal stubs instead. Production builds use the real package.
+    alias: {
+      '@ohdsi/atlas-ui': path.resolve(__dirname, './tests/stubs/atlas-ui.ts'),
+    },
   },
 });
