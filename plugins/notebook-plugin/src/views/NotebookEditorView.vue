@@ -110,7 +110,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Notebook,
   PyodideKernel,
-  WebRKernel,
   createEmptyNotebook,
   serializeIpynb,
   parseIpynb,
@@ -125,6 +124,9 @@ import DeleteNotebookDialog from '../components/DeleteNotebookDialog.vue'
 import DiscardChangesDialog from '../components/DiscardChangesDialog.vue'
 import { useAtlasNotebookTheme } from '../composables/useAtlasNotebookTheme'
 import { useNotebooksStore } from '../store/useNotebooksStore'
+import { RD2EReadyWebRKernel } from '../kernels/rD2EReadyWebRKernel'
+import { pyodideIndexUrl } from '../kernels/pyodideAssets'
+import { getSessionToken } from '../api/authToken'
 import type { NotebookDocument, NotebookTemplateDto } from '../api/types'
 
 const props = defineProps<{ id: string | null }>()
@@ -136,8 +138,29 @@ const store = useNotebooksStore()
 // kernel whose status is not 'disconnected', so a module-level singleton would
 // leave a remounted view with an empty kernelStatuses map and a stale
 // 'disconnected' indicator. Same reasoning as the React NotebookManager.
-const kernels = [new PyodideKernel(), new WebRKernel()]
-const kernelConfigs = [{ type: 'pyodide' as const }, { type: 'webr' as const }]
+const kernels = [new PyodideKernel(), new RD2EReadyWebRKernel()]
+
+// rD2E reads these out of the R session (Sys.getenv) to reach d2e's own routes.
+// TREX__DATASET_ID is deliberately empty: unlike the React notebook, this
+// plugin has no dataset selector yet, so the rD2E calls that need a dataset
+// (get_cohort_definition_set, run_strategus_flow) will report a missing dataset
+// rather than silently querying the wrong one. `library(rD2E)` and the function
+// definitions work regardless.
+const kernelConfigs = [
+  // indexUrl must match the bundled pyodide package or loadPyodide refuses to
+  // start; see pyodideAssets.ts.
+  { type: 'pyodide' as const, ...(pyodideIndexUrl ? { indexUrl: pyodideIndexUrl } : {}) },
+  {
+    type: 'webr' as const,
+    envVars: {
+      TREX__ENDPOINT_URL: window.location.origin,
+      TREX__DATASET_ID: '',
+      ...(getSessionToken()
+        ? { TREX__AUTHORIZATION_TOKEN: getSessionToken() as string }
+        : {}),
+    },
+  },
+]
 
 const rootEl = ref<HTMLElement | null>(null)
 // Plain ref rather than useTemplateRef: this package declares vue ^3.4.0 and
