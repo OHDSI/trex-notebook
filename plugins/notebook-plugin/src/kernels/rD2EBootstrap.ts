@@ -74,12 +74,16 @@ local({
   prevTcolon <- get(":::", envir = baseEnv)
 
   libShim <- function(package, ...) {
-    nm <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    charOnly <- isTRUE(list(...)[["character.only"]])
+    nm <- if (charOnly) as.character(package)
+          else tryCatch(as.character(substitute(package)), error = function(e) "")
     if (identical(nm, "rD2E")) return(invisible("rD2E"))
     mc <- match.call(); mc[[1L]] <- prevLib; eval(mc, parent.frame())
   }
   reqShim <- function(package, ...) {
-    nm <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    charOnly <- isTRUE(list(...)[["character.only"]])
+    nm <- if (charOnly) as.character(package)
+          else tryCatch(as.character(substitute(package)), error = function(e) "")
     if (identical(nm, "rD2E")) return(invisible(TRUE))
     mc <- match.call(); mc[[1L]] <- prevReq; eval(mc, parent.frame())
   }
