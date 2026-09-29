@@ -38,7 +38,7 @@
       v-if="ready"
       :initial-data="initialData"
       :kernels="kernels"
-      :default-kernel-config="{ type: 'pyodide' }"
+      :kernel-configs="kernelConfigs"
       :on-change="onChange"
     />
     <div v-else class="text-medium-emphasis">Loading…</div>
@@ -52,11 +52,12 @@ import {
   PyodideKernel,
   createEmptyNotebook,
 } from "@trex/notebook";
-import type { NotebookData } from "@trex/notebook";
+import type { NotebookData, KernelConfig } from "@trex/notebook";
 import { AtlasAlert, AtlasButton, AtlasChip, AtlasIcon, AtlasTextField } from "@ohdsi/atlas-ui";
 import SectionHero from "../components/SectionHero.vue";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 import { RD2EReadyWebRKernel } from "../kernels/RD2EReadyWebRKernel";
+import { ensureAuthToken, getAuthToken } from "../api/authToken";
 
 const props = defineProps<{ id: string | null }>();
 const emit = defineEmits<{ (e: "back"): void; (e: "saved", id: string): void }>();
@@ -65,6 +66,22 @@ const store = useNotebooksStore();
 const kernels = [new PyodideKernel(), new RD2EReadyWebRKernel()];
 
 const ready = ref(false);
+const kernelConfigs = ref<KernelConfig[]>([]);
+
+async function buildKernelConfigs(): Promise<KernelConfig[]> {
+  await ensureAuthToken();
+  const token = getAuthToken() ?? '';
+  return [
+    { type: 'pyodide' },
+    {
+      type: 'webr',
+      envVars: {
+        TREX__ENDPOINT_URL: window.location.origin,
+        TREX__AUTHORIZATION_TOKEN: token,
+      },
+    },
+  ];
+}
 const saving = ref(false);
 const dirty = ref(false);
 const error = ref<string | null>(null);
@@ -96,6 +113,7 @@ async function load(): Promise<void> {
       error.value = e instanceof Error ? e.message : String(e);
     }
   }
+  kernelConfigs.value = await buildKernelConfigs();
   ready.value = true;
 }
 

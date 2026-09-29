@@ -105,16 +105,23 @@ local({
   # Shim library()
   orig_library <- base::library
   library_shim <- function(package, ...) {
-    pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    dots <- list(...)
+    char_only <- isTRUE(dots[["character.only"]])
+    if (char_only) {
+      pkg <- package
+      dots[["character.only"]] <- NULL
+    } else {
+      pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    }
     if (pkg %in% shimmed) {
       return(invisible(pkg))
     }
     tryCatch(
-      orig_library(package = pkg, character.only = TRUE, ...),
+      do.call(orig_library, c(list(package = pkg, character.only = TRUE), dots)),
       error = function(e) {
         message(paste0("Installing ", pkg, "..."))
         webr::install(pkg)
-        orig_library(package = pkg, character.only = TRUE, ...)
+        do.call(orig_library, c(list(package = pkg, character.only = TRUE), dots))
       }
     )
   }
@@ -125,11 +132,18 @@ local({
   # Shim require()
   orig_require <- base::require
   require_shim <- function(package, ...) {
-    pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    dots <- list(...)
+    char_only <- isTRUE(dots[["character.only"]])
+    if (char_only) {
+      pkg <- package
+      dots[["character.only"]] <- NULL
+    } else {
+      pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
+    }
     if (pkg %in% shimmed) {
       return(invisible(TRUE))
     }
-    orig_require(package = pkg, character.only = TRUE, ...)
+    do.call(orig_require, c(list(package = pkg, character.only = TRUE), dots))
   }
   unlockBinding("require", base_env)
   assign("require", require_shim, envir = base_env)

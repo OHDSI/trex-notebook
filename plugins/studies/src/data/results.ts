@@ -90,6 +90,27 @@ export async function deleteResult(id: string): Promise<void> {
   writeIndex(readIndex().filter((m) => m.id !== id));
 }
 
+/**
+ * Caches a backend result's blob locally, keyed by the backend id, so the
+ * results-viewer plugin (which loads blobs from this same IndexedDB store)
+ * can open it immediately afterwards.
+ */
+export async function saveDownloadedResult(
+  meta: { id: string; name: string; size: number },
+  blob: Blob
+): Promise<ResultMeta> {
+  const entry: ResultMeta = { id: meta.id, name: meta.name, size: meta.size, addedAt: Date.now() };
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put({ ...entry, blob });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  writeIndex([entry, ...readIndex().filter((m) => m.id !== entry.id)]);
+  return entry;
+}
+
 export function formatSize(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;

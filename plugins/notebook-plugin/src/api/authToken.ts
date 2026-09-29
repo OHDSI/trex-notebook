@@ -60,6 +60,10 @@ export async function ensureAuthToken(): Promise<void> {
   trexToken = (await p) ?? trexToken;
 }
 
+export function getAuthToken(): string | null {
+  return trexToken ?? token;
+}
+
 export function authHeaders(): Record<string, string> {
   const t = trexToken ?? token;
   return t ? { Authorization: `Bearer ${t}` } : {};
