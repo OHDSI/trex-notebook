@@ -10,8 +10,9 @@ Covers the four known 6.5.0 changes (executeSettings replacing top-level
 run_covariate_summary, hyperparameter_settings removal, skip_diagnostics removal,
 split_settings carrying no "type" field) plus fixes found while verifying the rest of
 the PLP surface: the modelSettings object shape (fitFunction, param only -- "settings"
-metadata lives nested under param as "_settings", mirroring the R attribute, not as a
-third top-level field), create_random_forest_feature_selection's max_depth field, and
+metadata lives nested under param as "attr_settings", mirroring the key the R custom
+serializer emits for that R attribute (and what the Strategus/PLP deserializer reads),
+not as a third top-level field), create_random_forest_feature_selection's max_depth field, and
 create_patient_level_prediction_validation_module_specifications's log_level field.
 
 Run: python3 plugins/notebook/tests/strategus_spec_builder_plp.test.py
@@ -237,7 +238,8 @@ check(
 # =============================================================================
 # Fix found while verifying the rest of the surface: every modelSettings object is
 # {fitFunction, param} only -- the "settings" metadata PLP attaches lives nested under
-# param as "_settings" (mirroring the R attribute), not as a third top-level field.
+# param as "attr_settings" (the key R's custom serializer emits for that R attribute,
+# and what the Strategus/PLP deserializer reads), not as a third top-level field.
 # =============================================================================
 
 def expect_model_settings_shape(label, obj):
@@ -246,8 +248,8 @@ def expect_model_settings_shape(label, obj):
         f"{label}: modelSettings object has only {{fitFunction, param}}"
     )
     check(
-        "_settings" in obj["param"],
-        f"{label}: settings metadata carried nested under param as _settings"
+        "attr_settings" in obj["param"],
+        f"{label}: settings metadata carried nested under param as attr_settings"
     )
 
 

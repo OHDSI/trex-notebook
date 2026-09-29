@@ -572,7 +572,7 @@ def create_get_db_cohort_method_data_args(
     first_exposure_only: bool = True,
     washout_period: int = 365,
     nesting_cohort_id=_REMOVED,
-    restrict_to_common_period: bool = True,
+    restrict_to_common_period: bool = False,
     min_age=_REMOVED,
     max_age=_REMOVED,
     gender_concept_ids=_REMOVED,
@@ -1513,13 +1513,15 @@ def create_model_design(
     if split_settings is None:
         split_settings = create_default_split_setting()
     # run_split_data/run_sample_data/run_feature_engineering/run_preprocess_data/
-    # run_model_development are not exposed as createModelDesign() arguments in
-    # PatientLevelPrediction 6.5.0; only run_covariate_summary is. The other five
-    # are always True inside executeSettings.
+    # run_model_development are not exposed as create_model_design() arguments in
+    # PatientLevelPrediction 6.5.0; create_model_design() itself hardcodes these
+    # five. run_sample_data/run_feature_engineering default to False (they're only
+    # forced True by createExecuteSettings() when explicit sample/feature-engineering
+    # settings are supplied, which this builder never does).
     execute_settings = {
         "runSplitData": True,
-        "runSampleData": True,
-        "runFeatureEngineering": True,
+        "runSampleData": False,
+        "runFeatureEngineering": False,
         "runPreprocessData": True,
         "runModelDevelopment": True,
         "runCovariateSummary": run_covariate_summary
@@ -1580,9 +1582,11 @@ def _make_cyclops_model_settings(model_name, model_type, cyclops_model_type,
         "saveType": "RtoJson", "predict": "predictCyclops"
     }
     # PatientLevelPrediction 6.5.0's modelSettings object carries only fitFunction
-    # and param; the settings metadata lives as an attribute on param (mirrored
-    # here as the "_settings" key), not as a third top-level field.
-    param = {**param, "_settings": settings}
+    # and param; the settings metadata lives as an attribute on param. R's custom
+    # serializer emits that attribute as the "attr_settings" key, which is what the
+    # Strategus/PLP deserializer looks for, so it's mirrored here under the same key
+    # rather than as a third top-level field.
+    param = {**param, "attr_settings": settings}
     return {
         "fitFunction": "fitCyclopsModel",
         "param": param,
@@ -1674,8 +1678,8 @@ def set_iterative_hard_thresholding(
     }
     param = {
         **param,
-        "_settings": {"modelName": "iterativeHardThresholding", "modelType": "binary",
-                      "seed": seed, "saveType": "RtoJson", "predict": "predictCyclops"}
+        "attr_settings": {"modelName": "iterativeHardThresholding", "modelType": "binary",
+                          "seed": seed, "saveType": "RtoJson", "predict": "predictCyclops"}
     }
     return {
         "fitFunction": "fitCyclopsModel",
@@ -1688,7 +1692,7 @@ def _make_sklearn_model_settings(model_name, python_module, python_class, param,
     """Internal helper for sklearn-based model settings."""
     param = {
         **param,
-        "_settings": {
+        "attr_settings": {
             "modelType": "binary", "seed": seed, "modelName": model_name,
             "pythonModule": python_module, "pythonClass": python_class,
             "saveType": "saveLoadSklearn", "predict": "predictSklearn"
@@ -1723,9 +1727,9 @@ def set_gradient_boosting_machine(
     }
     param = {
         **param,
-        "_settings": {"modelType": "binary", "seed": seed,
-                      "modelName": "gradientBoostingMachine",
-                      "saveType": "xgboost", "predict": "predictXgboost"}
+        "attr_settings": {"modelType": "binary", "seed": seed,
+                          "modelName": "gradientBoostingMachine",
+                          "saveType": "xgboost", "predict": "predictXgboost"}
     }
     return {
         "fitFunction": "fitXgboost",
@@ -1759,9 +1763,9 @@ def set_light_gbm(
     }
     param = {
         **param,
-        "_settings": {"modelType": "binary", "seed": seed,
-                      "modelName": "lightGBM",
-                      "saveType": "lightgbm", "predict": "predictLightGBM"}
+        "attr_settings": {"modelType": "binary", "seed": seed,
+                          "modelName": "lightGBM",
+                          "saveType": "lightgbm", "predict": "predictLightGBM"}
     }
     return {
         "fitFunction": "fitLightGBM",
