@@ -181,7 +181,7 @@
   status <- webr::eval_js("globalThis._rD2E_s")
   body <- webr::eval_js("globalThis._rD2E_b")
 
-  list(status = status, content = .rD2E_from_json(body))
+  list(status = status, content = tryCatch(.rD2E_from_json(body), error = function(e) body))
 }
 
 # =============================================================================
