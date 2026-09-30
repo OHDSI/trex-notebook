@@ -2476,16 +2476,19 @@ def create_cohort_method_module_specifications(
     if cm_diagnostic_thresholds is None:
         cm_diagnostic_thresholds = _create_default_cm_diagnostic_thresholds()
 
+    settings = {
+        "cmAnalysisList": cm_analysis_list,
+        "targetComparatorOutcomesList": target_comparator_outcomes_list,
+    }
+    if analyses_to_exclude is not None:
+        settings["analysesToExclude"] = analyses_to_exclude
+    settings["refitPsForEveryOutcome"] = refit_ps_for_every_outcome
+    settings["refitPsForEveryStudyPopulation"] = refit_ps_for_every_study_population
+    settings["cmDiagnosticThresholds"] = cm_diagnostic_thresholds
+
     return {
         "module": "CohortMethodModule",
-        "settings": {
-            "cmAnalysisList": cm_analysis_list,
-            "targetComparatorOutcomesList": target_comparator_outcomes_list,
-            "analysesToExclude": analyses_to_exclude,
-            "refitPsForEveryOutcome": refit_ps_for_every_outcome,
-            "refitPsForEveryStudyPopulation": refit_ps_for_every_study_population,
-            "cmDiagnosticThresholds": cm_diagnostic_thresholds
-        },
+        "settings": settings,
         "_class": ("CohortMethodModuleSpecifications", "ModuleSpecifications")
     }
 
