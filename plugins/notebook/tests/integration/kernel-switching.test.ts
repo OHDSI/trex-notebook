@@ -133,6 +133,25 @@ describe('Kernel Switching Integration', () => {
 
       await expect(api.switchKernel('nonexistent')).rejects.toThrow('No kernel found')
     })
+
+    it('preserves envVars from kernelConfigs when switching kernels', async () => {
+      const connectSpy = vi.spyOn(webRKernel, 'connect')
+      const kernelConfigs: KernelConfig[] = [
+        { type: 'webr', envVars: { TREX__AUTHORIZATION_TOKEN: 'test-token' } } as KernelConfig,
+      ]
+      const [api] = withSetup(() =>
+        useKernel({ kernels: [pyodideKernel, webRKernel], kernelConfigs })
+      )
+
+      // The composable's own connect() (used by switchKernel) is distinct from
+      // connectAllConfigured's mount-time auto-connect of the same kernel, so
+      // this call is what actually exercises switchKernel's lookup.
+      await api.switchKernel('webr')
+
+      expect(connectSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ envVars: { TREX__AUTHORIZATION_TOKEN: 'test-token' } })
+      )
+    })
   })
 
   describe('kernel execution after switch', () => {
