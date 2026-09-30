@@ -107,9 +107,9 @@ local({
   library_shim <- function(package, ...) {
     dots <- list(...)
     char_only <- isTRUE(dots[["character.only"]])
+    dots[["character.only"]] <- NULL
     if (char_only) {
       pkg <- package
-      dots[["character.only"]] <- NULL
     } else {
       pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
     }
@@ -134,9 +134,9 @@ local({
   require_shim <- function(package, ...) {
     dots <- list(...)
     char_only <- isTRUE(dots[["character.only"]])
+    dots[["character.only"]] <- NULL
     if (char_only) {
       pkg <- package
-      dots[["character.only"]] <- NULL
     } else {
       pkg <- tryCatch(as.character(substitute(package)), error = function(e) "")
     }
