@@ -78,7 +78,14 @@ async function getToken(): Promise<string | null> {
   if (!refreshing) {
     refreshing = doRefresh().finally(() => { refreshing = null; });
   }
-  return refreshing;
+  const refreshed = await refreshing;
+  if (refreshed) return refreshed;
+
+  // Refresh failed (network blip, revoked refresh token, bad config), but the
+  // stored token was only "expiring soon", not actually expired yet — use it
+  // rather than sending no Authorization header at all and guaranteeing a 401.
+  if (stored && decodeExp(stored) * 1000 > Date.now()) return stored;
+  return null;
 }
 
 async function authHeaders(): Promise<Record<string, string>> {
