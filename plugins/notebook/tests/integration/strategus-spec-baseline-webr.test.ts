@@ -66,7 +66,10 @@ async function collect(iter: AsyncIterable<KernelOutput>): Promise<KernelOutput[
   return out
 }
 
-describe('Strategus spec baseline — WebR', () => {
+// Requires a real WebR session (CDN download), which isn't available in the
+// vitest/jsdom environment used here. Opt in with RUN_KERNEL_INTEGRATION=1 in
+// an environment that has one.
+describe.skipIf(!process.env.RUN_KERNEL_INTEGRATION)('Strategus spec baseline — WebR', () => {
   let kernel: WebRKernel
 
   beforeAll(async () => {

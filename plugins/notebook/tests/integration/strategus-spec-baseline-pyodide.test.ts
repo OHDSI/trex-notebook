@@ -68,7 +68,10 @@ async function collect(iter: AsyncIterable<KernelOutput>): Promise<KernelOutput[
   return out
 }
 
-describe('Strategus spec baseline — Pyodide', () => {
+// Requires a real Worker, which jsdom (the vitest environment used here)
+// doesn't provide. Opt in with RUN_KERNEL_INTEGRATION=1 in an environment
+// that has one.
+describe.skipIf(!process.env.RUN_KERNEL_INTEGRATION)('Strategus spec baseline — Pyodide', () => {
   let kernel: PyodideKernel
 
   beforeAll(async () => {
