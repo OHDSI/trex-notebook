@@ -937,7 +937,7 @@ def create_outcome(
     outcome = {
         "outcomeId": outcome_id,
         "outcomeOfInterest": outcome_of_interest,
-        "trueEffectSize": true_effect_size if true_effect_size is not None else math.nan,
+        "trueEffectSize": true_effect_size,
     }
     if prior_outcome_lookback is not None:
         outcome["priorOutcomeLookback"] = prior_outcome_lookback
@@ -1234,7 +1234,7 @@ def create_exposure(
     return {
         "exposureId": exposure_id,
         "exposureIdRef": exposure_id_ref,
-        "trueEffectSize": true_effect_size if true_effect_size is not None else math.nan,
+        "trueEffectSize": true_effect_size,
         "_class": "Exposure"
     }
 

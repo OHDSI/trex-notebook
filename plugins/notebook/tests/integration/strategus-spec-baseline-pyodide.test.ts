@@ -22,9 +22,31 @@ const baseline = JSON.parse(
 // names on each cohort definition entry — which is enough to catch a
 // structural drift (e.g. a renamed/missing field) without requiring the
 // synthetic test cohorts to carry identical names/content to the baseline's.
+// The Pyodide builder embeds "_class"/"_fun" as literal dict keys on its
+// settings/args objects (e.g. covariateSettings, control, prior, *Args) so its
+// own code can inspect an object's type at runtime. The R builder's baseline
+// fixture never has these: they're S3 class *attributes* there, and
+// generate-strategus-baseline.R's stripClasses() explicitly nils them out
+// before serializing. Strip them recursively so the comparison isn't
+// polluted by this Python-internal implementation detail.
+function stripMarkers(value: any): any {
+  if (Array.isArray(value)) return value.map(stripMarkers)
+  if (value !== null && typeof value === 'object') {
+    const result: any = {}
+    for (const [k, v] of Object.entries(value)) {
+      if (k === '_class' || k === '_fun') continue
+      result[k] = stripMarkers(v)
+    }
+    return result
+  }
+  return value
+}
+
 function pickScoped(spec: any) {
-  const moduleSpecifications = spec.moduleSpecifications.filter((m: any) =>
-    ['CohortGeneratorModule', 'CohortMethodModule', 'PatientLevelPredictionModule'].includes(m.module)
+  const moduleSpecifications = stripMarkers(
+    spec.moduleSpecifications.filter((m: any) =>
+      ['CohortGeneratorModule', 'CohortMethodModule', 'PatientLevelPredictionModule'].includes(m.module)
+    )
   )
   const sharedResourcesShape = (spec.sharedResources ?? []).map((sr: any) => ({
     keys: Object.keys(sr).sort(),
