@@ -83,8 +83,8 @@ check(
 )
 
 check(
-    char_settings.get("_fun") == "getDbCovariateData",
-    "_get_default_characterization_covariate_settings(): _fun NOT touched (still getDbCovariateData)"
+    char_settings.get("_fun") == "getDbDefaultCovariateData",
+    "_get_default_characterization_covariate_settings(): _fun matches R/FeatureExtraction (getDbDefaultCovariateData)"
 )
 
 # =============================================================================

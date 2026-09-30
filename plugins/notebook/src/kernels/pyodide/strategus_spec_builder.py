@@ -177,47 +177,52 @@ def _get_default_characterization_covariate_settings() -> dict:
     return {
         "temporal": False,
         "temporalSequence": False,
-        # Demographics - all enabled
+        # Demographics
         "DemographicsGender": True,
-        "DemographicsAge": True,
         "DemographicsAgeGroup": True,
         "DemographicsRace": True,
         "DemographicsEthnicity": True,
         "DemographicsIndexYear": True,
         "DemographicsIndexMonth": True,
-        "DemographicsTimeInCohort": True,
-        "DemographicsPriorObservationTime": True,
-        "DemographicsPostObservationTime": True,
         # Long term covariates
         "ConditionGroupEraLongTerm": True,
-        "DrugGroupEraOverlapping": True,
         "DrugGroupEraLongTerm": True,
+        "DrugGroupEraOverlapping": True,
         "ProcedureOccurrenceLongTerm": True,
-        "MeasurementLongTerm": True,
-        "ObservationLongTerm": True,
         "DeviceExposureLongTerm": True,
-        "VisitConceptCountLongTerm": True,
+        "MeasurementLongTerm": True,
+        "MeasurementRangeGroupLongTerm": True,
+        "MeasurementValueAsConceptLongTerm": True,
+        "ObservationLongTerm": True,
+        "ObservationValueAsConceptLongTerm": True,
         # Short term covariates
         "ConditionGroupEraShortTerm": True,
         "DrugGroupEraShortTerm": True,
         "ProcedureOccurrenceShortTerm": True,
-        "MeasurementShortTerm": True,
-        "ObservationShortTerm": True,
         "DeviceExposureShortTerm": True,
-        "VisitConceptCountShortTerm": True,
+        "MeasurementShortTerm": True,
+        "MeasurementRangeGroupShortTerm": True,
+        "MeasurementValueAsConceptShortTerm": True,
+        "ObservationShortTerm": True,
+        "ObservationValueAsConceptShortTerm": True,
+        # Comorbidity scores
+        "CharlsonIndex": True,
+        "Dcsi": True,
+        "Chads2": True,
+        "Chads2Vasc": True,
         # Time windows
+        "shortTermStartDays": -30,
+        "mediumTermStartDays": -180,
         "endDays": 0,
         "longTermStartDays": -365,
-        "mediumTermStartDays": -180,
-        "shortTermStartDays": -30,
         # Concept filtering
         "includedCovariateConceptIds": [],
-        "excludedCovariateConceptIds": [],
-        "includedCovariateIds": [],
         "addDescendantsToInclude": False,
+        "excludedCovariateConceptIds": [],
         "addDescendantsToExclude": False,
+        "includedCovariateIds": [],
         "_class": "covariateSettings",
-        "_fun": "getDbCovariateData"
+        "_fun": "getDbDefaultCovariateData"
     }
 
 
