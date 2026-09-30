@@ -814,7 +814,9 @@ def create_fit_outcome_model_args(
         prior = create_prior(prior_type="laplace", use_cross_validation=True)
     if control is None:
         control = create_control(cv_type="auto", starting_variance=0.01,
-                                 tolerance=2e-07, noise_level="silent")
+                                 tolerance=2e-07, noise_level="quiet",
+                                 cv_repetitions=10, reset_coefficients=True,
+                                 seed=1, selector_type="auto")
     args = {
         "modelType": model_type,
         "stratified": stratified,
