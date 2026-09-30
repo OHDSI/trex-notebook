@@ -116,7 +116,18 @@ async function reload(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    const [backendResults, localItems] = await Promise.all([listBackendResults(), listResults()]);
+    const [backendSettled, localSettled] = await Promise.allSettled([listBackendResults(), listResults()]);
+
+    // Independent failure handling: a backend outage shouldn't hide results
+    // that already live in this browser's IndexedDB, and vice versa.
+    const backendResults = backendSettled.status === 'fulfilled' ? backendSettled.value : [];
+    const localItems = localSettled.status === 'fulfilled' ? localSettled.value : [];
+
+    const failure = backendSettled.status === 'rejected' ? backendSettled.reason : localSettled.status === 'rejected' ? localSettled.reason : null;
+    if (failure) {
+      error.value = failure instanceof Error ? failure.message : String(failure);
+    }
+
     const localIds = new Set(localItems.map((m) => m.id));
 
     const backendRows: Row[] = backendResults.map((r) => ({
@@ -134,8 +145,6 @@ async function reload(): Promise<void> {
       .map((m) => ({ ...m, source: 'local', downloaded: true }));
 
     items.value = [...backendRows, ...localOnlyRows].sort((a, b) => b.addedAt - a.addedAt);
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e);
   } finally {
     loading.value = false;
   }
