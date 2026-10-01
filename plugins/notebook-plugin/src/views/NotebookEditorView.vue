@@ -57,7 +57,7 @@ import { AtlasAlert, AtlasButton, AtlasChip, AtlasIcon, AtlasTextField } from "@
 import SectionHero from "../components/SectionHero.vue";
 import { useNotebooksStore } from "../store/useNotebooksStore";
 import { RD2EReadyWebRKernel } from "../kernels/RD2EReadyWebRKernel";
-import { ensureAuthToken, getAuthToken } from "../api/authToken";
+import { getWebApiToken } from "../api/authToken";
 
 const props = defineProps<{ id: string | null }>();
 const emit = defineEmits<{ (e: "back"): void; (e: "saved", id: string): void }>();
@@ -69,8 +69,7 @@ const ready = ref(false);
 const kernelConfigs = ref<KernelConfig[]>([]);
 
 async function buildKernelConfigs(): Promise<KernelConfig[]> {
-  await ensureAuthToken();
-  const token = getAuthToken() ?? '';
+  const token = getWebApiToken() ?? '';
   return [
     { type: 'pyodide' },
     {
