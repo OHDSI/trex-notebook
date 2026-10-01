@@ -3,9 +3,9 @@
 // coordinator API; central's contract (`central/shared/src/schemas.ts` /
 // `central/web/src/stores/studies.ts`) is duplicated here rather than imported
 // because each trex plugin builds independently.
-import { authHeaders, ensureAuthToken } from './authToken';
+import { hostAuthHeaders } from './authToken';
 
-export const defaultBase = (): string => `${location.origin}/plugins/network-api/network-api`;
+export const defaultBase = (): string => `${location.origin}/network-api`;
 
 interface SignupStateResponse {
   status?: string;
@@ -14,8 +14,7 @@ interface SignupStateResponse {
 /** True only when the network is configured AND this site is an active member. */
 export async function isNetworkActive(base: string = defaultBase()): Promise<boolean> {
   try {
-    await ensureAuthToken();
-    const res = await fetch(`${base}/signup/state`, { headers: { ...authHeaders() } });
+    const res = await fetch(`${base}/signup/state`, { headers: { ...hostAuthHeaders() } });
     if (res.status !== 200) return false;
     const body = (await res.json()) as SignupStateResponse;
     return body.status === 'active';
@@ -37,8 +36,7 @@ interface CoordinatorStateResponse {
  */
 export async function isCoordinatorConfigured(base: string = defaultBase()): Promise<boolean> {
   try {
-    await ensureAuthToken();
-    const res = await fetch(`${base}/coordinator/state`, { headers: { ...authHeaders() } });
+    const res = await fetch(`${base}/coordinator/state`, { headers: { ...hostAuthHeaders() } });
     if (res.status !== 200) return false;
     const body = (await res.json()) as CoordinatorStateResponse;
     return body.configured === true;
@@ -72,10 +70,9 @@ interface StudyWithUploads {
  * are pre-signed), then publish it.
  */
 export async function publishStudy(args: PublishStudyArgs, base: string = defaultBase()): Promise<void> {
-  await ensureAuthToken();
   const createRes = await fetch(`${base}/studies`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json', ...hostAuthHeaders() },
     body: JSON.stringify({ name: args.name, description: args.description, version: args.version }),
   });
   if (!createRes.ok) {
@@ -95,7 +92,7 @@ export async function publishStudy(args: PublishStudyArgs, base: string = defaul
 
   const publishRes = await fetch(`${base}/studies/${encodeURIComponent(data.study.studyId)}/publish`, {
     method: 'POST',
-    headers: { ...authHeaders() },
+    headers: { ...hostAuthHeaders() },
   });
   if (!publishRes.ok) {
     throw new Error(`publish failed: ${publishRes.status}`);

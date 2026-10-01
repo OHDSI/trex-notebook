@@ -7,14 +7,31 @@
 // grant-less `anon` Postgres role. ensureAuthToken() exchanges it via the
 // /trex-token function for a trex-native token before it is sent. Tokens that
 // already carry aud "authenticated" are trex-native and are sent unchanged.
-let token: string | null = null;
+let source: () => string | null = () => null;
+let exchangedFor: string | null = null;
 let trexToken: string | null = null;
 let exchange: Promise<string | null> | null = null;
 
-export function setAuthToken(t: string | null): void {
-  token = t;
+/** Reads the host token on every request, so a token the host refreshes is picked up. */
+export function setAuthTokenSource(get: () => string | null): void {
+  source = get;
+  exchangedFor = null;
   trexToken = null;
   exchange = null;
+}
+
+export function setAuthToken(t: string | null): void {
+  setAuthTokenSource(() => t);
+}
+
+function hostToken(): string | null {
+  const t = source() ?? null;
+  if (t !== exchangedFor) {
+    exchangedFor = t;
+    trexToken = null;
+    exchange = null;
+  }
+  return t;
 }
 
 function jwtPayload(t: string): Record<string, unknown> | null {
@@ -47,6 +64,7 @@ async function exchangeToken(t: string): Promise<string | null> {
 
 /** Resolve the token authHeaders() will send; await before any backend request. */
 export async function ensureAuthToken(): Promise<void> {
+  const token = hostToken();
   if (!token) return;
   const payload = jwtPayload(token);
   if (!payload || payload.aud === 'authenticated') return;
@@ -57,19 +75,23 @@ export async function ensureAuthToken(): Promise<void> {
     });
   }
   const p = exchange;
-  trexToken = (await p) ?? trexToken;
+  const exchanged = await p;
+  if (exchangedFor === token) trexToken = exchanged ?? trexToken;
 }
 
 export function authHeaders(): Record<string, string> {
-  const t = trexToken ?? token;
+  const host = hostToken();
+  const t = trexToken ?? host;
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
 /**
  * Headers carrying the host-provided token without the trex exchange.
- * The /WebAPI routes validate the host's OIDC token and reject trex-native
- * (HS256) tokens — the inverse of the trex core endpoints above.
+ * The /WebAPI, network-api and hades-api routes validate the host's OIDC token
+ * and reject trex-native (HS256) tokens — the inverse of the trex core
+ * endpoints above.
  */
 export function hostAuthHeaders(): Record<string, string> {
+  const token = hostToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

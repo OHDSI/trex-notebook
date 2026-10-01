@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { loadConfig } from '../config';
 import { ApiClient } from '../api/client';
-import { getAuthToken } from '../api/authToken';
+import { authHeaders, getAuthToken } from '../api/authToken';
 import { initiateSubmissionSchema } from '../api/schemas';
 import {
   type Study,
@@ -28,12 +28,12 @@ async function putFileToS3(url: string, file: File): Promise<void> {
   if (!res.ok) throw new Error(`upload failed (${res.status})`);
 }
 
-const metadataBase = (): string => `${location.origin}/plugins/metadata-api/metadata-api`;
+const metadataBase = (): string => `${location.origin}/metadata-api`;
 
 async function exportGzViaMetadataApi(jobId: string, uploadUrl: string, dbFilename?: string): Promise<void> {
   const res = await fetch(`${metadataBase()}/results/export-gz`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ jobId, uploadUrl, dbFilename }),
   });
   if (!res.ok) throw new Error(`export-gz failed (${res.status})`);

@@ -28,3 +28,21 @@ describe('strategus HadesClient.execute', () => {
     expect(envs).toEqual([{ envName: 'study1', path: '/e/study1' }]);
   });
 });
+
+describe('strategus HadesClient auth', () => {
+  it('sends the host IdP token as-is, without a /trex-token exchange', async () => {
+    const { setAuthToken } = await import('../src/api/authToken');
+    const idpToken = [
+      btoa(JSON.stringify({ alg: 'RS256' })),
+      btoa(JSON.stringify({ sub: 'u1', aud: 'https://idp', exp: Math.floor(Date.now() / 1000) + 3600 })),
+      'sig',
+    ].join('.');
+    setAuthToken(idpToken);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ envs: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await new HadesClient('http://x/hades-api').listEnvs();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(`Bearer ${idpToken}`);
+    setAuthToken(null);
+  });
+});
