@@ -39,4 +39,7 @@ design.
 
 - Any notebook session left open longer than the host's OIDC token lifetime.
 - Both `TREX__AUTHORIZATION_TOKEN` and `TREX__ENDPOINT_URL` are affected in
-  principle (only the token is expiry-sensitive today).
+  principle (only the token is expiry-sensitive today — the RS256 OIDC token
+  most directly, though the HS256 trex-native exchange token used for
+  `/trex/graphql` has its own, likely longer, expiry and is subject to the
+  same staleness once a session outlives it).

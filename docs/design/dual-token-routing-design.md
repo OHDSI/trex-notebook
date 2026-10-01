@@ -73,6 +73,12 @@ In `plugins/notebook-plugin/src/views/NotebookEditorView.vue`:
 
 No other call site uses `getAuthToken()` (confirmed via repo-wide grep).
 
+`getWebApiToken()`'s contract is "always the un-exchanged token the host
+handed in" — it does not check or warn if that token happens to already be
+HS256/trex-native (e.g. a dev harness calling `setAuthToken()` directly with
+one). That's not a regression from today's behavior and out of scope here,
+just worth flagging for a future reader.
+
 ## Testing
 
 Extend `plugins/notebook-plugin/tests/authToken.spec.ts` (currently 2 cases,
