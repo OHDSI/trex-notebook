@@ -1,13 +1,12 @@
 import type { HadesJob, HadesJobDetail, HadesEnv, RunRequest } from './types';
-import { authHeaders, ensureAuthToken } from './authToken';
+import { hostAuthHeaders } from './authToken';
 
 export class HadesClient {
   constructor(private base: string) {}
 
   private async req<T>(path: string, init?: RequestInit): Promise<T> {
-    await ensureAuthToken();
     const resp = await fetch(`${this.base}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json', ...hostAuthHeaders() },
       ...init,
     });
     if (!resp.ok) throw new Error(`hades-api ${path} failed: ${resp.status}`);
@@ -39,4 +38,4 @@ export class HadesClient {
   }
 }
 
-export const defaultBase = (): string => `${location.origin}/plugins/hades-api/hades-api`;
+export const defaultBase = (): string => `${location.origin}/hades-api`;

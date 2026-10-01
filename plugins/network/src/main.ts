@@ -1,5 +1,5 @@
 import { h, createApp } from 'vue';
-import { setAuthToken } from './api/authToken';
+import { setAuthTokenSource } from './api/authToken';
 import { createPinia } from 'pinia';
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
@@ -86,7 +86,8 @@ const vueLifecycles = singleSpaVue({
 });
 
 export const bootstrap = async (props: PluginProps) => {
-  setAuthToken((props.authContext as { token?: string } | undefined)?.token ?? null);
+  const authContext = props.authContext as { token?: string | null } | undefined;
+  setAuthTokenSource(() => authContext?.token ?? null);
   await injectPluginCss(props.uiFilesUrl ?? '');
   injectMdiCss();
   return vueLifecycles.bootstrap(props);
