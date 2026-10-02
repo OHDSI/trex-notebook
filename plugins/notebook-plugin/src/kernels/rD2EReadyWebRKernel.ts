@@ -5,12 +5,15 @@ import {
 } from '@trex/notebook'
 import { buildRD2EBootstrapCode } from './rD2EBootstrap'
 
+// Ported from plugins/ui/apps/webr-notebook/src/kernels/rD2EReadyWebRKernel.ts.
+//
 // WebRKernel subclass that loads d2e's rD2E as part of connect(). The upstream
 // (generic) WebRKernel reports status='idle' once WebR + the Strategus spec
-// builder are ready, but it does not define rD2E or shim `library(rD2E)`.
+// builder are ready, but it no longer defines rD2E or shims `library(rD2E)`.
 // Running the bootstrap inside connect() means connect() does not resolve until
 // rD2E is available; execute() additionally awaits the bootstrap so a caller
-// that doesn't await connect() (or a fast first cell) can't race it.
+// that doesn't await connect() (or a fast first cell) can't race it. Mirrors
+// PyqeReadyPyodideKernel.
 export class RD2EReadyWebRKernel extends WebRKernel {
   private rD2EReady: Promise<void> | null = null
   private isBootstrapping = false

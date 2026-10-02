@@ -42,7 +42,7 @@ const emit = defineEmits<{
   <div :class="cn('group relative', isSelected && 'z-10')" @click="emit('select')">
     <!-- Cell type label -->
     <span
-      class="absolute -top-2 right-2 z-20 rounded-md bg-background/95 px-2 py-0.5 text-xs font-medium text-primary shadow-sm ring-1 ring-border/50 select-none"
+      class="absolute -top-2 right-2 z-20 rounded-md bg-background/95 px-2 py-0.5 text-[11px] font-medium text-primary shadow-sm ring-1 ring-border/50 select-none"
     >
       {{ isCodeCell(cell) ? (cell.language === 'r' ? 'R' : 'Python') : 'Markdown' }}
     </span>
@@ -50,7 +50,7 @@ const emit = defineEmits<{
     <!-- Action bar -->
     <div
       :class="cn(
-        'absolute -top-2 right-2 z-30 flex items-center gap-1 rounded-md bg-background/95 p-1 shadow-sm ring-1 ring-border/50 opacity-0 transition-opacity',
+        'absolute -top-2 right-2 z-30 flex items-center gap-1 rounded-md bg-background/95 px-2 py-1 shadow-sm ring-1 ring-border/50 opacity-0 transition-opacity',
         !isSelected && 'group-hover:opacity-100',
         isSelected && 'opacity-100',
       )"
@@ -60,7 +60,7 @@ const emit = defineEmits<{
           <Button
             variant="ghost"
             size="sm"
-            class="h-7 px-1.5 text-xs font-medium text-primary select-none"
+            class="h-6 px-2 text-[11px] font-medium text-primary select-none"
             @click.stop
           >
             {{ cell.language === 'r' ? 'R' : 'Python' }}
@@ -71,13 +71,13 @@ const emit = defineEmits<{
           <DropdownMenuItem @click="emit('changeLanguage', 'r')">R</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <span v-else class="px-1.5 text-xs font-medium text-primary select-none">Markdown</span>
+      <span v-else class="px-2 text-[11px] font-medium text-primary select-none">Markdown</span>
 
       <Button
         v-if="isCodeCell(cell)"
         variant="ghost"
         size="icon"
-        class="h-7 w-7"
+        class="h-6 w-6"
         :disabled="readOnly || !kernelReady"
         title="Run cell (Shift+Enter)"
         @click.stop="emit('run')"
@@ -88,7 +88,7 @@ const emit = defineEmits<{
       <Button
         variant="ghost"
         size="icon"
-        class="h-7 w-7"
+        class="h-6 w-6"
         :disabled="!canMoveUp || readOnly"
         title="Move up"
         @click.stop="emit('moveUp')"
@@ -99,7 +99,7 @@ const emit = defineEmits<{
       <Button
         variant="ghost"
         size="icon"
-        class="h-7 w-7"
+        class="h-6 w-6"
         :disabled="!canMoveDown || readOnly"
         title="Move down"
         @click.stop="emit('moveDown')"
@@ -109,7 +109,7 @@ const emit = defineEmits<{
 
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <Button variant="ghost" size="icon" class="h-7 w-7" @click.stop>
+          <Button variant="ghost" size="icon" class="h-6 w-6" @click.stop>
             <MoreHorizontal class="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

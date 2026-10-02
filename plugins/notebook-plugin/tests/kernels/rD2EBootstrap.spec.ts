@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { RD2EReadyWebRKernel } from '../../src/kernels/RD2EReadyWebRKernel'
+import { RD2EReadyWebRKernel } from '../../src/kernels/rD2EReadyWebRKernel'
 import { buildRD2EBootstrapCode } from '../../src/kernels/rD2EBootstrap'
 import type { KernelOutput } from '@trex/notebook'
 

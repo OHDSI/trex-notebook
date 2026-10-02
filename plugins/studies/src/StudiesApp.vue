@@ -7,7 +7,7 @@
         <LocalTab />
       </div>
       <div
-        v-if="visited.has('network')"
+        v-if="networkEnabled && visited.has('network')"
         v-show="section === 'network'"
         class="studies-section studies-section--scroll"
       >
@@ -17,7 +17,7 @@
         <ResultsTab />
       </div>
       <div
-        v-if="visited.has('configuration')"
+        v-if="networkEnabled && visited.has('configuration')"
         v-show="section === 'configuration'"
         class="studies-section studies-section--scroll"
       >
@@ -55,6 +55,7 @@ import PluginEmbed from './components/PluginEmbed.vue';
 import LocalTab from './views/LocalTab.vue';
 import NetworkTab from './views/NetworkTab.vue';
 import ResultsTab from './views/ResultsTab.vue';
+import { networkEnabled } from './config';
 
 const section = ref<StudiesSection>('overview');
 provide('studiesSection', section);
@@ -66,6 +67,13 @@ provide('studiesOpenResult', openResultId);
 // Lazily mount Network on first visit, then keep it alive across switches.
 const visited = reactive(new Set<StudiesSection>(['overview']));
 watch(section, (s) => visited.add(s), { immediate: true });
+
+// If the host turns Network off while one of its sections is open, fall back.
+watch(networkEnabled, (on) => {
+  if (!on && (section.value === 'network' || section.value === 'configuration')) {
+    section.value = 'overview';
+  }
+});
 
 function closeResult(): void {
   openResultId.value = null;

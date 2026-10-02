@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { WebRKernel, type KernelOutput } from '@trex/notebook'
-import { RD2EReadyWebRKernel } from '../../src/kernels/RD2EReadyWebRKernel'
+import { RD2EReadyWebRKernel } from '../../src/kernels/rD2EReadyWebRKernel'
 
 async function collect(iter: AsyncIterable<KernelOutput>): Promise<KernelOutput[]> {
   const out: KernelOutput[] = []
