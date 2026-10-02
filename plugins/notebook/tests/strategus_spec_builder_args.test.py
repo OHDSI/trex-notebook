@@ -374,8 +374,8 @@ check(
 )
 
 check(
-    sb.create_trim_by_ps_args()["trimFraction"] is None,
-    "create_trim_by_ps_args: trim_fraction default is still None"
+    sb.create_trim_by_ps_args()["trimFraction"] == 0.05,
+    "create_trim_by_ps_args: trim_fraction default is 0.05 (5.5.2's trimByPs rejects None)"
 )
 
 # =============================================================================

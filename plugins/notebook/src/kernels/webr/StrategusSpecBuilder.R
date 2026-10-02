@@ -737,7 +737,7 @@ createCreatePsArgs <- function(excludeCovariateIds = c(),
   return(args)
 }
 
-createTrimByPsArgs <- function(trimFraction = NULL,
+createTrimByPsArgs <- function(trimFraction = 0.05,
                                equipoiseBounds = NULL,
                                maxWeight = NULL,
                                trimMethod = NULL) {

@@ -257,13 +257,13 @@ that position.
 
 **Default values are not aligned.** Where a builder's inlined default differs from the
 package's (`modelType = "cox"` vs `"logistic"`, `washoutPeriod = 365` vs `0`,
-`numberOfStrata = 10` vs `5`, `generalizabilitySdmThreshold = 999` vs `1`, `trimFraction`
-`NULL` vs `0.05`, and the `createGetDbCohortMethodDataArgs` exposure defaults), the builder
+`numberOfStrata = 10` vs `5`, `generalizabilitySdmThreshold = 999` vs `1`, and the `createGetDbCohortMethodDataArgs` exposure defaults), the builder
 keeps its own value. The builders write every key explicitly, so a default never reaches
 Strategus as an absence and therefore never causes incompatibility; aligning them would
 silently change study semantics — flipping outcome models from Cox to logistic, dropping a
 365-day washout. Only *names* and *field sets* change. Two tests pin this so it is not
-"tidied up" later.
+"tidied up" later. Exception: `trimFraction` now defaults to `0.05` as in 5.5.2, because
+`trimByPs()` asserts a number and rejects the builder's former `NULL` at run time.
 
 ## Testing
 

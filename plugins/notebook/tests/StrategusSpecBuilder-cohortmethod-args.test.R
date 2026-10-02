@@ -340,8 +340,8 @@ check(
 )
 
 check(
-  is.null(createTrimByPsArgs()$trimFraction),
-  "createTrimByPsArgs: trimFraction default is still NULL"
+  identical(createTrimByPsArgs()$trimFraction, 0.05),
+  "createTrimByPsArgs: trimFraction default is 0.05 (5.5.2's trimByPs rejects NULL)"
 )
 
 # =============================================================================

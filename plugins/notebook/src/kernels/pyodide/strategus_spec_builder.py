@@ -685,7 +685,7 @@ def create_create_ps_args(
 
 
 def create_trim_by_ps_args(
-    trim_fraction: Optional[float] = None,
+    trim_fraction: float = 0.05,
     equipoise_bounds=_REMOVED,
     max_weight=_REMOVED,
     trim_method=_REMOVED
