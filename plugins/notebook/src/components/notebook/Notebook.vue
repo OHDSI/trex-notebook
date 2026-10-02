@@ -350,9 +350,9 @@ defineExpose({
     <div class="flex flex-col gap-2">
       <div
         v-if="notebook.cells.length === 0"
-        class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-muted bg-muted/20 px-6 py-10 text-center"
+        class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/5 px-6 py-10 text-center"
       >
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-muted-foreground ring-1 ring-border">
           <NotebookPen class="h-5 w-5" />
         </div>
         <div class="flex flex-col gap-1">
@@ -411,28 +411,28 @@ defineExpose({
           <Button
             variant="ghost"
             size="sm"
-            class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            class="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
             @click="handleAddCodeCell('python')"
           >
-            <Plus class="h-4 w-4" />
+            <Plus class="h-3 w-3" />
             Python
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            class="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
             @click="handleAddCodeCell('r')"
           >
-            <Plus class="h-4 w-4" />
+            <Plus class="h-3 w-3" />
             R
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            class="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
             @click="handleAddMarkdownCell"
           >
-            <Plus class="h-4 w-4" />
+            <Plus class="h-3 w-3" />
             Markdown
           </Button>
         </div>

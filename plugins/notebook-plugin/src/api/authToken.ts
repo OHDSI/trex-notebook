@@ -60,6 +60,18 @@ export async function ensureAuthToken(): Promise<void> {
   trexToken = (await p) ?? trexToken;
 }
 
+/**
+ * The host-supplied session token, BEFORE any /trex-token exchange.
+ *
+ * rD2E running inside webR calls d2e's own routes (/d2e-webapi, /prefect) with
+ * this value as TREX__AUTHORIZATION_TOKEN, matching what the React notebook
+ * passes. Those routes want the host session token, not the trex-native one
+ * authHeaders() may substitute for plugin-function calls.
+ */
+export function getSessionToken(): string | null {
+  return token;
+}
+
 export function authHeaders(): Record<string, string> {
   const t = trexToken ?? token;
   return t ? { Authorization: `Bearer ${t}` } : {};

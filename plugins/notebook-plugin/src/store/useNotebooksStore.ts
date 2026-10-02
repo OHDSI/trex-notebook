@@ -3,6 +3,7 @@ import { ref } from "vue";
 import type { NotebookData } from "@trex/notebook";
 import type { NotebookSummary, NotebookDocument, NewNotebookInput, NotebookPatch } from "../api/types";
 import { GraphqlClient, defaultGraphqlEndpoint } from "../api/graphqlClient";
+import { GIT_MIRROR_ENABLED, mirrorNotebook } from "../api/notebookGit";
 
 const LIST = `query {
   allNotebookDocuments(orderBy: UPDATED_AT_DESC) {
@@ -42,6 +43,24 @@ export const useNotebooksStore = defineStore("notebooks", () => {
   const gql = new GraphqlClient(defaultGraphqlEndpoint());
   const notebooks = ref<NotebookSummary[]>([]);
   const error = ref<string | null>(null);
+  // Set when the row write succeeded but the git mirror did not. The save still
+  // stands — the repo is simply one revision behind until the next write or an
+  // overwrite-all repair run. Rendered as a warning, never an error.
+  const mirrorWarning = ref<string | null>(null);
+
+  async function mirror(id: string): Promise<void> {
+    // Disabled: the mirror call 401s and Atlas's login-guard turns any 401 into a
+    // sign-in dialog, which would log the user out on every save.
+    if (!GIT_MIRROR_ENABLED) return;
+    try {
+      await mirrorNotebook(id);
+      mirrorWarning.value = null;
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      mirrorWarning.value = `Saved, but not pushed to git: ${detail}`;
+      console.error(`Failed to mirror notebook ${id}: ${detail}`);
+    }
+  }
 
   async function fetch(): Promise<void> {
     try {
@@ -71,18 +90,24 @@ export const useNotebooksStore = defineStore("notebooks", () => {
         },
       },
     });
+    const id = d.createNotebookDocument.notebookDocument.rowId;
+    await mirror(id);
     await fetch();
-    return d.createNotebookDocument.notebookDocument.rowId;
+    return id;
   }
 
   async function update(id: string, patch: NotebookPatch): Promise<void> {
     await gql.request(UPDATE, { id, patch: { ...patch, updatedAt: new Date().toISOString() } });
+    await mirror(id);
     await fetch();
   }
 
   async function remove(id: string): Promise<void> {
     const patch: NotebookPatch = { deletedAt: new Date().toISOString() };
     await gql.request(UPDATE, { id, patch });
+    // Mirror after the soft-delete so the function sees deleted_at and removes
+    // the file from the repo.
+    await mirror(id);
     await fetch();
   }
 
@@ -95,5 +120,5 @@ export const useNotebooksStore = defineStore("notebooks", () => {
     });
   }
 
-  return { notebooks, error, fetch, get, create, update, remove, duplicate };
+  return { notebooks, error, mirrorWarning, fetch, get, create, update, remove, duplicate };
 });

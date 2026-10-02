@@ -10,6 +10,12 @@ vi.mock("../api/graphqlClient", () => ({
   },
 }));
 
+const mirrorNotebook = vi.fn();
+vi.mock("../api/notebookGit", () => ({
+  GIT_MIRROR_ENABLED: true,
+  mirrorNotebook: (...args: unknown[]) => mirrorNotebook(...args),
+}));
+
 const emptyContent = { metadata: {}, cells: [] };
 
 describe("useNotebooksStore", () => {
@@ -106,5 +112,58 @@ describe("useNotebooksStore", () => {
     expect(id).toBe("copy1");
     const createVars = request.mock.calls[1][1];
     expect((createVars.input as any).notebookDocument.name).toBe("Orig (copy)");
+  });
+
+  it("mirrors the new notebook after create", async () => {
+    request
+      .mockResolvedValueOnce({ createNotebookDocument: { notebookDocument: { rowId: "n9" } } })
+      .mockResolvedValueOnce({ allNotebookDocuments: { nodes: [] } });
+    mirrorNotebook.mockResolvedValue({ status: "ok" });
+    const s = useNotebooksStore();
+    const id = await s.create({ name: "A", description: "", content: emptyContent });
+    expect(id).toBe("n9");
+    expect(mirrorNotebook).toHaveBeenCalledWith("n9");
+  });
+
+  it("mirrors the notebook after update", async () => {
+    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    mirrorNotebook.mockResolvedValue({ status: "ok" });
+    const s = useNotebooksStore();
+    await s.update("n1", { name: "B" });
+    expect(mirrorNotebook).toHaveBeenCalledWith("n1");
+  });
+
+  it("mirrors the notebook after remove, so the repo drops the file", async () => {
+    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    mirrorNotebook.mockResolvedValue({ status: "ok" });
+    const s = useNotebooksStore();
+    await s.remove("n1");
+    expect(mirrorNotebook).toHaveBeenCalledWith("n1");
+  });
+
+  it("does not mirror when the row write fails", async () => {
+    request.mockRejectedValue(new Error("graphql 400"));
+    const s = useNotebooksStore();
+    await expect(s.update("n1", { name: "B" })).rejects.toThrow("graphql 400");
+    expect(mirrorNotebook).not.toHaveBeenCalled();
+  });
+
+  it("a failed mirror warns but still resolves the save", async () => {
+    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    mirrorNotebook.mockRejectedValue(new Error("push rejected"));
+    const s = useNotebooksStore();
+    await s.update("n1", { name: "B" });     // must NOT throw
+    expect(s.mirrorWarning).toContain("push rejected");
+  });
+
+  it("clears a stale mirror warning on the next successful write", async () => {
+    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    mirrorNotebook.mockRejectedValueOnce(new Error("push rejected"));
+    const s = useNotebooksStore();
+    await s.update("n1", { name: "B" });
+    expect(s.mirrorWarning).toBeTruthy();
+    mirrorNotebook.mockResolvedValue({ status: "ok" });
+    await s.update("n1", { name: "C" });
+    expect(s.mirrorWarning).toBeNull();
   });
 });
