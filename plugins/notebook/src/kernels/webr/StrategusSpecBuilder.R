@@ -20,7 +20,8 @@
 #   command and raw output; docs/superpowers/specs/2026-09-10-strategus-spec-builder-hades-alignment-design.md
 #   for the design and scope):
 #   - CohortMethod            5.5.2  (VERIFIED — cmAnalysis args, ps/trim/match/stratify args,
-#                                     fitOutcomeModelArgs, getDbCohortMethodDataArgs)
+#                                     fitOutcomeModelArgs, getDbCohortMethodDataArgs; every
+#                                     createCmAnalysis() *Args slot has a constructor here)
 #   - FeatureExtraction       3.11.0 (VERIFIED — covariate settings field names, incl.
 #                                     temporal and gender-only variants)
 #   - Cyclops                 3.6.0  (VERIFIED — control and prior field names)
@@ -742,17 +743,29 @@ createTrimByPsArgs <- function(trimFraction = NULL,
                                trimMethod = NULL) {
   if (!missing(equipoiseBounds)) {
     .cmRemovedArg("createTrimByPsArgs", "equipoiseBounds",
-                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+                  "5.5.2 splits trimming; use createTrimByPsToEquipoiseArgs(bounds = ...) on the trimByPsToEquipoiseArgs slot of createCmAnalysis().")
   }
   if (!missing(maxWeight)) {
     .cmRemovedArg("createTrimByPsArgs", "maxWeight",
-                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+                  "5.5.2 splits trimming; use createTrimByIptwArgs() on the trimByIptwArgs slot or createTruncateIptwArgs() on the truncateIptwArgs slot of createCmAnalysis().")
   }
   if (!missing(trimMethod)) {
     .cmRemovedArg("createTrimByPsArgs", "trimMethod",
-                  "5.5.2 splits trimming; the equipoise and IPTW variants are not available in the notebook builder; set the corresponding createCmAnalysis() slot by hand.")
+                  "5.5.2 splits trimming; use the slot of the matching constructor on createCmAnalysis(): createTrimByPsArgs() (trimByPsArgs), createTrimByPsToEquipoiseArgs() (trimByPsToEquipoiseArgs) or createTrimByIptwArgs() (trimByIptwArgs).")
   }
   args <- list(trimFraction = trimFraction)
+  class(args) <- "args"
+  return(args)
+}
+
+createTrimByPsToEquipoiseArgs <- function(bounds = c(0.3, 0.7)) {
+  args <- list(bounds = bounds)
+  class(args) <- "args"
+  return(args)
+}
+
+createTrimByIptwArgs <- function(maxWeight = 10) {
+  args <- list(maxWeight = maxWeight)
   class(args) <- "args"
   return(args)
 }
@@ -791,6 +804,22 @@ createMatchOnPsArgs <- function(caliper = 0.2,
   return(args)
 }
 
+createMatchOnPsAndCovariatesArgs <- function(caliper = 0.2,
+                                             caliperScale = "standardized logit",
+                                             maxRatio = 1,
+                                             allowReverseMatch = FALSE,
+                                             covariateIds) {
+  args <- list(
+    caliper = caliper,
+    caliperScale = caliperScale,
+    maxRatio = maxRatio,
+    allowReverseMatch = allowReverseMatch,
+    covariateIds = covariateIds
+  )
+  class(args) <- "args"
+  return(args)
+}
+
 createStratifyByPsArgs <- function(numberOfStrata = 10,
                                    baseSelection = "all",
                                    stratificationColumns = c(),
@@ -806,6 +835,18 @@ createStratifyByPsArgs <- function(numberOfStrata = 10,
   if (length(stratificationColumns) > 0) {
     args$stratificationColumns <- stratificationColumns
   }
+  class(args) <- "args"
+  return(args)
+}
+
+createStratifyByPsAndCovariatesArgs <- function(numberOfStrata = 5,
+                                                baseSelection = "all",
+                                                covariateIds) {
+  args <- list(
+    numberOfStrata = numberOfStrata,
+    baseSelection = baseSelection,
+    covariateIds = covariateIds
+  )
   class(args) <- "args"
   return(args)
 }
@@ -901,9 +942,13 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
     createCreateStudyPopulationArgs = shape(createCreateStudyPopulationArgs()),
     createCreatePsArgs = shape(createCreatePsArgs(), c("excludeCovariateIds", "includeCovariateIds")),
     createTrimByPsArgs = shape(createTrimByPsArgs()),
+    createTrimByPsToEquipoiseArgs = shape(createTrimByPsToEquipoiseArgs()),
+    createTrimByIptwArgs = shape(createTrimByIptwArgs()),
     createTruncateIptwArgs = shape(createTruncateIptwArgs()),
     createMatchOnPsArgs = shape(createMatchOnPsArgs(), "stratificationColumns"),
+    createMatchOnPsAndCovariatesArgs = shape(createMatchOnPsAndCovariatesArgs(covariateIds = 0)),
     createStratifyByPsArgs = shape(createStratifyByPsArgs(), "stratificationColumns"),
+    createStratifyByPsAndCovariatesArgs = shape(createStratifyByPsAndCovariatesArgs(covariateIds = 0)),
     createComputeCovariateBalanceArgs = shape(createComputeCovariateBalanceArgs(),
                                               c("subgroupCovariateId", "covariateFilter")),
     createFitOutcomeModelArgs = shape(createFitOutcomeModelArgs(),
@@ -917,27 +962,38 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
   createStudyPopArgs = "createCreateStudyPopulationArgs",
   createPsArgs = "createCreatePsArgs",
   trimByPsArgs = "createTrimByPsArgs",
+  trimByPsToEquipoiseArgs = "createTrimByPsToEquipoiseArgs",
+  trimByIptwArgs = "createTrimByIptwArgs",
   truncateIptwArgs = "createTruncateIptwArgs",
   matchOnPsArgs = "createMatchOnPsArgs",
+  matchOnPsAndCovariatesArgs = "createMatchOnPsAndCovariatesArgs",
   stratifyByPsArgs = "createStratifyByPsArgs",
+  stratifyByPsAndCovariatesArgs = "createStratifyByPsAndCovariatesArgs",
+  computeSharedCovariateBalanceArgs = "createComputeCovariateBalanceArgs",
   computeCovariateBalanceArgs = "createComputeCovariateBalanceArgs",
   fitOutcomeModelArgs = "createFitOutcomeModelArgs"
 )
 
-.cmArgsMatchingConstructor <- function(value, shapes) {
+# Does `value` have the shape of one constructor? All of its always-present fields, and
+# nothing outside its always-present + optional fields.
+.cmArgsMatchesShape <- function(value, shape) {
   fields <- names(value)
-  for (ctor in names(shapes)) {
-    s <- shapes[[ctor]]
-    if (all(s$required %in% fields) && all(fields %in% c(s$required, s$optional))) return(ctor)
+  all(shape$required %in% fields) && all(fields %in% c(shape$required, shape$optional))
+}
+
+# First constructor, other than `except`, whose shape `value` matches (NULL if none).
+.cmArgsOtherMatchingConstructor <- function(value, shapes, except) {
+  for (ctor in setdiff(names(shapes), except)) {
+    if (.cmArgsMatchesShape(value, shapes[[ctor]])) return(ctor)
   }
   NULL
 }
 
-# Slots with a constructor must hold that constructor's object. Slots without one
-# (trimByPsToEquipoiseArgs, trimByIptwArgs, matchOnPsAndCovariatesArgs,
-# stratifyByPsAndCovariatesArgs, computeSharedCovariateBalanceArgs) are set by hand: a
-# plain named list is accepted and stamped "args"; an "args" object shaped like one of
-# the constructors is rejected, since that is what a shifted positional call lands there.
+# Every slot has a constructor and must hold that constructor's object: class "args" and
+# the constructor's field shape. Some constructors share a shape (createTrimByIptwArgs and
+# createTruncateIptwArgs are both {maxWeight}), so the check is "matches the EXPECTED
+# constructor's shape", not "first matching constructor is the expected one"; a by-name
+# swap between those two slots is therefore not detectable (accepted limitation).
 .assertArgsSlot <- function(value, slotName, shapes) {
   if (is.null(value)) return(value)
   wrongSlot <- function(detail) {
@@ -947,35 +1003,18 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
     ), call. = FALSE)
   }
   expected <- unname(.cmArgsSlotConstructors[slotName])
-  if (!is.na(expected)) {
-    if (!inherits(value, "args")) {
-      wrongSlot(sprintf("must be an object created by %s() (class \"args\"); got class %s",
-                        expected, paste(class(value), collapse = "/")))
-    }
-    matched <- .cmArgsMatchingConstructor(value, shapes)
-    if (!identical(matched, expected)) {
-      wrongSlot(if (is.null(matched)) {
-        sprintf("expected an object from %s(); got fields %s",
-                expected, paste(names(value), collapse = ", "))
-      } else {
-        sprintf("expected an object from %s(); got one shaped like %s()", expected, matched)
-      })
-    }
-    return(value)
+  if (!inherits(value, "args")) {
+    wrongSlot(sprintf("must be an object created by %s() (class \"args\"); got class %s",
+                      expected, paste(class(value), collapse = "/")))
   }
-  isPlainList <- is.list(value) && identical(class(value), "list")
-  if (!(isPlainList || inherits(value, "args")) || is.null(names(value)) || any(names(value) == "")) {
-    wrongSlot(sprintf("has no constructor; set it by hand as a named list; got class %s",
-                      paste(class(value), collapse = "/")))
-  }
-  if (isPlainList) {
-    class(value) <- "args"
-    return(value)
-  }
-  matched <- .cmArgsMatchingConstructor(value, shapes)
-  if (!is.null(matched)) {
-    wrongSlot(sprintf("has no constructor and must be set by hand, but got an object shaped like %s()",
-                      matched))
+  if (!.cmArgsMatchesShape(value, shapes[[expected]])) {
+    other <- .cmArgsOtherMatchingConstructor(value, shapes, expected)
+    wrongSlot(if (is.null(other)) {
+      sprintf("expected an object from %s(); got fields %s",
+              expected, paste(names(value), collapse = ", "))
+    } else {
+      sprintf("expected an object from %s(); got one shaped like %s()", expected, other)
+    })
   }
   value
 }

@@ -123,6 +123,42 @@ check(
 )
 
 check(
+  identical(names(createTrimByPsToEquipoiseArgs()), c("bounds")),
+  "createTrimByPsToEquipoiseArgs(): emitted key set matches CohortMethod 5.5.2 object (bounds only)"
+)
+
+check(
+  identical(names(createTrimByIptwArgs()), c("maxWeight")),
+  "createTrimByIptwArgs(): emitted key set matches CohortMethod 5.5.2 object (maxWeight only)"
+)
+
+check(
+  identical(
+    names(createMatchOnPsAndCovariatesArgs(covariateIds = 1)),
+    c("caliper", "caliperScale", "maxRatio", "allowReverseMatch", "covariateIds")
+  ),
+  "createMatchOnPsAndCovariatesArgs(): emitted key set/order matches CohortMethod 5.5.2 object"
+)
+
+check(
+  identical(
+    names(createStratifyByPsAndCovariatesArgs(covariateIds = 1)),
+    c("numberOfStrata", "baseSelection", "covariateIds")
+  ),
+  "createStratifyByPsAndCovariatesArgs(): emitted key set/order matches CohortMethod 5.5.2 object"
+)
+
+check(
+  inherits(tryCatch(createMatchOnPsAndCovariatesArgs(), error = function(e) e), "error"),
+  "createMatchOnPsAndCovariatesArgs(): covariateIds is required"
+)
+
+check(
+  inherits(tryCatch(createStratifyByPsAndCovariatesArgs(), error = function(e) e), "error"),
+  "createStratifyByPsAndCovariatesArgs(): covariateIds is required"
+)
+
+check(
   identical(
     names(createMatchOnPsArgs()),
     c("caliper", "caliperScale", "maxRatio", "allowReverseMatch")
@@ -528,24 +564,67 @@ legacyErr <- tryCatch({
 check(!is.null(legacyErr) && grepl("trimByPsToEquipoiseArgs", legacyErr, fixed = TRUE),
       "createCmAnalysis: legacy positional call raises at the first shifted slot")
 
-handSetSlots <- c("trimByPsToEquipoiseArgs", "trimByIptwArgs", "matchOnPsAndCovariatesArgs",
-                  "stratifyByPsAndCovariatesArgs", "computeSharedCovariateBalanceArgs")
+# Every slot has a constructor now: it accepts that constructor's object and rejects another
+# constructor's object, naming the slot. Slot -> (its constructor's object, a wrong object).
+slotObjects <- list(
+  trimByPsToEquipoiseArgs = list(createTrimByPsToEquipoiseArgs(), createMatchOnPsArgs()),
+  trimByIptwArgs = list(createTrimByIptwArgs(), createMatchOnPsArgs()),
+  matchOnPsAndCovariatesArgs = list(createMatchOnPsAndCovariatesArgs(covariateIds = c(1, 2)),
+                                    createMatchOnPsArgs()),
+  stratifyByPsAndCovariatesArgs = list(createStratifyByPsAndCovariatesArgs(covariateIds = c(1, 2)),
+                                       createStratifyByPsArgs()),
+  computeSharedCovariateBalanceArgs = list(createComputeCovariateBalanceArgs(), createMatchOnPsArgs())
+)
 
-for (slotName in handSetSlots) {
+for (slotName in names(slotObjects)) {
   callArgs <- list(
     getDbCohortMethodDataArgs = createGetDbCohortMethodDataArgs(),
     createStudyPopArgs = createCreateStudyPopulationArgs()
   )
-  callArgs[[slotName]] <- list(someField = 1)
+  callArgs[[slotName]] <- slotObjects[[slotName]][[1]]
   analysis <- tryCatch(do.call(createCmAnalysis, callArgs), error = function(e) e)
-  check(!inherits(analysis, "error") && identical(class(analysis[[slotName]]), "args"),
-        sprintf("createCmAnalysis(%s = <hand-built list>): accepted and stamped class 'args'", slotName))
+  check(!inherits(analysis, "error") && identical(class(analysis), "cmAnalysis") &&
+          identical(analysis[[slotName]], slotObjects[[slotName]][[1]]),
+        sprintf("createCmAnalysis(%s = <its constructor's object>): accepted", slotName))
 
-  callArgs[[slotName]] <- createTruncateIptwArgs()
+  callArgs[[slotName]] <- slotObjects[[slotName]][[2]]
   err <- tryCatch({ do.call(createCmAnalysis, callArgs); NULL }, error = function(e) conditionMessage(e))
   check(!is.null(err) && grepl(slotName, err, fixed = TRUE),
-        sprintf("createCmAnalysis(%s = createTruncateIptwArgs()): constructor object rejected in hand-set slot", slotName))
+        sprintf("createCmAnalysis(%s = <another constructor's object>): rejected, naming the slot", slotName))
+
+  callArgs[[slotName]] <- list(someField = 1)
+  err <- tryCatch({ do.call(createCmAnalysis, callArgs); NULL }, error = function(e) conditionMessage(e))
+  check(!is.null(err) && grepl(slotName, err, fixed = TRUE),
+        sprintf("createCmAnalysis(%s = <plain list>): rejected, naming the slot", slotName))
 }
+
+# createTrimByIptwArgs() and createTruncateIptwArgs() share the shape {maxWeight}, so a
+# by-name swap between their slots is not detectable. Known, accepted limitation.
+check(
+  !inherits(tryCatch(createCmAnalysis(
+    getDbCohortMethodDataArgs = createGetDbCohortMethodDataArgs(),
+    createStudyPopArgs = createCreateStudyPopulationArgs(),
+    trimByIptwArgs = createTruncateIptwArgs(),
+    truncateIptwArgs = createTrimByIptwArgs()
+  ), error = function(e) e), "error"),
+  "createCmAnalysis: trimByIptwArgs/truncateIptwArgs swap is accepted (identical shapes)"
+)
+
+# Removed-arg messages on createTrimByPsArgs point at the real constructors.
+trimMsg <- function(...) tryCatch({ createTrimByPsArgs(...); NULL }, error = function(e) conditionMessage(e))
+check(grepl("createTrimByPsToEquipoiseArgs", trimMsg(equipoiseBounds = c(0.3, 0.7)), fixed = TRUE) &&
+        grepl("trimByPsToEquipoiseArgs", trimMsg(equipoiseBounds = c(0.3, 0.7)), fixed = TRUE),
+      "createTrimByPsArgs(equipoiseBounds=...): points at createTrimByPsToEquipoiseArgs / its slot")
+check(grepl("createTrimByIptwArgs", trimMsg(maxWeight = 10), fixed = TRUE) &&
+        grepl("createTruncateIptwArgs", trimMsg(maxWeight = 10), fixed = TRUE),
+      "createTrimByPsArgs(maxWeight=...): points at createTrimByIptwArgs / createTruncateIptwArgs")
+check(grepl("createTrimByPsToEquipoiseArgs", trimMsg(trimMethod = "x"), fixed = TRUE) &&
+        grepl("createTrimByIptwArgs", trimMsg(trimMethod = "x"), fixed = TRUE) &&
+        grepl("createTrimByPsArgs()", trimMsg(trimMethod = "x"), fixed = TRUE),
+      "createTrimByPsArgs(trimMethod=...): lists the three matching constructors")
+check(!any(grepl("by hand", c(trimMsg(equipoiseBounds = 1), trimMsg(maxWeight = 1), trimMsg(trimMethod = "x")),
+                 fixed = TRUE)),
+      "createTrimByPsArgs: removed-arg messages no longer say 'set by hand'")
 
 # =============================================================================
 

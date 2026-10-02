@@ -55,6 +55,18 @@ check(identical(class(createTrimByPsArgs()), "args"),
 check(identical(class(createTruncateIptwArgs()), "args"),
       "createTruncateIptwArgs: class is 'args'")
 
+check(identical(class(createTrimByPsToEquipoiseArgs()), "args"),
+      "createTrimByPsToEquipoiseArgs: class is 'args'")
+
+check(identical(class(createTrimByIptwArgs()), "args"),
+      "createTrimByIptwArgs: class is 'args'")
+
+check(identical(class(createMatchOnPsAndCovariatesArgs(covariateIds = 1)), "args"),
+      "createMatchOnPsAndCovariatesArgs: class is 'args'")
+
+check(identical(class(createStratifyByPsAndCovariatesArgs(covariateIds = 1)), "args"),
+      "createStratifyByPsAndCovariatesArgs: class is 'args'")
+
 check(identical(class(createMatchOnPsArgs()), "args"),
       "createMatchOnPsArgs: class is 'args'")
 
