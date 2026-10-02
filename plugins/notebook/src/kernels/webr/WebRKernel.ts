@@ -8,6 +8,23 @@ import type {
 import { KernelConnectionError } from '../types'
 import strategusSpecBuilderSource from './StrategusSpecBuilder.R?raw'
 
+/**
+ * Pull the message text out of an R condition (webR proxy) returned by
+ * captureR for message()/warning(). Returns null if it can't be extracted.
+ */
+async function extractConditionMessage(data: unknown): Promise<string | null> {
+  try {
+    const cond = data as { get?: (prop: string) => Promise<{ toJs?: () => Promise<unknown> }> }
+    if (typeof cond?.get !== 'function') return null
+    const msg = await cond.get('message')
+    const js = (await msg.toJs?.()) as { values?: unknown[] } | undefined
+    const first = js?.values?.[0]
+    return typeof first === 'string' ? first : null
+  } catch {
+    return null
+  }
+}
+
 export class WebRKernel implements KernelPlugin {
   readonly id = 'webr'
   readonly name = 'R (WebR)'
@@ -279,7 +296,19 @@ local({
 
         for (const output of result.output) {
           let text: string
-          if (typeof output.data === 'string') {
+          let streamName: 'stdout' | 'stderr' = output.type === 'stderr' ? 'stderr' : 'stdout'
+          const conditionText =
+            output.type === 'message' || output.type === 'warning'
+              ? await extractConditionMessage(output.data)
+              : null
+          if (conditionText != null) {
+            // R message()/warning() conditions arrive as condition objects, not strings
+            streamName = 'stderr'
+            text =
+              output.type === 'warning'
+                ? `Warning message:\n${conditionText.replace(/\n?$/, '\n')}`
+                : conditionText
+          } else if (typeof output.data === 'string') {
             text = output.data
           } else if (output.data == null) {
             text = ''
@@ -299,7 +328,7 @@ local({
           }
           yield {
             type: 'stream',
-            name: output.type === 'stderr' ? 'stderr' : 'stdout',
+            name: streamName,
             text,
           } as KernelOutput
         }

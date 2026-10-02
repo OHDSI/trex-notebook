@@ -242,3 +242,38 @@ describe('rD2E bootstrap — multiple cells and repeated bootstrap attempts (rea
     }
   }, 60000)
 })
+
+describe('WebR kernel — message() and warning() output (real WebR)', () => {
+  let kernel: RD2EReadyWebRKernel
+
+  beforeAll(async () => {
+    kernel = new RD2EReadyWebRKernel()
+    await kernel.connect({ type: 'webr' } as any)
+  }, 60000)
+
+  afterAll(async () => {
+    await kernel?.disconnect().catch(() => {})
+  })
+
+  function stderr(outputs: KernelOutput[]): string {
+    return outputs
+      .filter((o: any) => o.type === 'stream' && o.name === 'stderr')
+      .map((o: any) => o.text)
+      .join('')
+  }
+
+  it('message() is surfaced as a stderr stream', async () => {
+    const outputs = await collect(kernel.execute(`message("x-msg")`, 'r'))
+    expect(stderr(outputs)).toContain('x-msg')
+  }, 60000)
+
+  it('warning() is surfaced as a stderr stream', async () => {
+    const outputs = await collect(kernel.execute(`warning("y-warn")`, 'r'))
+    expect(stderr(outputs)).toContain('y-warn')
+  }, 60000)
+
+  it('cat() still yields stdout', async () => {
+    const outputs = await collect(kernel.execute(`cat("z-out\\n")`, 'r'))
+    expect(stdout(outputs)).toContain('z-out')
+  }, 60000)
+})
