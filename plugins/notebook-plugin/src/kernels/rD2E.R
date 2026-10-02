@@ -411,10 +411,19 @@ create_options <- function(token_study_code = "",
   # Checked here rather than left to the results API so a bad name fails
   # before the Strategus run, not after it at upload time.
   if (!is.null(analysis_results_name)) {
-    if (length(analysis_results_name) != 1 || is.na(analysis_results_name)) {
+    if (!is.character(analysis_results_name) ||
+        length(analysis_results_name) != 1 ||
+        is.na(analysis_results_name)) {
       stop("analysis_results_name must be a single string")
     }
-    analysis_results_name <- trimws(as.character(analysis_results_name))
+    # Unicode-aware, to match the trim the flow and results API apply.
+    analysis_results_name <- trimws(analysis_results_name,
+                                    whitespace = "[\\h\\v]")
+    # .rD2E_to_json escapes only a few control characters; the rest would
+    # produce invalid JSON.
+    if (grepl("[[:cntrl:]]", analysis_results_name)) {
+      stop("analysis_results_name must not contain control characters")
+    }
     if (nchar(analysis_results_name) > 255) {
       stop("analysis_results_name must be at most 255 characters")
     }

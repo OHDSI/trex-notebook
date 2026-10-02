@@ -108,6 +108,52 @@ cat("ok")
     expect(out).toBe('abc')
   })
 
+  it('create_options omits analysisResultsName when not given or blank', async () => {
+    const { outputs, out } = await run(
+      `cat(is.null(rD2E::create_options()$analysisResultsName), is.null(rD2E::create_options(analysis_results_name = "   ")$analysisResultsName))`
+    )
+    expect(errorsAndStderr(outputs)).toEqual([])
+    expect(out).toBe('TRUE TRUE')
+  })
+
+  it('create_options trims and includes analysisResultsName', async () => {
+    const { outputs, out } = await run(
+      `cat(rD2E::create_options(analysis_results_name = "  My run ")$analysisResultsName)`
+    )
+    expect(errorsAndStderr(outputs)).toEqual([])
+    expect(out).toBe('My run')
+  })
+
+  it('create_options rejects an analysis_results_name over 255 characters', async () => {
+    const { outputs } = await run(
+      `rD2E::create_options(analysis_results_name = strrep("a", 256))`
+    )
+    expect(JSON.stringify(errorsAndStderr(outputs))).toContain('at most 255 characters')
+  })
+
+  it('create_options rejects an NA analysis_results_name', async () => {
+    const { outputs } = await run(`rD2E::create_options(analysis_results_name = NA)`)
+    expect(JSON.stringify(errorsAndStderr(outputs))).toContain('must be a single string')
+  })
+
+  it('create_options rejects a non-character analysis_results_name', async () => {
+    const { outputs } = await run(`rD2E::create_options(analysis_results_name = 5)`)
+    expect(JSON.stringify(errorsAndStderr(outputs))).toContain('must be a single string')
+  })
+
+  it('create_options trims Unicode whitespace from analysis_results_name', async () => {
+    const { outputs, out } = await run(
+      `cat(is.null(rD2E::create_options(analysis_results_name = "\\u00a0\\u00a0")$analysisResultsName))`
+    )
+    expect(errorsAndStderr(outputs)).toEqual([])
+    expect(out).toBe('TRUE')
+  })
+
+  it('create_options rejects control characters in analysis_results_name', async () => {
+    const { outputs } = await run(`rD2E::create_options(analysis_results_name = "a\\nb")`)
+    expect(JSON.stringify(errorsAndStderr(outputs))).toContain('must not contain control characters')
+  })
+
   it("rD2E:::.rD2E_to_json resolves the internal (dot-prefixed) function", async () => {
     const { outputs, out } = await run(`cat(rD2E:::.rD2E_to_json(list(a = 1)))`)
     expect(errorsAndStderr(outputs)).toEqual([])
