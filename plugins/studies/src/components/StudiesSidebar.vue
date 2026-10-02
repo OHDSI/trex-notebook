@@ -15,7 +15,7 @@
         <span>{{ it.label }}</span>
       </button>
 
-      <div class="studies-sidebar__spacer" />
+      <div v-if="bottomItems.length" class="studies-sidebar__spacer" />
 
       <button
         v-for="it in bottomItems"
@@ -32,22 +32,26 @@
 </template>
 
 <script setup lang="ts">
-import { inject, type Ref } from 'vue';
+import { computed, inject, type Ref } from 'vue';
 import { AtlasIcon } from '@ohdsi/atlas-ui';
 import type { StudiesSection } from '../StudiesApp.vue';
+import { networkEnabled } from '../config';
 
 // Shared active-section ref provided by StudiesApp.
 const section = inject<Ref<StudiesSection>>('studiesSection')!;
 
-const items: Array<{ key: StudiesSection; label: string; icon: string }> = [
-  { key: 'overview', label: 'Overview', icon: 'mdi-view-dashboard-outline' },
-  { key: 'network', label: 'Network', icon: 'mdi-earth' },
-  { key: 'results', label: 'Results', icon: 'mdi-chart-box-outline' },
-];
+type Item = { key: StudiesSection; label: string; icon: string };
 
-const bottomItems: Array<{ key: StudiesSection; label: string; icon: string }> = [
-  { key: 'configuration', label: 'Configuration', icon: 'mdi-cog-outline' },
-];
+// Network and Configuration only appear when the host enables them (see config.ts).
+const items = computed<Item[]>(() => [
+  { key: 'overview', label: 'Overview', icon: 'mdi-view-dashboard-outline' },
+  ...(networkEnabled.value ? [{ key: 'network' as const, label: 'Network', icon: 'mdi-earth' }] : []),
+  { key: 'results', label: 'Results', icon: 'mdi-chart-box-outline' },
+]);
+
+const bottomItems = computed<Item[]>(() =>
+  networkEnabled.value ? [{ key: 'configuration', label: 'Configuration', icon: 'mdi-cog-outline' }] : [],
+);
 </script>
 
 <style scoped>
