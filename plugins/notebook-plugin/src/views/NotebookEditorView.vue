@@ -140,12 +140,13 @@ const store = useNotebooksStore()
 // 'disconnected' indicator. Same reasoning as the React NotebookManager.
 const kernels = [new PyodideKernel(), new RD2EReadyWebRKernel()]
 
-// rD2E reads these out of the R session (Sys.getenv) to reach d2e's own routes.
-// TREX__DATASET_ID is deliberately empty: unlike the React notebook, this
-// plugin has no dataset selector yet, so the rD2E calls that need a dataset
-// (get_cohort_definition_set, run_strategus_flow) will report a missing dataset
-// rather than silently querying the wrong one. `library(rD2E)` and the function
-// definitions work regardless.
+// rD2E reads these out of the R session (Sys.getenv). get_cohort_definition_set
+// calls /WebAPI with the raw token and needs no dataset. TREX__DATASET_ID is
+// deliberately empty: unlike the React notebook, this plugin has no dataset
+// selector yet, so run_strategus_flow takes its dataset from
+// create_options(source_token_study_code = ...), and create_cohort_definition
+// sends an empty datasetId to /d2e-webapi rather than silently using the wrong
+// one. `library(rD2E)` and the function definitions work regardless.
 const kernelConfigs = [
   // indexUrl must match the bundled pyodide package or loadPyodide refuses to
   // start; see pyodideAssets.ts.
