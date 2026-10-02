@@ -149,10 +149,12 @@ emitted object: `nestingCohortId`, `minAge`, `maxAge`, `genderConceptIds` (from
 `targetComparatorOutcomes`.
 
 `createTrimByPsArgs` note: 5.5.2 splits trimming across `createTrimByPsArgs`,
-`createTrimByPsToEquipoiseArgs` and `createTrimByIptwArgs`. Only the first is reachable from
-the notebook, so the deprecation message must say the equipoise and IPTW variants are set by
-hand on the corresponding `createCmAnalysis()` slot, not point at functions the notebook does
-not define.
+`createTrimByPsToEquipoiseArgs` and `createTrimByIptwArgs`. All 5.5.2 trim, match and stratify
+variants now have notebook constructors (`createTrimByPsToEquipoiseArgs`,
+`createTrimByIptwArgs`, `createMatchOnPsAndCovariatesArgs`,
+`createStratifyByPsAndCovariatesArgs`, plus the existing ones), and
+`computeSharedCovariateBalanceArgs` takes `createComputeCovariateBalanceArgs()`. The deprecation
+messages therefore point at the real constructors and their `createCmAnalysis()` slots.
 
 ## Change set C — FeatureExtraction 3.11.0 covariate settings
 
