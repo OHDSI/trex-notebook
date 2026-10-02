@@ -156,6 +156,50 @@ check(
 )
 
 check(
+    keys(sb.create_trim_by_ps_to_equipoise_args()) == ["bounds"],
+    "create_trim_by_ps_to_equipoise_args(): emitted key set matches CohortMethod 5.5.2 object (bounds only)"
+)
+
+check(
+    sb.create_trim_by_ps_to_equipoise_args()["bounds"] == [0.3, 0.7],
+    "create_trim_by_ps_to_equipoise_args(): bounds default is emitted as a list [0.3, 0.7]"
+)
+
+check(
+    keys(sb.create_trim_by_iptw_args()) == ["maxWeight"],
+    "create_trim_by_iptw_args(): emitted key set matches CohortMethod 5.5.2 object (maxWeight only)"
+)
+
+check(
+    keys(sb.create_match_on_ps_and_covariates_args(covariate_ids=[1])) == [
+        "caliper", "caliperScale", "maxRatio", "allowReverseMatch", "covariateIds"
+    ],
+    "create_match_on_ps_and_covariates_args(): emitted key set/order matches CohortMethod 5.5.2 object"
+)
+
+check(
+    keys(sb.create_stratify_by_ps_and_covariates_args(covariate_ids=[1])) == [
+        "numberOfStrata", "baseSelection", "covariateIds"
+    ],
+    "create_stratify_by_ps_and_covariates_args(): emitted key set/order matches CohortMethod 5.5.2 object"
+)
+
+
+def raises_type_error(fn) -> bool:
+    try:
+        fn()
+        return False
+    except TypeError:
+        return True
+
+
+check(raises_type_error(lambda: sb.create_match_on_ps_and_covariates_args()),
+      "create_match_on_ps_and_covariates_args(): covariate_ids is required")
+
+check(raises_type_error(lambda: sb.create_stratify_by_ps_and_covariates_args()),
+      "create_stratify_by_ps_and_covariates_args(): covariate_ids is required")
+
+check(
     keys(sb.create_match_on_ps_args()) == ["caliper", "caliperScale", "maxRatio", "allowReverseMatch"],
     "create_match_on_ps_args(): emitted key set/order matches CohortMethod 5.5.2 object"
 )
@@ -567,24 +611,74 @@ except TypeError as e:
 check(legacy_err is not None and "trim_by_ps_to_equipoise_args" in legacy_err,
       "create_cm_analysis: legacy positional call raises at the first shifted slot")
 
-for slot_name, analysis_key in {
-    "trim_by_ps_to_equipoise_args": "trimByPsToEquipoiseArgs",
-    "trim_by_iptw_args": "trimByIptwArgs",
-    "match_on_ps_and_covariates_args": "matchOnPsAndCovariatesArgs",
-    "stratify_by_ps_and_covariates_args": "stratifyByPsAndCovariatesArgs",
-    "compute_shared_covariate_balance_args": "computeSharedCovariateBalanceArgs",
-}.items():
+# Every slot has a constructor now: it accepts that constructor's object and rejects another
+# constructor's object, naming the slot. Slot -> (its constructor's object, a wrong object).
+SLOT_OBJECTS = {
+    "trim_by_ps_to_equipoise_args": (
+        "trimByPsToEquipoiseArgs", sb.create_trim_by_ps_to_equipoise_args(),
+        sb.create_match_on_ps_args()),
+    "trim_by_iptw_args": (
+        "trimByIptwArgs", sb.create_trim_by_iptw_args(), sb.create_match_on_ps_args()),
+    "match_on_ps_and_covariates_args": (
+        "matchOnPsAndCovariatesArgs",
+        sb.create_match_on_ps_and_covariates_args(covariate_ids=[1, 2]),
+        sb.create_match_on_ps_args()),
+    "stratify_by_ps_and_covariates_args": (
+        "stratifyByPsAndCovariatesArgs",
+        sb.create_stratify_by_ps_and_covariates_args(covariate_ids=[1, 2]),
+        sb.create_stratify_by_ps_args()),
+    "compute_shared_covariate_balance_args": (
+        "computeSharedCovariateBalanceArgs", sb.create_compute_covariate_balance_args(),
+        sb.create_match_on_ps_args()),
+}
+
+for slot_name, (analysis_key, own_obj, wrong_obj) in SLOT_OBJECTS.items():
     try:
-        analysis = sb.create_cm_analysis(**{**BASE_KWARGS, slot_name: {"someField": 1}})
+        analysis = sb.create_cm_analysis(**{**BASE_KWARGS, slot_name: own_obj})
     except TypeError:
         analysis = None
-    check(analysis is not None and analysis.get(analysis_key, {}).get("_class") == "args",
-          f"create_cm_analysis({slot_name}=<hand-built dict>): accepted and stamped _class 'args'")
+    check(analysis is not None and analysis.get("_class") == "cmAnalysis"
+          and analysis.get(analysis_key) == own_obj,
+          f"create_cm_analysis({slot_name}=<its constructor's object>): accepted")
 
-    err = cm_analysis_error(**{slot_name: sb.create_truncate_iptw_args()})
+    err = cm_analysis_error(**{slot_name: wrong_obj})
     check(err is not None and slot_name in err,
-          f"create_cm_analysis({slot_name}=create_truncate_iptw_args()): constructor object "
-          "rejected in hand-set slot")
+          f"create_cm_analysis({slot_name}=<another constructor's object>): rejected, naming the slot")
+
+    err = cm_analysis_error(**{slot_name: {"someField": 1}})
+    check(err is not None and slot_name in err,
+          f"create_cm_analysis({slot_name}=<plain dict>): rejected, naming the slot")
+
+# create_trim_by_iptw_args() and create_truncate_iptw_args() share the shape {maxWeight}, so a
+# by-name swap between their slots is not detectable. Known, accepted limitation.
+check(cm_analysis_error(
+    trim_by_iptw_args=sb.create_truncate_iptw_args(),
+    truncate_iptw_args=sb.create_trim_by_iptw_args(),
+) is None, "create_cm_analysis: trim_by_iptw_args/truncate_iptw_args swap is accepted (identical shapes)")
+
+
+# Removed-arg messages on create_trim_by_ps_args point at the real constructors.
+def trim_msg(**kwargs):
+    try:
+        sb.create_trim_by_ps_args(**kwargs)
+        return ""
+    except TypeError as e:
+        return str(e)
+
+
+m = trim_msg(equipoise_bounds=[0.3, 0.7])
+check("create_trim_by_ps_to_equipoise_args" in m and "trim_by_ps_to_equipoise_args" in m,
+      "create_trim_by_ps_args(equipoise_bounds=...): points at create_trim_by_ps_to_equipoise_args / its slot")
+m = trim_msg(max_weight=10)
+check("create_trim_by_iptw_args" in m and "create_truncate_iptw_args" in m,
+      "create_trim_by_ps_args(max_weight=...): points at create_trim_by_iptw_args / create_truncate_iptw_args")
+m = trim_msg(trim_method="x")
+check("create_trim_by_ps_to_equipoise_args" in m and "create_trim_by_iptw_args" in m
+      and "create_trim_by_ps_args()" in m,
+      "create_trim_by_ps_args(trim_method=...): lists the three matching constructors")
+check(not any("by hand" in trim_msg(**kw) for kw in (
+    {"equipoise_bounds": 1}, {"max_weight": 1}, {"trim_method": "x"})),
+    "create_trim_by_ps_args: removed-arg messages no longer say 'set by hand'")
 
 # =============================================================================
 

@@ -26,7 +26,8 @@ HADES Package Version Tracking (for maintenance):
     command and raw output; docs/superpowers/specs/2026-09-10-strategus-spec-builder-hades-alignment-design.md
     for the design and scope):
     - CohortMethod            5.5.2  (VERIFIED - cmAnalysis args, ps/trim/match/stratify
-                                      args, fitOutcomeModelArgs, getDbCohortMethodDataArgs)
+                                      args, fitOutcomeModelArgs, getDbCohortMethodDataArgs; every
+                                      create_cm_analysis() *_args slot has a constructor here)
     - FeatureExtraction       3.11.0 (VERIFIED - covariate settings field names, incl.
                                       temporal and gender-only variants)
     - Cyclops                 3.6.0  (VERIFIED - control and prior field names)
@@ -692,20 +693,31 @@ def create_trim_by_ps_args(
     """Create arguments for trimByPs."""
     if equipoise_bounds is not _REMOVED:
         _removed_arg("create_trim_by_ps_args", "equipoise_bounds",
-                     "5.5.2 splits trimming; the equipoise and IPTW variants are not "
-                     "available in the notebook builder; set the corresponding "
-                     "create_cm_analysis() slot by hand.")
+                     "5.5.2 splits trimming; use create_trim_by_ps_to_equipoise_args("
+                     "bounds=...) on the trim_by_ps_to_equipoise_args slot of "
+                     "create_cm_analysis().")
     if max_weight is not _REMOVED:
         _removed_arg("create_trim_by_ps_args", "max_weight",
-                     "5.5.2 splits trimming; the equipoise and IPTW variants are not "
-                     "available in the notebook builder; set the corresponding "
-                     "create_cm_analysis() slot by hand.")
+                     "5.5.2 splits trimming; use create_trim_by_iptw_args() on the "
+                     "trim_by_iptw_args slot or create_truncate_iptw_args() on the "
+                     "truncate_iptw_args slot of create_cm_analysis().")
     if trim_method is not _REMOVED:
         _removed_arg("create_trim_by_ps_args", "trim_method",
-                     "5.5.2 splits trimming; the equipoise and IPTW variants are not "
-                     "available in the notebook builder; set the corresponding "
-                     "create_cm_analysis() slot by hand.")
+                     "5.5.2 splits trimming; use the slot of the matching constructor on "
+                     "create_cm_analysis(): create_trim_by_ps_args() (trim_by_ps_args), "
+                     "create_trim_by_ps_to_equipoise_args() (trim_by_ps_to_equipoise_args) "
+                     "or create_trim_by_iptw_args() (trim_by_iptw_args).")
     return {"trimFraction": trim_fraction, "_class": "args"}
+
+
+def create_trim_by_ps_to_equipoise_args(bounds=(0.3, 0.7)) -> dict:
+    """Create arguments for trimByPsToEquipoise."""
+    return {"bounds": list(bounds), "_class": "args"}
+
+
+def create_trim_by_iptw_args(max_weight: float = 10) -> dict:
+    """Create arguments for trimByIptw."""
+    return {"maxWeight": max_weight, "_class": "args"}
 
 
 def create_truncate_iptw_args(max_weight: float = 10) -> dict:
@@ -741,6 +753,25 @@ def create_match_on_ps_args(
     return args
 
 
+def create_match_on_ps_and_covariates_args(
+    caliper: float = 0.2,
+    caliper_scale: str = "standardized logit",
+    max_ratio: int = 1,
+    allow_reverse_match: bool = False,
+    *,
+    covariate_ids: list
+) -> dict:
+    """Create arguments for matchOnPsAndCovariates."""
+    return {
+        "caliper": caliper,
+        "caliperScale": caliper_scale,
+        "maxRatio": max_ratio,
+        "allowReverseMatch": allow_reverse_match,
+        "covariateIds": covariate_ids,
+        "_class": "args",
+    }
+
+
 def create_stratify_by_ps_args(
     number_of_strata: int = 10,
     base_selection: str = "all",
@@ -759,6 +790,21 @@ def create_stratify_by_ps_args(
         args["stratificationColumns"] = stratification_columns
     args["_class"] = "args"
     return args
+
+
+def create_stratify_by_ps_and_covariates_args(
+    number_of_strata: int = 5,
+    base_selection: str = "all",
+    *,
+    covariate_ids: list
+) -> dict:
+    """Create arguments for stratifyByPsAndCovariates."""
+    return {
+        "numberOfStrata": number_of_strata,
+        "baseSelection": base_selection,
+        "covariateIds": covariate_ids,
+        "_class": "args",
+    }
 
 
 def create_compute_covariate_balance_args(
@@ -853,9 +899,15 @@ def _cm_args_shapes() -> dict:
         "create_create_ps_args": shape(create_create_ps_args(),
                                        ("excludeCovariateIds", "includeCovariateIds")),
         "create_trim_by_ps_args": shape(create_trim_by_ps_args()),
+        "create_trim_by_ps_to_equipoise_args": shape(create_trim_by_ps_to_equipoise_args()),
+        "create_trim_by_iptw_args": shape(create_trim_by_iptw_args()),
         "create_truncate_iptw_args": shape(create_truncate_iptw_args()),
         "create_match_on_ps_args": shape(create_match_on_ps_args(), ("stratificationColumns",)),
+        "create_match_on_ps_and_covariates_args": shape(
+            create_match_on_ps_and_covariates_args(covariate_ids=[0])),
         "create_stratify_by_ps_args": shape(create_stratify_by_ps_args(), ("stratificationColumns",)),
+        "create_stratify_by_ps_and_covariates_args": shape(
+            create_stratify_by_ps_and_covariates_args(covariate_ids=[0])),
         "create_compute_covariate_balance_args": shape(create_compute_covariate_balance_args(),
                                                        ("subgroupCovariateId", "covariateFilter")),
         "create_fit_outcome_model_args": shape(create_fit_outcome_model_args(),
@@ -869,9 +921,14 @@ _CM_ARGS_SLOT_CONSTRUCTORS = {
     "create_study_pop_args": "create_create_study_population_args",
     "create_ps_args": "create_create_ps_args",
     "trim_by_ps_args": "create_trim_by_ps_args",
+    "trim_by_ps_to_equipoise_args": "create_trim_by_ps_to_equipoise_args",
+    "trim_by_iptw_args": "create_trim_by_iptw_args",
     "truncate_iptw_args": "create_truncate_iptw_args",
     "match_on_ps_args": "create_match_on_ps_args",
+    "match_on_ps_and_covariates_args": "create_match_on_ps_and_covariates_args",
     "stratify_by_ps_args": "create_stratify_by_ps_args",
+    "stratify_by_ps_and_covariates_args": "create_stratify_by_ps_and_covariates_args",
+    "compute_shared_covariate_balance_args": "create_compute_covariate_balance_args",
     "compute_covariate_balance_args": "create_compute_covariate_balance_args",
     "fit_outcome_model_args": "create_fit_outcome_model_args",
 }
@@ -881,21 +938,27 @@ def _args_fields(value: dict) -> set:
     return {k for k in value if not k.startswith("_")}
 
 
-def _cm_args_matching_constructor(value: dict, shapes: dict) -> Optional[str]:
-    fields = _args_fields(value)
-    for ctor, s in shapes.items():
-        if s["required"] <= fields <= s["required"] | s["optional"]:
+def _cm_args_matches_shape(value: dict, shape: dict) -> bool:
+    """All of the constructor's always-present fields, nothing outside its always-present
+    + optional fields."""
+    return shape["required"] <= _args_fields(value) <= shape["required"] | shape["optional"]
+
+
+def _cm_args_other_matching_constructor(value: dict, shapes: dict, expected: str) -> Optional[str]:
+    """First constructor, other than `expected`, whose shape `value` matches (None if none)."""
+    for ctor, shape in shapes.items():
+        if ctor != expected and _cm_args_matches_shape(value, shape):
             return ctor
     return None
 
 
 def _assert_args_slot(value, slot_name: str, shapes: dict):
-    """Slots with a constructor must hold that constructor's object. Slots without one
-    (trim_by_ps_to_equipoise_args, trim_by_iptw_args, match_on_ps_and_covariates_args,
-    stratify_by_ps_and_covariates_args, compute_shared_covariate_balance_args) are set by
-    hand: a plain dict (no _class) is accepted and stamped "args"; an "args" object shaped
-    like one of the constructors is rejected, since that is what a shifted positional call
-    lands there."""
+    """Every slot has a constructor and must hold that constructor's object: _class "args"
+    and the constructor's field shape. Some constructors share a shape
+    (create_trim_by_iptw_args and create_truncate_iptw_args are both {maxWeight}), so the
+    check is "matches the EXPECTED constructor's shape", not "first matching constructor is
+    the expected one"; a by-name swap between those two slots is therefore not detectable
+    (accepted limitation)."""
     if value is None:
         return value
 
@@ -906,27 +969,16 @@ def _assert_args_slot(value, slot_name: str, shapes: dict):
         )
 
     got_class = value.get("_class") if isinstance(value, dict) else type(value).__name__
-    expected = _CM_ARGS_SLOT_CONSTRUCTORS.get(slot_name)
-    if expected is not None:
-        if not isinstance(value, dict) or value.get("_class") != "args":
-            wrong_slot(f"must be an object created by {expected}() (_class == \"args\"); "
-                       f"got {got_class!r}")
-        matched = _cm_args_matching_constructor(value, shapes)
-        if matched != expected:
-            if matched is None:
-                wrong_slot(f"expected an object from {expected}(); got fields "
-                           f"{', '.join(sorted(_args_fields(value)))}")
-            wrong_slot(f"expected an object from {expected}(); got one shaped like {matched}()")
-        return value
-
-    if not isinstance(value, dict) or value.get("_class") not in (None, "args"):
-        wrong_slot(f"has no constructor; set it by hand as a dict; got {got_class!r}")
-    if "_class" not in value:
-        return {**value, "_class": "args"}
-    matched = _cm_args_matching_constructor(value, shapes)
-    if matched is not None:
-        wrong_slot(f"has no constructor and must be set by hand, but got an object shaped "
-                   f"like {matched}()")
+    expected = _CM_ARGS_SLOT_CONSTRUCTORS[slot_name]
+    if not isinstance(value, dict) or value.get("_class") != "args":
+        wrong_slot(f"must be an object created by {expected}() (_class == \"args\"); "
+                   f"got {got_class!r}")
+    if not _cm_args_matches_shape(value, shapes[expected]):
+        other = _cm_args_other_matching_constructor(value, shapes, expected)
+        if other is None:
+            wrong_slot(f"expected an object from {expected}(); got fields "
+                       f"{', '.join(sorted(_args_fields(value)))}")
+        wrong_slot(f"expected an object from {expected}(); got one shaped like {other}()")
     return value
 
 

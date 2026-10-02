@@ -69,6 +69,18 @@ check(sb.create_trim_by_ps_args()["_class"] == "args",
 check(sb.create_truncate_iptw_args()["_class"] == "args",
       "create_truncate_iptw_args: _class is 'args'")
 
+check(sb.create_trim_by_ps_to_equipoise_args()["_class"] == "args",
+      "create_trim_by_ps_to_equipoise_args: _class is 'args'")
+
+check(sb.create_trim_by_iptw_args()["_class"] == "args",
+      "create_trim_by_iptw_args: _class is 'args'")
+
+check(sb.create_match_on_ps_and_covariates_args(covariate_ids=[1])["_class"] == "args",
+      "create_match_on_ps_and_covariates_args: _class is 'args'")
+
+check(sb.create_stratify_by_ps_and_covariates_args(covariate_ids=[1])["_class"] == "args",
+      "create_stratify_by_ps_and_covariates_args: _class is 'args'")
+
 check(sb.create_match_on_ps_args()["_class"] == "args",
       "create_match_on_ps_args: _class is 'args'")
 
