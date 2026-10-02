@@ -6,6 +6,7 @@ import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
 import singleSpaVue from 'single-spa-vue';
 import StudiesApp from './StudiesApp.vue';
+import { readHostConfig } from './config';
 
 const CSS_LINK_ID = 'studies-plugin-styles';
 
@@ -125,6 +126,7 @@ const vueLifecycles = singleSpaVue({
     },
   },
   handleInstance(app, props) {
+    readHostConfig();
     const pinia = createPinia();
     app.use(pinia);
     app.use(vuetify);
