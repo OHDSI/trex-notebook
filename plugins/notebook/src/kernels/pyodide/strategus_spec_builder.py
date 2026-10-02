@@ -838,22 +838,96 @@ def create_fit_outcome_model_args(
     return args
 
 
-def _assert_args_class(value, slot_name: str) -> None:
-    """create_cm_analysis's 16-parameter order matches CohortMethod 5.5.2 exactly, so a
-    legacy positional call site can silently bind an object into the wrong *_args slot
-    (all are None-defaulted with no type check on their own). This asserts every *_args
-    slot supplied carries the class the matching create_*_args()/
-    create_get_db_cohort_method_data_args()/create_create_study_population_args()
-    constructor stamps ("args"), so a misplaced object raises here instead of silently
-    producing a structurally valid but semantically wrong spec."""
-    if value is not None and (not isinstance(value, dict) or value.get("_class") != "args"):
-        got_class = value.get("_class") if isinstance(value, dict) else type(value).__name__
+# create_cm_analysis's 16-parameter order matches CohortMethod 5.5.2 exactly, so a legacy
+# positional call site can silently bind an object into the wrong *_args slot. Every
+# constructor stamps the same _class ("args", mirroring CohortMethod), so the class alone
+# can't tell slots apart; each constructor's field names can. A value matches a
+# constructor when it has all of that constructor's always-present fields and nothing
+# outside its always-present + optional fields.
+def _cm_args_shapes() -> dict:
+    def shape(obj: dict, optional=()) -> dict:
+        return {"required": _args_fields(obj), "optional": set(optional)}
+    return {
+        "create_get_db_cohort_method_data_args": shape(create_get_db_cohort_method_data_args()),
+        "create_create_study_population_args": shape(create_create_study_population_args()),
+        "create_create_ps_args": shape(create_create_ps_args(),
+                                       ("excludeCovariateIds", "includeCovariateIds")),
+        "create_trim_by_ps_args": shape(create_trim_by_ps_args()),
+        "create_truncate_iptw_args": shape(create_truncate_iptw_args()),
+        "create_match_on_ps_args": shape(create_match_on_ps_args(), ("stratificationColumns",)),
+        "create_stratify_by_ps_args": shape(create_stratify_by_ps_args(), ("stratificationColumns",)),
+        "create_compute_covariate_balance_args": shape(create_compute_covariate_balance_args(),
+                                                       ("subgroupCovariateId", "covariateFilter")),
+        "create_fit_outcome_model_args": shape(create_fit_outcome_model_args(),
+                                               ("interactionCovariateIds", "excludeCovariateIds",
+                                                "includeCovariateIds", "profileGrid")),
+    }
+
+
+_CM_ARGS_SLOT_CONSTRUCTORS = {
+    "get_db_cohort_method_data_args": "create_get_db_cohort_method_data_args",
+    "create_study_pop_args": "create_create_study_population_args",
+    "create_ps_args": "create_create_ps_args",
+    "trim_by_ps_args": "create_trim_by_ps_args",
+    "truncate_iptw_args": "create_truncate_iptw_args",
+    "match_on_ps_args": "create_match_on_ps_args",
+    "stratify_by_ps_args": "create_stratify_by_ps_args",
+    "compute_covariate_balance_args": "create_compute_covariate_balance_args",
+    "fit_outcome_model_args": "create_fit_outcome_model_args",
+}
+
+
+def _args_fields(value: dict) -> set:
+    return {k for k in value if not k.startswith("_")}
+
+
+def _cm_args_matching_constructor(value: dict, shapes: dict) -> Optional[str]:
+    fields = _args_fields(value)
+    for ctor, s in shapes.items():
+        if s["required"] <= fields <= s["required"] | s["optional"]:
+            return ctor
+    return None
+
+
+def _assert_args_slot(value, slot_name: str, shapes: dict):
+    """Slots with a constructor must hold that constructor's object. Slots without one
+    (trim_by_ps_to_equipoise_args, trim_by_iptw_args, match_on_ps_and_covariates_args,
+    stratify_by_ps_and_covariates_args, compute_shared_covariate_balance_args) are set by
+    hand: a plain dict (no _class) is accepted and stamped "args"; an "args" object shaped
+    like one of the constructors is rejected, since that is what a shifted positional call
+    lands there."""
+    if value is None:
+        return value
+
+    def wrong_slot(detail: str):
         raise TypeError(
-            f"create_cm_analysis({slot_name}=...) must be an object created by the "
-            f"matching create_*_args() constructor (_class == \"args\"); got {got_class!r} "
-            "instead. This usually means a positional call bound the wrong object into "
-            "this slot."
+            f"create_cm_analysis({slot_name}=...): {detail}. This usually means a "
+            "positional call bound the wrong object into this slot."
         )
+
+    got_class = value.get("_class") if isinstance(value, dict) else type(value).__name__
+    expected = _CM_ARGS_SLOT_CONSTRUCTORS.get(slot_name)
+    if expected is not None:
+        if not isinstance(value, dict) or value.get("_class") != "args":
+            wrong_slot(f"must be an object created by {expected}() (_class == \"args\"); "
+                       f"got {got_class!r}")
+        matched = _cm_args_matching_constructor(value, shapes)
+        if matched != expected:
+            if matched is None:
+                wrong_slot(f"expected an object from {expected}(); got fields "
+                           f"{', '.join(sorted(_args_fields(value)))}")
+            wrong_slot(f"expected an object from {expected}(); got one shaped like {matched}()")
+        return value
+
+    if not isinstance(value, dict) or value.get("_class") not in (None, "args"):
+        wrong_slot(f"has no constructor; set it by hand as a dict; got {got_class!r}")
+    if "_class" not in value:
+        return {**value, "_class": "args"}
+    matched = _cm_args_matching_constructor(value, shapes)
+    if matched is not None:
+        wrong_slot(f"has no constructor and must be set by hand, but got an object shaped "
+                   f"like {matched}()")
+    return value
 
 
 def create_cm_analysis(
@@ -875,20 +949,27 @@ def create_cm_analysis(
     fit_outcome_model_args: Optional[dict] = None
 ) -> dict:
     """Create a CohortMethod analysis specification."""
-    _assert_args_class(get_db_cohort_method_data_args, "get_db_cohort_method_data_args")
-    _assert_args_class(create_study_pop_args, "create_study_pop_args")
-    _assert_args_class(create_ps_args, "create_ps_args")
-    _assert_args_class(trim_by_ps_args, "trim_by_ps_args")
-    _assert_args_class(trim_by_ps_to_equipoise_args, "trim_by_ps_to_equipoise_args")
-    _assert_args_class(trim_by_iptw_args, "trim_by_iptw_args")
-    _assert_args_class(truncate_iptw_args, "truncate_iptw_args")
-    _assert_args_class(match_on_ps_args, "match_on_ps_args")
-    _assert_args_class(match_on_ps_and_covariates_args, "match_on_ps_and_covariates_args")
-    _assert_args_class(stratify_by_ps_args, "stratify_by_ps_args")
-    _assert_args_class(stratify_by_ps_and_covariates_args, "stratify_by_ps_and_covariates_args")
-    _assert_args_class(compute_shared_covariate_balance_args, "compute_shared_covariate_balance_args")
-    _assert_args_class(compute_covariate_balance_args, "compute_covariate_balance_args")
-    _assert_args_class(fit_outcome_model_args, "fit_outcome_model_args")
+    shapes = _cm_args_shapes()
+    get_db_cohort_method_data_args = _assert_args_slot(
+        get_db_cohort_method_data_args, "get_db_cohort_method_data_args", shapes)
+    create_study_pop_args = _assert_args_slot(create_study_pop_args, "create_study_pop_args", shapes)
+    create_ps_args = _assert_args_slot(create_ps_args, "create_ps_args", shapes)
+    trim_by_ps_args = _assert_args_slot(trim_by_ps_args, "trim_by_ps_args", shapes)
+    trim_by_ps_to_equipoise_args = _assert_args_slot(
+        trim_by_ps_to_equipoise_args, "trim_by_ps_to_equipoise_args", shapes)
+    trim_by_iptw_args = _assert_args_slot(trim_by_iptw_args, "trim_by_iptw_args", shapes)
+    truncate_iptw_args = _assert_args_slot(truncate_iptw_args, "truncate_iptw_args", shapes)
+    match_on_ps_args = _assert_args_slot(match_on_ps_args, "match_on_ps_args", shapes)
+    match_on_ps_and_covariates_args = _assert_args_slot(
+        match_on_ps_and_covariates_args, "match_on_ps_and_covariates_args", shapes)
+    stratify_by_ps_args = _assert_args_slot(stratify_by_ps_args, "stratify_by_ps_args", shapes)
+    stratify_by_ps_and_covariates_args = _assert_args_slot(
+        stratify_by_ps_and_covariates_args, "stratify_by_ps_and_covariates_args", shapes)
+    compute_shared_covariate_balance_args = _assert_args_slot(
+        compute_shared_covariate_balance_args, "compute_shared_covariate_balance_args", shapes)
+    compute_covariate_balance_args = _assert_args_slot(
+        compute_covariate_balance_args, "compute_covariate_balance_args", shapes)
+    fit_outcome_model_args = _assert_args_slot(fit_outcome_model_args, "fit_outcome_model_args", shapes)
     analysis = {
         "analysisId": analysis_id,
         "description": description,

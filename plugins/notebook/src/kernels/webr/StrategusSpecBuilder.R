@@ -889,18 +889,95 @@ createFitOutcomeModelArgs <- function(modelType = "cox",
 }
 
 # createCmAnalysis's 16-parameter order matches CohortMethod 5.5.2 exactly, so a legacy
-# positional call site can silently bind an object into the wrong *Args slot (all are
-# NULL-defaulted with no type check on their own). This asserts every *Args slot supplied
-# carries the class the matching create*Args()/createGetDbCohortMethodDataArgs()/
-# createCreateStudyPopArgs() constructor stamps ("args"), so a misplaced object raises here
-# instead of silently producing a structurally valid but semantically wrong spec.
-.assertArgsClass <- function(value, slotName) {
-  if (!is.null(value) && !inherits(value, "args")) {
+# positional call site can silently bind an object into the wrong *Args slot. Every
+# constructor stamps the same class ("args", as CohortMethod does, and it is serialized
+# as attr_class), so the class alone can't tell slots apart; each constructor's field
+# names can. A value matches a constructor when it has all of that constructor's
+# always-present fields and nothing outside its always-present + optional fields.
+.cmArgsShapes <- function() {
+  shape <- function(obj, optional = character(0)) list(required = names(obj), optional = optional)
+  list(
+    createGetDbCohortMethodDataArgs = shape(createGetDbCohortMethodDataArgs()),
+    createCreateStudyPopulationArgs = shape(createCreateStudyPopulationArgs()),
+    createCreatePsArgs = shape(createCreatePsArgs(), c("excludeCovariateIds", "includeCovariateIds")),
+    createTrimByPsArgs = shape(createTrimByPsArgs()),
+    createTruncateIptwArgs = shape(createTruncateIptwArgs()),
+    createMatchOnPsArgs = shape(createMatchOnPsArgs(), "stratificationColumns"),
+    createStratifyByPsArgs = shape(createStratifyByPsArgs(), "stratificationColumns"),
+    createComputeCovariateBalanceArgs = shape(createComputeCovariateBalanceArgs(),
+                                              c("subgroupCovariateId", "covariateFilter")),
+    createFitOutcomeModelArgs = shape(createFitOutcomeModelArgs(),
+                                      c("interactionCovariateIds", "excludeCovariateIds",
+                                        "includeCovariateIds", "profileGrid"))
+  )
+}
+
+.cmArgsSlotConstructors <- c(
+  getDbCohortMethodDataArgs = "createGetDbCohortMethodDataArgs",
+  createStudyPopArgs = "createCreateStudyPopulationArgs",
+  createPsArgs = "createCreatePsArgs",
+  trimByPsArgs = "createTrimByPsArgs",
+  truncateIptwArgs = "createTruncateIptwArgs",
+  matchOnPsArgs = "createMatchOnPsArgs",
+  stratifyByPsArgs = "createStratifyByPsArgs",
+  computeCovariateBalanceArgs = "createComputeCovariateBalanceArgs",
+  fitOutcomeModelArgs = "createFitOutcomeModelArgs"
+)
+
+.cmArgsMatchingConstructor <- function(value, shapes) {
+  fields <- names(value)
+  for (ctor in names(shapes)) {
+    s <- shapes[[ctor]]
+    if (all(s$required %in% fields) && all(fields %in% c(s$required, s$optional))) return(ctor)
+  }
+  NULL
+}
+
+# Slots with a constructor must hold that constructor's object. Slots without one
+# (trimByPsToEquipoiseArgs, trimByIptwArgs, matchOnPsAndCovariatesArgs,
+# stratifyByPsAndCovariatesArgs, computeSharedCovariateBalanceArgs) are set by hand: a
+# plain named list is accepted and stamped "args"; an "args" object shaped like one of
+# the constructors is rejected, since that is what a shifted positional call lands there.
+.assertArgsSlot <- function(value, slotName, shapes) {
+  if (is.null(value)) return(value)
+  wrongSlot <- function(detail) {
     stop(sprintf(
-      "createCmAnalysis(%s = ...) must be an object created by the matching create*Args() constructor (class \"args\"); got class %s instead. This usually means a positional call bound the wrong object into this slot.",
-      slotName, paste(class(value), collapse = "/")
+      "createCmAnalysis(%s = ...): %s. This usually means a positional call bound the wrong object into this slot.",
+      slotName, detail
     ), call. = FALSE)
   }
+  expected <- unname(.cmArgsSlotConstructors[slotName])
+  if (!is.na(expected)) {
+    if (!inherits(value, "args")) {
+      wrongSlot(sprintf("must be an object created by %s() (class \"args\"); got class %s",
+                        expected, paste(class(value), collapse = "/")))
+    }
+    matched <- .cmArgsMatchingConstructor(value, shapes)
+    if (!identical(matched, expected)) {
+      wrongSlot(if (is.null(matched)) {
+        sprintf("expected an object from %s(); got fields %s",
+                expected, paste(names(value), collapse = ", "))
+      } else {
+        sprintf("expected an object from %s(); got one shaped like %s()", expected, matched)
+      })
+    }
+    return(value)
+  }
+  isPlainList <- is.list(value) && identical(class(value), "list")
+  if (!(isPlainList || inherits(value, "args")) || is.null(names(value)) || any(names(value) == "")) {
+    wrongSlot(sprintf("has no constructor; set it by hand as a named list; got class %s",
+                      paste(class(value), collapse = "/")))
+  }
+  if (isPlainList) {
+    class(value) <- "args"
+    return(value)
+  }
+  matched <- .cmArgsMatchingConstructor(value, shapes)
+  if (!is.null(matched)) {
+    wrongSlot(sprintf("has no constructor and must be set by hand, but got an object shaped like %s()",
+                      matched))
+  }
+  value
 }
 
 createCmAnalysis <- function(analysisId = 1,
@@ -919,20 +996,22 @@ createCmAnalysis <- function(analysisId = 1,
                              computeSharedCovariateBalanceArgs = NULL,
                              computeCovariateBalanceArgs = NULL,
                              fitOutcomeModelArgs = NULL) {
-  .assertArgsClass(getDbCohortMethodDataArgs, "getDbCohortMethodDataArgs")
-  .assertArgsClass(createStudyPopArgs, "createStudyPopArgs")
-  .assertArgsClass(createPsArgs, "createPsArgs")
-  .assertArgsClass(trimByPsArgs, "trimByPsArgs")
-  .assertArgsClass(trimByPsToEquipoiseArgs, "trimByPsToEquipoiseArgs")
-  .assertArgsClass(trimByIptwArgs, "trimByIptwArgs")
-  .assertArgsClass(truncateIptwArgs, "truncateIptwArgs")
-  .assertArgsClass(matchOnPsArgs, "matchOnPsArgs")
-  .assertArgsClass(matchOnPsAndCovariatesArgs, "matchOnPsAndCovariatesArgs")
-  .assertArgsClass(stratifyByPsArgs, "stratifyByPsArgs")
-  .assertArgsClass(stratifyByPsAndCovariatesArgs, "stratifyByPsAndCovariatesArgs")
-  .assertArgsClass(computeSharedCovariateBalanceArgs, "computeSharedCovariateBalanceArgs")
-  .assertArgsClass(computeCovariateBalanceArgs, "computeCovariateBalanceArgs")
-  .assertArgsClass(fitOutcomeModelArgs, "fitOutcomeModelArgs")
+  shapes <- .cmArgsShapes()
+  getDbCohortMethodDataArgs <- .assertArgsSlot(getDbCohortMethodDataArgs, "getDbCohortMethodDataArgs", shapes)
+  createStudyPopArgs <- .assertArgsSlot(createStudyPopArgs, "createStudyPopArgs", shapes)
+  createPsArgs <- .assertArgsSlot(createPsArgs, "createPsArgs", shapes)
+  trimByPsArgs <- .assertArgsSlot(trimByPsArgs, "trimByPsArgs", shapes)
+  trimByPsToEquipoiseArgs <- .assertArgsSlot(trimByPsToEquipoiseArgs, "trimByPsToEquipoiseArgs", shapes)
+  trimByIptwArgs <- .assertArgsSlot(trimByIptwArgs, "trimByIptwArgs", shapes)
+  truncateIptwArgs <- .assertArgsSlot(truncateIptwArgs, "truncateIptwArgs", shapes)
+  matchOnPsArgs <- .assertArgsSlot(matchOnPsArgs, "matchOnPsArgs", shapes)
+  matchOnPsAndCovariatesArgs <- .assertArgsSlot(matchOnPsAndCovariatesArgs, "matchOnPsAndCovariatesArgs", shapes)
+  stratifyByPsArgs <- .assertArgsSlot(stratifyByPsArgs, "stratifyByPsArgs", shapes)
+  stratifyByPsAndCovariatesArgs <- .assertArgsSlot(stratifyByPsAndCovariatesArgs, "stratifyByPsAndCovariatesArgs", shapes)
+  computeSharedCovariateBalanceArgs <- .assertArgsSlot(computeSharedCovariateBalanceArgs,
+                                                       "computeSharedCovariateBalanceArgs", shapes)
+  computeCovariateBalanceArgs <- .assertArgsSlot(computeCovariateBalanceArgs, "computeCovariateBalanceArgs", shapes)
+  fitOutcomeModelArgs <- .assertArgsSlot(fitOutcomeModelArgs, "fitOutcomeModelArgs", shapes)
   analysis <- list(
     analysisId = analysisId,
     description = description,

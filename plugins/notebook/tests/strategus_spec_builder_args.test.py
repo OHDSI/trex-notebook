@@ -519,6 +519,73 @@ except TypeError:
     no_error = False
 check(no_error, "create_cm_analysis: correctly-typed slots (_class == 'args') do not raise")
 
+# Every constructor stamps the same "args" _class, so the guard tells slots apart by
+# field names: a real constructor object in the wrong slot must raise too.
+BASE_KWARGS = {
+    "get_db_cohort_method_data_args": sb.create_get_db_cohort_method_data_args(),
+    "create_study_pop_args": sb.create_create_study_population_args(),
+}
+
+
+def cm_analysis_error(**kwargs):
+    try:
+        sb.create_cm_analysis(**{**BASE_KWARGS, **kwargs})
+        return None
+    except TypeError as e:
+        return str(e)
+
+
+err = cm_analysis_error(trim_by_ps_args=sb.create_match_on_ps_args())
+check(err is not None and "trim_by_ps_args" in err and "create_match_on_ps_args" in err,
+      "create_cm_analysis(trim_by_ps_args=create_match_on_ps_args()): raises, naming the slot "
+      "and the constructor it looks like")
+
+err = cm_analysis_error(fit_outcome_model_args=sb.create_create_ps_args())
+check(err is not None and "fit_outcome_model_args" in err,
+      "create_cm_analysis(fit_outcome_model_args=create_create_ps_args()): raises")
+
+check(cm_analysis_error(
+    create_ps_args=sb.create_create_ps_args(exclude_covariate_ids=[1, 2]),
+    match_on_ps_args=sb.create_match_on_ps_args(stratification_columns=["a"]),
+    compute_covariate_balance_args=sb.create_compute_covariate_balance_args(subgroup_covariate_id=1),
+    fit_outcome_model_args=sb.create_fit_outcome_model_args(profile_grid=[0, 1]),
+) is None, "create_cm_analysis: constructor objects carrying optional fields still match their slot")
+
+# Pre-5.5.2 positional order: (..., create_ps_args, trim_by_ps_args, truncate_iptw_args,
+# match_on_ps_args, ...). Under the 5.5.2 order truncate_iptw_args lands in
+# trim_by_ps_to_equipoise_args, which must raise rather than silently mis-bind.
+try:
+    sb.create_cm_analysis(
+        1, "legacy positional",
+        sb.create_get_db_cohort_method_data_args(), sb.create_create_study_population_args(),
+        sb.create_create_ps_args(), sb.create_trim_by_ps_args(),
+        sb.create_truncate_iptw_args(), sb.create_match_on_ps_args()
+    )
+    legacy_err = None
+except TypeError as e:
+    legacy_err = str(e)
+check(legacy_err is not None and "trim_by_ps_to_equipoise_args" in legacy_err,
+      "create_cm_analysis: legacy positional call raises at the first shifted slot")
+
+for slot_name, analysis_key in {
+    "trim_by_ps_to_equipoise_args": "trimByPsToEquipoiseArgs",
+    "trim_by_iptw_args": "trimByIptwArgs",
+    "match_on_ps_and_covariates_args": "matchOnPsAndCovariatesArgs",
+    "stratify_by_ps_and_covariates_args": "stratifyByPsAndCovariatesArgs",
+    "compute_shared_covariate_balance_args": "computeSharedCovariateBalanceArgs",
+}.items():
+    try:
+        analysis = sb.create_cm_analysis(**{**BASE_KWARGS, slot_name: {"someField": 1}})
+    except TypeError:
+        analysis = None
+    check(analysis is not None and analysis.get(analysis_key, {}).get("_class") == "args",
+          f"create_cm_analysis({slot_name}=<hand-built dict>): accepted and stamped _class 'args'")
+
+    err = cm_analysis_error(**{slot_name: sb.create_truncate_iptw_args()})
+    check(err is not None and slot_name in err,
+          f"create_cm_analysis({slot_name}=create_truncate_iptw_args()): constructor object "
+          "rejected in hand-set slot")
+
 # =============================================================================
 
 if FAILURES > 0:

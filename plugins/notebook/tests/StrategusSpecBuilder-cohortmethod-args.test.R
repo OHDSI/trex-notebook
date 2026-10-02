@@ -487,6 +487,66 @@ check(
   "createCmAnalysis: correctly-typed slots (class 'args') do not raise"
 )
 
+# Every constructor stamps the same "args" class, so the guard tells slots apart by
+# field names: a real constructor object in the wrong slot must raise too.
+cmAnalysisError <- function(...) {
+  tryCatch({
+    createCmAnalysis(
+      getDbCohortMethodDataArgs = createGetDbCohortMethodDataArgs(),
+      createStudyPopArgs = createCreateStudyPopulationArgs(),
+      ...
+    )
+    NULL
+  }, error = function(e) conditionMessage(e))
+}
+
+err <- cmAnalysisError(trimByPsArgs = createMatchOnPsArgs())
+check(!is.null(err) && grepl("trimByPsArgs", err, fixed = TRUE) && grepl("createMatchOnPsArgs", err, fixed = TRUE),
+      "createCmAnalysis(trimByPsArgs = createMatchOnPsArgs()): raises, naming the slot and the constructor it looks like")
+
+err <- cmAnalysisError(fitOutcomeModelArgs = createCreatePsArgs())
+check(!is.null(err) && grepl("fitOutcomeModelArgs", err, fixed = TRUE),
+      "createCmAnalysis(fitOutcomeModelArgs = createCreatePsArgs()): raises")
+
+check(is.null(cmAnalysisError(
+  createPsArgs = createCreatePsArgs(excludeCovariateIds = c(1, 2)),
+  matchOnPsArgs = createMatchOnPsArgs(stratificationColumns = c("a")),
+  computeCovariateBalanceArgs = createComputeCovariateBalanceArgs(subgroupCovariateId = 1),
+  fitOutcomeModelArgs = createFitOutcomeModelArgs(profileGrid = c(0, 1))
+)), "createCmAnalysis: constructor objects carrying optional fields still match their slot")
+
+# Pre-5.5.2 positional order: (..., createPsArgs, trimByPsArgs, truncateIptwArgs,
+# matchOnPsArgs, ...). Under the 5.5.2 order truncateIptwArgs lands in
+# trimByPsToEquipoiseArgs, which must raise rather than silently mis-bind.
+legacyErr <- tryCatch({
+  createCmAnalysis(1, "legacy positional",
+                   createGetDbCohortMethodDataArgs(), createCreateStudyPopulationArgs(),
+                   createCreatePsArgs(), createTrimByPsArgs(),
+                   createTruncateIptwArgs(), createMatchOnPsArgs())
+  NULL
+}, error = function(e) conditionMessage(e))
+check(!is.null(legacyErr) && grepl("trimByPsToEquipoiseArgs", legacyErr, fixed = TRUE),
+      "createCmAnalysis: legacy positional call raises at the first shifted slot")
+
+handSetSlots <- c("trimByPsToEquipoiseArgs", "trimByIptwArgs", "matchOnPsAndCovariatesArgs",
+                  "stratifyByPsAndCovariatesArgs", "computeSharedCovariateBalanceArgs")
+
+for (slotName in handSetSlots) {
+  callArgs <- list(
+    getDbCohortMethodDataArgs = createGetDbCohortMethodDataArgs(),
+    createStudyPopArgs = createCreateStudyPopulationArgs()
+  )
+  callArgs[[slotName]] <- list(someField = 1)
+  analysis <- tryCatch(do.call(createCmAnalysis, callArgs), error = function(e) e)
+  check(!inherits(analysis, "error") && identical(class(analysis[[slotName]]), "args"),
+        sprintf("createCmAnalysis(%s = <hand-built list>): accepted and stamped class 'args'", slotName))
+
+  callArgs[[slotName]] <- createTruncateIptwArgs()
+  err <- tryCatch({ do.call(createCmAnalysis, callArgs); NULL }, error = function(e) conditionMessage(e))
+  check(!is.null(err) && grepl(slotName, err, fixed = TRUE),
+        sprintf("createCmAnalysis(%s = createTruncateIptwArgs()): constructor object rejected in hand-set slot", slotName))
+}
+
 # =============================================================================
 
 if (failures > 0) {
