@@ -50,7 +50,7 @@ export class RD2EReadyWebRKernel extends WebRKernel {
     code: string,
     language: 'python' | 'r'
   ): AsyncIterable<KernelOutput> {
-    if (this.rD2EReady && !this.isBootstrapping) {
+    if (this.rD2EReady) {
       await this.rD2EReady
     }
     yield* super.execute(code, language)

@@ -128,7 +128,10 @@ export function useKernel(options: UseKernelOptions = {}): UseKernelReturn {
   async function switchKernel(kernelId: string) {
     const targetKernel = kernels.find((k) => k.id === kernelId)
     if (!targetKernel) throw new Error(`No kernel found with ID: ${kernelId}`)
-    await connect({ type: kernelId } as KernelConfig)
+    // Reuse the config (envVars, etc.) this kernel was originally set up with,
+    // rather than reconnecting with a bare { type } that drops it.
+    const existingConfig = kernelConfigs?.find((c) => c.type === kernelId)
+    await connect(existingConfig ?? ({ type: kernelId } as KernelConfig))
   }
 
   async function connectAllConfigured() {

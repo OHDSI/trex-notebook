@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vuetify from 'vite-plugin-vuetify';
-import { copyFileSync, mkdirSync, existsSync, readdirSync, statSync, cpSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, readdirSync, statSync, cpSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -42,6 +42,19 @@ function copyPublicAssets() {
           } else {
             copyFileSync(src, dest);
           }
+        }
+        // shinylive-sw.js is a classic service worker (uses importScripts) but
+        // load-shinylive-sw.js registers it with { type: "module" }, which makes
+        // the SW fail to evaluate (no document/importScripts/process in module
+        // context → "Cannot determine runtime environment"). Strip the type option
+        // so it registers as a classic SW where importScripts is available.
+        const loadSwPath = join(slOut, 'shinylive', 'load-shinylive-sw.js');
+        if (existsSync(loadSwPath)) {
+          const patched = readFileSync(loadSwPath, 'utf8').replace(
+            'navigator.serviceWorker.register(serviceWorkerPath, { type: "module" })',
+            'navigator.serviceWorker.register(serviceWorkerPath)'
+          );
+          writeFileSync(loadSwPath, patched);
         }
       }
 

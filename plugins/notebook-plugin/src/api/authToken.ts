@@ -1,12 +1,15 @@
-// Shared auth token for backend calls. Set by main.ts from the host's
-// authContext on mount; read by graphqlClient. Replaces the
-// sibyl session-cookie assumption — Atlas3 provides a Bearer token instead.
+// Shared auth tokens for backend calls. Set by main.ts from the host's
+// authContext on mount.
 //
-// Under a d2e/Atlas host the token is a Logto RS256 access token, which trex
-// core's HS256-only auth middleware rejects — requests would run as the
-// grant-less `anon` Postgres role. ensureAuthToken() exchanges it via the
-// /trex-token function for a trex-native token before it is sent. Tokens that
-// already carry aud "authenticated" are trex-native and are sent unchanged.
+// Two backend auth paths need two different token shapes:
+//  - /WebAPI/* (rD2E, via getWebApiToken()) is gated by trex core's
+//    RS256/JWKS-only middleware — it must receive the original, un-exchanged
+//    OIDC access token the host handed in.
+//  - /trex/graphql (via authHeaders()/ensureAuthToken()) is gated by trex
+//    core's HS256-only middleware — an RS256 OIDC token is exchanged via the
+//    /trex-token function for a trex-native token before it is sent. Tokens
+//    that already carry aud "authenticated" are trex-native and are sent
+//    unchanged.
 let token: string | null = null;
 let trexToken: string | null = null;
 let exchange: Promise<string | null> | null = null;
@@ -45,7 +48,7 @@ async function exchangeToken(t: string): Promise<string | null> {
   }
 }
 
-/** Resolve the token authHeaders() will send; await before any backend request. */
+/** Resolve the token authHeaders() will send; await before any /trex/graphql request. */
 export async function ensureAuthToken(): Promise<void> {
   if (!token) return;
   const payload = jwtPayload(token);
@@ -60,15 +63,8 @@ export async function ensureAuthToken(): Promise<void> {
   trexToken = (await p) ?? trexToken;
 }
 
-/**
- * The host-supplied session token, BEFORE any /trex-token exchange.
- *
- * rD2E running inside webR calls d2e's own routes (/d2e-webapi, /prefect) with
- * this value as TREX__AUTHORIZATION_TOKEN, matching what the React notebook
- * passes. Those routes want the host session token, not the trex-native one
- * authHeaders() may substitute for plugin-function calls.
- */
-export function getSessionToken(): string | null {
+/** The raw, un-exchanged token for /WebAPI/* (rD2E) calls — never the trex-native exchange token. */
+export function getWebApiToken(): string | null {
   return token;
 }
 

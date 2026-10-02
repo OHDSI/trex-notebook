@@ -64,3 +64,4 @@ export function authHeaders(): Record<string, string> {
   const t = trexToken ?? token;
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
+

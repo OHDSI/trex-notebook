@@ -77,6 +77,17 @@
         key <- gsub('"', '\\"', nms[i], fixed = TRUE)
         paste0('"', key, '":', .rD2E_to_json(x[[i]], .depth + 1L))
       }, character(1), USE.NAMES = FALSE)
+      # Emit R attributes (e.g. class, fun) as attr_<name> keys so Strategus can
+      # reconstruct S3 classes -- matching ParallelLogger::saveSettingsToJson format.
+      attribs <- attributes(x)
+      attribs[["names"]] <- NULL
+      if (length(attribs) > 0) {
+        attr_items <- vapply(seq_along(attribs), function(i) {
+          key <- gsub('"', '\\"', paste0("attr_", names(attribs)[i]), fixed = TRUE)
+          paste0('"', key, '":', .rD2E_to_json(attribs[[i]], .depth + 1L))
+        }, character(1), USE.NAMES = FALSE)
+        items <- c(items, attr_items)
+      }
       return(paste0("{", paste(items, collapse = ","), "}"))
     }
   }
@@ -170,7 +181,7 @@
   status <- webr::eval_js("globalThis._rD2E_s")
   body <- webr::eval_js("globalThis._rD2E_b")
 
-  list(status = status, content = .rD2E_from_json(body))
+  list(status = status, content = tryCatch(.rD2E_from_json(body), error = function(e) body))
 }
 
 # =============================================================================
@@ -180,12 +191,10 @@
 .rD2E_getCohortDefinition <- function(cohortId) {
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
-  dataset_id <- Sys.getenv("TREX__DATASET_ID")
-  url <- paste0(host, "/d2e-webapi/cohortdefinition/", cohortId)
+  url <- paste0(host, "/WebAPI/cohortdefinition/", cohortId)
 
   .rD2E_GET(url, headers = list(
-    Authorization = paste0("Bearer ", auth_token),
-    datasetId = dataset_id
+    Authorization = paste0("Bearer ", auth_token)
   ))
 }
 
@@ -229,8 +238,17 @@ get_cohort_definition_set <- function(cohortIds, generateStats = FALSE) {
   for (i in seq_along(cohortIds)) {
     cohortId <- cohortIds[i]
     message(paste("Fetching cohortId:", cohortId))
+    # NOTE: /WebAPI/cohortdefinition/{id} changed format — expression is now a
+    # stringified JSON string instead of a parsed JSON object. Normalize so
+    # downstream code always sees a JSON string regardless of which format the
+    # backend returns.
     object <- .rD2E_getCohortDefinition(cohortId = cohortId)
-    json <- .rD2E_to_json(object$expression)
+    expression <- object$expression
+    json <- if (is.character(expression) && length(expression) == 1) {
+      expression
+    } else {
+      .rD2E_to_json(expression)
+    }
 
     sql <- ""
 
@@ -342,11 +360,7 @@ run_strategus_flow <- function(analysisSpecification,
     json_graph$executionSettings <- .rD2E_to_json(executionSettings)
   }
   if (length(options) == 0) {
-    options <- create_options()
-  }
-
-  if (options$tokenStudyCode == "" || is.null(options$tokenStudyCode)) {
-    stop("Error: tokenStudyCode must be set in options")
+    stop("options must be provided; use create_options() to build them")
   }
 
   parameters <- list(
@@ -365,6 +379,8 @@ run_strategus_flow <- function(analysisSpecification,
   )
 
   if (result$status == 200 || result$status == 201) {
+    message(paste0("Strategus flow run triggered successfully with id: ",
+                   result$content$flowrunId))
     return(result$content)
   } else {
     stop(paste0("Request failed with status code ", result$status))
@@ -372,16 +388,48 @@ run_strategus_flow <- function(analysisSpecification,
 }
 
 create_options <- function(token_study_code = "",
+                           source_token_study_code,
                            upload_results = FALSE,
                            update_results_schema = TRUE,
-                           run_table1 = FALSE) {
-  dataset_id <- Sys.getenv("TREX__DATASET_ID")
-  return(list(
+                           run_table1 = FALSE,
+                           analysis_results_name = NULL) {
+  if (!missing(source_token_study_code) &&
+      !is.null(source_token_study_code) &&
+      nzchar(trimws(as.character(source_token_study_code)))) {
+    dataset_id <- as.character(source_token_study_code)
+  } else {
+    dataset_id <- Sys.getenv("TREX__DATASET_ID")
+  }
+  options <- list(
     mode = "kernel",
     datasetId = dataset_id,
     uploadResults = upload_results,
     updateResultsSchema = update_results_schema,
     tokenStudyCode = token_study_code,
     runTable1 = run_table1
-  ))
+  )
+  # Checked here rather than left to the results API so a bad name fails
+  # before the Strategus run, not after it at upload time.
+  if (!is.null(analysis_results_name)) {
+    if (!is.character(analysis_results_name) ||
+        length(analysis_results_name) != 1 ||
+        is.na(analysis_results_name)) {
+      stop("analysis_results_name must be a single string")
+    }
+    # Unicode-aware, to match the trim the flow and results API apply.
+    analysis_results_name <- trimws(analysis_results_name,
+                                    whitespace = "[\\h\\v]")
+    # .rD2E_to_json escapes only a few control characters; the rest would
+    # produce invalid JSON.
+    if (grepl("[[:cntrl:]]", analysis_results_name)) {
+      stop("analysis_results_name must not contain control characters")
+    }
+    if (nchar(analysis_results_name) > 255) {
+      stop("analysis_results_name must be at most 255 characters")
+    }
+    if (nzchar(analysis_results_name)) {
+      options$analysisResultsName <- analysis_results_name
+    }
+  }
+  return(options)
 }
