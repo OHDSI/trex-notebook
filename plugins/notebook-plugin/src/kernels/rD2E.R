@@ -379,6 +379,8 @@ run_strategus_flow <- function(analysisSpecification,
   )
 
   if (result$status == 200 || result$status == 201) {
+    message(paste0("Strategus flow run triggered successfully with id: ",
+                   result$content$flowrunId))
     return(result$content)
   } else {
     stop(paste0("Request failed with status code ", result$status))
@@ -389,7 +391,8 @@ create_options <- function(token_study_code = "",
                            source_token_study_code,
                            upload_results = FALSE,
                            update_results_schema = TRUE,
-                           run_table1 = FALSE) {
+                           run_table1 = FALSE,
+                           analysis_results_name = NULL) {
   if (!missing(source_token_study_code) &&
       !is.null(source_token_study_code) &&
       nzchar(trimws(as.character(source_token_study_code)))) {
@@ -397,12 +400,27 @@ create_options <- function(token_study_code = "",
   } else {
     dataset_id <- Sys.getenv("TREX__DATASET_ID")
   }
-  return(list(
+  options <- list(
     mode = "kernel",
     datasetId = dataset_id,
     uploadResults = upload_results,
     updateResultsSchema = update_results_schema,
     tokenStudyCode = token_study_code,
     runTable1 = run_table1
-  ))
+  )
+  # Checked here rather than left to the results API so a bad name fails
+  # before the Strategus run, not after it at upload time.
+  if (!is.null(analysis_results_name)) {
+    if (length(analysis_results_name) != 1 || is.na(analysis_results_name)) {
+      stop("analysis_results_name must be a single string")
+    }
+    analysis_results_name <- trimws(as.character(analysis_results_name))
+    if (nchar(analysis_results_name) > 255) {
+      stop("analysis_results_name must be at most 255 characters")
+    }
+    if (nzchar(analysis_results_name)) {
+      options$analysisResultsName <- analysis_results_name
+    }
+  }
+  return(options)
 }
