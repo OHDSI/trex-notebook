@@ -132,7 +132,8 @@ async function reload(): Promise<void> {
 
     const backendRows: Row[] = backendResults.map((r) => ({
       id: r.id,
-      name: r.fileName,
+      // Every flow upload is "results.zip"; the stored name is what tells runs apart.
+      name: r.name || r.fileName,
       size: r.fileSize,
       addedAt: new Date(r.createdAt).getTime(),
       source: 'backend',
