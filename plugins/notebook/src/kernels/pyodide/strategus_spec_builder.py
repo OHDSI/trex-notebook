@@ -228,18 +228,20 @@ def _get_default_characterization_covariate_settings() -> dict:
 
 
 def _get_default_case_covariate_settings() -> dict:
-    """Characterization case (during) covariate settings."""
-    return {
-        "useConditionGroupEraDuring": True,
-        "useDrugGroupEraDuring": True,
-        "useProcedureOccurrenceDuring": True,
-        "useDeviceExposureDuring": True,
-        "useMeasurementDuring": True,
-        "useObservationDuring": True,
-        "useVisitConceptCountDuring": True,
-        "_class": "covariateSettings",
-        "_fun": "Characterization::getDuringCovariateData"
-    }
+    """Characterization case (during) covariate settings.
+
+    Routes through create_during_covariate_settings so Java-field names stay
+    prefix-free — FeatureExtraction's createSql() looks fields up by exact name.
+    """
+    return create_during_covariate_settings(
+        useConditionGroupEraDuring=True,
+        useDrugGroupEraDuring=True,
+        useProcedureOccurrenceDuring=True,
+        useDeviceExposureDuring=True,
+        useMeasurementDuring=True,
+        useObservationDuring=True,
+        useVisitConceptCountDuring=True,
+    )
 
 
 def _get_default_temporal_covariate_settings() -> dict:
@@ -2627,54 +2629,130 @@ def create_cohort_method_module_specifications(
 
 
 def create_characterization_module_specifications(
-    target_ids: list[int],
-    outcome_ids: list[int],
-    outcome_washout_days: list[int] = None,
+    target_ids,
+    outcome_ids,
+    outcome_washout_days=None,
     min_prior_observation: int = 365,
     dechallenge_stop_interval: int = 30,
     dechallenge_evaluation_window: int = 30,
-    risk_window_start: list[int] = None,
-    start_anchor: list[str] = None,
-    risk_window_end: list[int] = None,
-    end_anchor: list[str] = None,
+    risk_window_start=None,
+    start_anchor=None,
+    risk_window_end=None,
+    end_anchor=None,
     min_characterization_mean: float = 0.01,
     covariate_settings: Optional[dict] = None,
-    case_covariate_settings: Optional[dict] = None
+    case_covariate_settings: Optional[dict] = None,
+    case_pre_target_duration: int = 365,
+    case_post_outcome_duration: int = 365,
 ) -> dict:
-    """Create Characterization module specifications."""
+    """Create Characterization module specifications.
+
+    Mirrors the installed Strategus::CharacterizationModule$createModuleSpecifications
+    layout: the module's execute() reads jobContext$settings$analysis, so settings must
+    carry {analysis: <characterizationSettings>, minCharacterizationMean}, NOT the flat
+    user inputs.
+    """
+    def _as_list(x):
+        if x is None:
+            return []
+        return list(x) if isinstance(x, (list, tuple)) else [x]
+
+    target_ids = _as_list(target_ids)
+    outcome_ids = _as_list(outcome_ids)
+
     if outcome_washout_days is None:
         outcome_washout_days = [365]
+    outcome_washout_days = _as_list(outcome_washout_days)
+
     if risk_window_start is None:
         risk_window_start = [1, 1]
+    risk_window_start = _as_list(risk_window_start)
+
     if start_anchor is None:
-        start_anchor = ["cohort start", "cohort start"]
+        start_anchor = ["cohort start"] * len(risk_window_start)
+    start_anchor = _as_list(start_anchor)
+
     if risk_window_end is None:
         risk_window_end = [0, 365]
+    risk_window_end = _as_list(risk_window_end)
+
     if end_anchor is None:
-        end_anchor = ["cohort end", "cohort end"]
+        end_anchor = ["cohort end"] * len(risk_window_start)
+    end_anchor = _as_list(end_anchor)
+
+    min_prior_observation_list = _as_list(min_prior_observation)
+    if len(min_prior_observation_list) != 1:
+        raise ValueError("minPriorObservation needs to be length 1")
+    min_prior_observation = min_prior_observation_list[0]
+
+    if not (len(risk_window_start) == len(start_anchor) == len(risk_window_end) == len(end_anchor)):
+        raise ValueError("Time-at-risk settings must be same length")
+
     if covariate_settings is None:
         covariate_settings = _get_default_characterization_covariate_settings()
     if case_covariate_settings is None:
         case_covariate_settings = _get_default_case_covariate_settings()
 
+    # Group outcomes by washout (parity with Strategus module)
+    if len(outcome_washout_days) == 1:
+        washout_vector = list(outcome_washout_days)
+        outcome_lists = [list(outcome_ids)]
+    else:
+        if len(outcome_washout_days) != len(outcome_ids):
+            raise ValueError("outcomeWashoutDays must be length 1 or match outcomeIds length")
+        washout_vector = []
+        outcome_lists = []
+        for i, w in enumerate(outcome_washout_days):
+            if w in washout_vector:
+                j = washout_vector.index(w)
+            else:
+                washout_vector.append(w)
+                outcome_lists.append([])
+                j = len(washout_vector) - 1
+            if outcome_ids[i] not in outcome_lists[j]:
+                outcome_lists[j].append(outcome_ids[i])
+
+    time_to_event = create_time_to_event_settings(
+        target_ids=target_ids, outcome_ids=outcome_ids
+    )
+    dechallenge = create_dechallenge_rechallenge_settings(
+        target_ids=target_ids,
+        outcome_ids=outcome_ids,
+        dechallenge_stop_interval=dechallenge_stop_interval,
+        dechallenge_evaluation_window=dechallenge_evaluation_window,
+    )
+
+    aggregate_list = []
+    for i in range(len(risk_window_start)):
+        for j in range(len(washout_vector)):
+            aggregate_list.append(create_aggregate_covariate_settings(
+                target_ids=target_ids,
+                outcome_ids=outcome_lists[j],
+                min_prior_observation=min_prior_observation,
+                outcome_washout_days=washout_vector[j],
+                risk_window_start=risk_window_start[i],
+                start_anchor=start_anchor[i],
+                risk_window_end=risk_window_end[i],
+                end_anchor=end_anchor[i],
+                covariate_settings=covariate_settings,
+                case_covariate_settings=case_covariate_settings,
+                case_pre_target_duration=case_pre_target_duration,
+                case_post_outcome_duration=case_post_outcome_duration,
+            ))
+
+    analysis = create_characterization_settings(
+        time_to_event_settings=time_to_event,
+        dechallenge_rechallenge_settings=dechallenge,
+        aggregate_covariate_settings=aggregate_list,
+    )
+
     return {
         "module": "CharacterizationModule",
         "settings": {
-            "targetIds": target_ids,
-            "outcomeIds": outcome_ids,
-            "outcomeWashoutDays": outcome_washout_days,
-            "minPriorObservation": min_prior_observation,
-            "dechallengeStopInterval": dechallenge_stop_interval,
-            "dechallengeEvaluationWindow": dechallenge_evaluation_window,
-            "riskWindowStart": risk_window_start,
-            "startAnchor": start_anchor,
-            "riskWindowEnd": risk_window_end,
-            "endAnchor": end_anchor,
+            "analysis": analysis,
             "minCharacterizationMean": min_characterization_mean,
-            "covariateSettings": covariate_settings,
-            "caseCovariateSettings": case_covariate_settings
         },
-        "_class": ("CharacterizationModuleSpecifications", "ModuleSpecifications")
+        "_class": ("CharacterizationModuleSpecifications", "ModuleSpecifications"),
     }
 
 

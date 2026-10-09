@@ -173,19 +173,20 @@
 }
 
 # T010: Characterization case (during) covariate settings (from Characterization::createDuringCovariateSettings)
+#
+# Routes through createDuringCovariateSettings so Java-field names stay prefix-free —
+# FeatureExtraction's createSql() looks fields up by exact name; use*-prefixed keys
+# cause an opaque NullPointerException during SQL generation.
 .getDefaultCaseCovariateSettings <- function() {
-  settings <- list(
-    useConditionGroupEraDuring = TRUE,
-    useDrugGroupEraDuring = TRUE,
+  createDuringCovariateSettings(
+    useConditionGroupEraDuring   = TRUE,
+    useDrugGroupEraDuring        = TRUE,
     useProcedureOccurrenceDuring = TRUE,
-    useDeviceExposureDuring = TRUE,
-    useMeasurementDuring = TRUE,
-    useObservationDuring = TRUE,
-    useVisitConceptCountDuring = TRUE
+    useDeviceExposureDuring      = TRUE,
+    useMeasurementDuring         = TRUE,
+    useObservationDuring         = TRUE,
+    useVisitConceptCountDuring   = TRUE
   )
-  class(settings) <- "covariateSettings"
-  attr(settings, "fun") <- "Characterization::getDuringCovariateData"
-  return(settings)
 }
 
 # T011: CohortDiagnostics temporal covariate settings (from CohortDiagnostics::getDefaultCovariateSettings)
@@ -2509,21 +2510,77 @@ createCharacterizationModuleSpecifications <- function(targetIds,
                                                        endAnchor = c("cohort end", "cohort end"),
                                                        minCharacterizationMean = 0.01,
                                                        covariateSettings = .getDefaultCharacterizationCovariateSettings(),
-                                                       caseCovariateSettings = .getDefaultCaseCovariateSettings()) {
-  moduleSettings <- list(
+                                                       caseCovariateSettings = .getDefaultCaseCovariateSettings(),
+                                                       casePreTargetDuration = 365,
+                                                       casePostOutcomeDuration = 365) {
+  # Parity with Strategus::CharacterizationModule$createModuleSpecifications: the module's
+  # execute() reads jobContext$settings$analysis, so settings must carry a pre-built
+  # characterizationSettings object plus minCharacterizationMean — not the flat user inputs.
+
+  if (length(minPriorObservation) != 1) {
+    stop("minPriorObservation needs to be length 1")
+  }
+  if (length(riskWindowStart) != length(startAnchor) ||
+      length(riskWindowEnd) != length(startAnchor) ||
+      length(endAnchor) != length(startAnchor)) {
+    stop("Time-at-risk settings must be same length")
+  }
+
+  # Group outcomes by washout (parity with the installed module)
+  if (length(outcomeWashoutDays) == 1) {
+    outcomeWashoutDaysVector <- outcomeWashoutDays
+    outcomeIdsList <- list(outcomeIds)
+  } else {
+    if (length(outcomeWashoutDays) != length(outcomeIds)) {
+      stop("outcomeWashoutDays must be length 1 or match outcomeIds length")
+    }
+    outcomeWashoutDaysVector <- unique(outcomeWashoutDays)
+    outcomeIdsList <- lapply(outcomeWashoutDaysVector, function(x) {
+      ind <- which(outcomeWashoutDays == x)
+      unique(outcomeIds[ind])
+    })
+  }
+
+  timeToEventSettings <- createTimeToEventSettings(
+    targetIds = targetIds, outcomeIds = outcomeIds
+  )
+  dechallengeRechallengeSettings <- createDechallengeRechallengeSettings(
     targetIds = targetIds,
     outcomeIds = outcomeIds,
-    outcomeWashoutDays = outcomeWashoutDays,
-    minPriorObservation = minPriorObservation,
     dechallengeStopInterval = dechallengeStopInterval,
-    dechallengeEvaluationWindow = dechallengeEvaluationWindow,
-    riskWindowStart = riskWindowStart,
-    startAnchor = startAnchor,
-    riskWindowEnd = riskWindowEnd,
-    endAnchor = endAnchor,
-    minCharacterizationMean = minCharacterizationMean,
-    covariateSettings = covariateSettings,
-    caseCovariateSettings = caseCovariateSettings
+    dechallengeEvaluationWindow = dechallengeEvaluationWindow
+  )
+
+  aggregateCovariateSettings <- list()
+  for (i in seq_along(riskWindowStart)) {
+    for (j in seq_along(outcomeWashoutDaysVector)) {
+      aggregateCovariateSettings[[length(aggregateCovariateSettings) + 1]] <-
+        createAggregateCovariateSettings(
+          targetIds = targetIds,
+          outcomeIds = outcomeIdsList[[j]],
+          minPriorObservation = minPriorObservation,
+          outcomeWashoutDays = outcomeWashoutDaysVector[j],
+          riskWindowStart = riskWindowStart[i],
+          startAnchor = startAnchor[i],
+          riskWindowEnd = riskWindowEnd[i],
+          endAnchor = endAnchor[i],
+          covariateSettings = covariateSettings,
+          caseCovariateSettings = caseCovariateSettings,
+          casePreTargetDuration = casePreTargetDuration,
+          casePostOutcomeDuration = casePostOutcomeDuration
+        )
+    }
+  }
+
+  analysis <- createCharacterizationSettings(
+    timeToEventSettings = timeToEventSettings,
+    dechallengeRechallengeSettings = dechallengeRechallengeSettings,
+    aggregateCovariateSettings = aggregateCovariateSettings
+  )
+
+  moduleSettings <- list(
+    analysis = analysis,
+    minCharacterizationMean = minCharacterizationMean
   )
   return(.createModuleSpecifications("CharacterizationModule", moduleSettings))
 }
