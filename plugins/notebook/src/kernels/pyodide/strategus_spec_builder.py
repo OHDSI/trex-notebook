@@ -2281,8 +2281,8 @@ def create_dechallenge_rechallenge_settings(
 ) -> dict:
     """Create dechallenge-rechallenge settings."""
     return {
-        "targetIds": target_ids,
-        "outcomeIds": outcome_ids,
+        "targetCohortDefinitionIds": target_ids,
+        "outcomeCohortDefinitionIds": outcome_ids,
         "dechallengeStopInterval": dechallenge_stop_interval,
         "dechallengeEvaluationWindow": dechallenge_evaluation_window,
         "_class": "dechallengeRechallengeSettings"

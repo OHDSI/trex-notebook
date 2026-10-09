@@ -142,6 +142,18 @@ check(
     identical(drch$dechallengeEvaluationWindow, 30),
   "analysis$dechallengeRechallengeSettings[[1]] carries default intervals"
 )
+# Characterization::getDechallengeRechallengeJobs reads targetCohortDefinitionIds /
+# outcomeCohortDefinitionIds; using targetIds/outcomeIds here produces NULL extraction
+# and a 0-row expand.grid, which later triggers "replacement has 1 row, data has 0".
+check(
+  identical(drch$targetCohortDefinitionIds, c(1, 2)) &&
+    identical(drch$outcomeCohortDefinitionIds, 3),
+  "analysis$dechallengeRechallengeSettings[[1]] uses targetCohortDefinitionIds / outcomeCohortDefinitionIds (not targetIds / outcomeIds)"
+)
+check(
+  is.null(drch$targetIds) && is.null(drch$outcomeIds),
+  "analysis$dechallengeRechallengeSettings[[1]] does NOT leak targetIds / outcomeIds"
+)
 
 check(
   is.list(analysis$aggregateCovariateSettings) &&

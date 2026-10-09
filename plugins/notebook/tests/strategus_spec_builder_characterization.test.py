@@ -153,6 +153,18 @@ check(
     and drch.get("dechallengeEvaluationWindow") == 30,
     "analysis.dechallengeRechallengeSettings carries default intervals"
 )
+# Characterization::getDechallengeRechallengeJobs reads targetCohortDefinitionIds /
+# outcomeCohortDefinitionIds; using targetIds/outcomeIds here produces NULL extraction
+# and a 0-row expand.grid, which later triggers "replacement has 1 row, data has 0".
+check(
+    drch.get("targetCohortDefinitionIds") == [1, 2]
+    and drch.get("outcomeCohortDefinitionIds") == [3],
+    "analysis.dechallengeRechallengeSettings uses targetCohortDefinitionIds / outcomeCohortDefinitionIds (not targetIds / outcomeIds)"
+)
+check(
+    "targetIds" not in drch and "outcomeIds" not in drch,
+    "analysis.dechallengeRechallengeSettings does NOT leak targetIds / outcomeIds"
+)
 
 check(
     isinstance(analysis.get("aggregateCovariateSettings"), list)

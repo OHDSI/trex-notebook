@@ -2137,8 +2137,8 @@ createDechallengeRechallengeSettings <- function(targetIds,
                                                  dechallengeStopInterval = 30,
                                                  dechallengeEvaluationWindow = 30) {
   result <- list(
-    targetIds = targetIds,
-    outcomeIds = outcomeIds,
+    targetCohortDefinitionIds = targetIds,
+    outcomeCohortDefinitionIds = outcomeIds,
     dechallengeStopInterval = dechallengeStopInterval,
     dechallengeEvaluationWindow = dechallengeEvaluationWindow
   )
