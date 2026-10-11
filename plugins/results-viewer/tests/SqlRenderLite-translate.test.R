@@ -146,6 +146,23 @@ check(eq(SqlRender$render(paste0("select cg.cohort_name from ",
            "on cd.target_cohort_id = cg.cohort_definition_id")),
       "render(): full availability-matrix query renders both prefixes")
 
+# --- render(): conditional blocks {cond}?{then}:{else} ---
+# Regression: .processConditionals used `gsub(pattern, function, x)` which fails
+# with "Error in as.character(replacement): cannot coerce type 'closure'...".
+# The Characterization module's HADES SQL uses these blocks, so the module
+# failed to load before any SQL executed.
+check(eq(SqlRender$render("select {@use_cases}?{distinct}:{} x from t",
+                           use_cases = "true"),
+         "select distinct x from t"),
+      "render(): conditional {truthy}?{then}:{} picks then branch")
+check(eq(SqlRender$render("select {@use_cases}?{distinct}:{all} x from t",
+                           use_cases = ""),
+         "select all x from t"),
+      "render(): conditional {empty}?{then}:{else} picks else branch")
+check(eq(SqlRender$render("select {@n != 0}?{top @n}:{} x from t", n = "5"),
+         "select top 5 x from t"),
+      "render(): conditional with != comparison and nested param")
+
 # --- idempotence ---
 once <- SqlRender$translate("SELECT TOP 1 x FROM t WITH (NOLOCK)", "duckdb")
 twice <- SqlRender$translate(once, "duckdb")

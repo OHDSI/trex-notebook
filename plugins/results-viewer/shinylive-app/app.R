@@ -40,6 +40,28 @@ for (.pkg in c("SqlRender", "DatabaseConnector", "CirceR",
   })))
 }
 
+# Shim-package SqlRender's translate() uses a half-finished CSV-pattern engine
+# that silently passes MSSQL idioms (SELECT TOP n, ...) through to DuckDB,
+# which then errors with "syntax error at or near \"1\"". SqlRenderLite.R has a
+# hand-written translate(); source it AFTER SqlRender is loaded so its
+# assignInNamespace() block replaces the broken translate inside the package
+# namespace. Without this source(), SqlRenderLite is dead code.
+tryCatch(source("SqlRenderLite.R"), error = function(e)
+  message("Failed to source SqlRenderLite.R: ", e$message))
+
+# Mirror every shiny::showNotification() to the WebR console so error toasts
+# that auto-dismiss (OhdsiShinyAppBuilder wraps each module load in tryCatch
+# and shows the error via showNotification) remain visible in logs.
+tryCatch({
+  .orig_showNotification <- shiny::showNotification
+  assignInNamespace("showNotification", function(ui, ...) {
+    try(message("SHINY_NOTIFICATION: ", paste(as.character(ui), collapse = " ")),
+        silent = TRUE)
+    .orig_showNotification(ui, ...)
+  }, ns = "shiny")
+}, error = function(e)
+  message("Failed to patch showNotification: ", e$message))
+
 # Force-register the OhdsiShinyAppBuilder www/images path so the header logo
 # resolves. system.file() should do this, but in WebR's mounted FS Shiny's
 # automatic www-from-package handling sometimes misses, so register explicitly.

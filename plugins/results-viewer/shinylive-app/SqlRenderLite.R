@@ -62,22 +62,29 @@ SqlRender$renderSql <- SqlRender$render
 }
 
 .processConditionals <- function(sql) {
-  # Iteratively process conditionals from innermost to outermost
-  maxIter <- 100
+  # Iteratively replace innermost {cond}?{then}[:{else}] blocks one at a time.
+  # Base R gsub() does NOT accept a function replacement; using one throws
+  # "Error in as.character(replacement): cannot coerce type 'closure' ...",
+  # which breaks module loading before any SQL runs. Instead, find each match
+  # with regexec() and splice the result in via substr-slicing.
+  pattern <- "\\{([^{}]*)\\}\\s*\\?\\s*\\{([^{}]*)\\}(?:\\s*:\\s*\\{([^{}]*)\\})?"
+  maxIter <- 1000
   for (i in seq_len(maxIter)) {
-    # Match innermost conditional: {condition}?{then} or {condition}?{then}:{else}
-    # The condition and blocks must not contain unmatched braces (innermost first)
-    pattern <- "\\{([^{}]*)\\}\\s*\\?\\s*\\{([^{}]*)\\}(?:\\s*:\\s*\\{([^{}]*)\\})?"
-    if (!grepl(pattern, sql, perl = TRUE)) break
-
-    sql <- gsub(pattern, function(match) {
-      parts <- regmatches(match, regexec(pattern, match, perl = TRUE))[[1]]
-      condition <- trimws(parts[2])
-      thenBlock <- parts[3]
-      elseBlock <- if (length(parts) >= 4 && nchar(parts[4]) > 0) parts[4] else ""
-
-      if (.evalCondition(condition)) thenBlock else elseBlock
-    }, sql, perl = TRUE)
+    m <- regexec(pattern, sql, perl = TRUE)[[1]]
+    if (m[1] == -1) break
+    starts <- as.integer(m)
+    lens <- attr(m, "match.length")
+    whole_start <- starts[1]
+    whole_end <- starts[1] + lens[1] - 1
+    condition <- if (lens[2] > 0) substr(sql, starts[2], starts[2] + lens[2] - 1) else ""
+    thenBlock <- if (lens[3] > 0) substr(sql, starts[3], starts[3] + lens[3] - 1) else ""
+    elseBlock <- if (length(starts) >= 4 && !is.na(starts[4]) && starts[4] > 0 && lens[4] > 0) {
+      substr(sql, starts[4], starts[4] + lens[4] - 1)
+    } else ""
+    replacement <- if (.evalCondition(trimws(condition))) thenBlock else elseBlock
+    before <- if (whole_start > 1) substr(sql, 1, whole_start - 1) else ""
+    after <- if (whole_end < nchar(sql)) substr(sql, whole_end + 1, nchar(sql)) else ""
+    sql <- paste0(before, replacement, after)
   }
   sql
 }
