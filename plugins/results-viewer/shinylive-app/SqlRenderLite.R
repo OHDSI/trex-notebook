@@ -124,15 +124,228 @@ SqlRender$renderSql <- SqlRender$render
   return(nchar(val) > 0 && val != "0" && tolower(val) != "false")
 }
 
-# --- translate() : SQL dialect translation ---
-# For DuckDB, most SQL is standard. We handle a few common patterns.
+# --- translate() : SQL dialect translation (MSSQL -> DuckDB/SQLite) ---
+# OHDSI packages ship SQL in SQL Server dialect and rely on SqlRender to
+# translate it to the target DB. The real SqlRender needs Java (rJava); we
+# can't ship that to WebR, so we re-implement the subset of translations the
+# OhdsiShinyModules Characterization/Cohort/Estimation modules actually use.
+#
+# Design rules:
+#   - Idempotent: translating twice yields the same string.
+#   - Quote-aware: never rewrite inside '…' string literals.
+#   - Dialect-gated: only rewrite for duckdb/sqlite; otherwise passthrough.
+#   - Case-insensitive matching of SQL keywords; preserve the surrounding
+#     whitespace of the original.
 
 SqlRender$translate <- function(sql, targetDialect = "duckdb", tempEmulationSchema = NULL) {
-  # DuckDB uses standard SQL — no translation needed.
-  sql
+  if (!is.character(sql) || length(sql) == 0) return(sql)
+  if (!tolower(targetDialect) %in% c("duckdb", "sqlite")) return(sql)
+
+  # 1. Mask single-quoted string literals so rewrites don't touch their contents.
+  masks <- list()
+  mask_pattern <- "'(?:[^']|'')*'"
+  masked <- gsub(mask_pattern, perl = TRUE, replacement = "__STRLIT_PLACEHOLDER__",
+                 x = (function() {
+                   # Collect matches in order for later restore.
+                   m <- gregexpr(mask_pattern, sql, perl = TRUE)[[1]]
+                   if (!(length(m) == 1 && m[1] == -1)) {
+                     starts <- as.integer(m)
+                     lens <- attr(m, "match.length")
+                     for (i in seq_along(starts)) {
+                       masks[[length(masks) + 1]] <<- substr(sql, starts[i], starts[i] + lens[i] - 1)
+                     }
+                   }
+                   sql
+                 })())
+
+  # 2. SELECT TOP n  ->  append LIMIT n at end of statement.
+  #    Match "SELECT [DISTINCT] TOP n" at statement start (case-insensitive);
+  #    strip "TOP n" and remember n to append as LIMIT.
+  top_pat <- "(?i)\\bSELECT(\\s+DISTINCT)?\\s+TOP\\s+(\\d+)\\b"
+  top_match <- regmatches(masked, regexec(top_pat, masked, perl = TRUE))[[1]]
+  if (length(top_match) >= 3 && nzchar(top_match[1])) {
+    n_rows <- top_match[3]
+    distinct <- if (nzchar(top_match[2])) " DISTINCT" else ""
+    masked <- sub(top_pat, paste0("SELECT", distinct), masked, perl = TRUE)
+    # Append LIMIT before trailing ';' / whitespace, unless one already exists.
+    if (!grepl("(?i)\\bLIMIT\\s+\\d+\\b", masked, perl = TRUE)) {
+      masked <- sub("(;\\s*)?$", paste0(" LIMIT ", n_rows, "\\1"), masked, perl = TRUE)
+    }
+  }
+
+  # 3. ISNULL(a, b) -> COALESCE(a, b)
+  masked <- gsub("(?i)\\bISNULL\\s*\\(", "COALESCE(", masked, perl = TRUE)
+
+  # 4. GETDATE() / SYSDATETIME() -> CURRENT_TIMESTAMP
+  masked <- gsub("(?i)\\b(GETDATE|SYSDATETIME)\\s*\\(\\s*\\)", "CURRENT_TIMESTAMP", masked, perl = TRUE)
+
+  # 5. LEN(x) -> LENGTH(x)
+  masked <- gsub("(?i)\\bLEN\\s*\\(", "LENGTH(", masked, perl = TRUE)
+
+  # 6. IIF(cond, a, b) -> CASE WHEN cond THEN a ELSE b END
+  masked <- .translateIIF(masked)
+
+  # 7. DATEDIFF(unit, a, b) -> date_diff('unit', a, b)
+  masked <- .translateDateDiff(masked)
+
+  # 8. DATEADD(unit, n, d) -> (d + INTERVAL (n) UNIT)
+  masked <- .translateDateAdd(masked)
+
+  # 9. CONVERT(type, x) / CONVERT(VARCHAR(n), x) -> CAST(x AS type)
+  masked <- .translateConvert(masked)
+
+  # 10. CAST(x AS DATETIME) / DATETIME2 -> CAST(x AS TIMESTAMP)
+  masked <- gsub("(?i)\\bCAST\\s*\\(([^)]+?)\\s+AS\\s+DATETIME2?(?:\\s*\\(\\s*\\d+\\s*\\))?\\s*\\)",
+                 "CAST(\\1 AS TIMESTAMP)", masked, perl = TRUE)
+
+  # 11. Strip WITH (NOLOCK)
+  masked <- gsub("(?i)\\s+WITH\\s*\\(\\s*NOLOCK\\s*\\)", "", masked, perl = TRUE)
+
+  # 12. Strip trailing OPTION (...) hint clause.
+  masked <- gsub("(?i)\\s+OPTION\\s*\\([^)]*\\)\\s*(?=;|$)", "", masked, perl = TRUE)
+
+  # 13. [bracketed_identifier] -> "bracketed_identifier"
+  masked <- gsub("\\[([A-Za-z_][A-Za-z0-9_]*)\\]", '"\\1"', masked, perl = TRUE)
+
+  # 14. Restore masked string literals in order.
+  if (length(masks) > 0) {
+    out <- masked
+    for (lit in masks) {
+      out <- sub("__STRLIT_PLACEHOLDER__", lit, out, fixed = TRUE)
+    }
+    masked <- out
+  }
+
+  masked
 }
 
 SqlRender$translateSql <- SqlRender$translate
+
+# --- helpers for translate() ---
+
+.translateIIF <- function(sql) {
+  # IIF(cond, a, b)  ->  CASE WHEN cond THEN a ELSE b END
+  pattern <- "(?i)\\bIIF\\s*\\("
+  while (grepl(pattern, sql, perl = TRUE)) {
+    start <- regexpr(pattern, sql, perl = TRUE)
+    if (start[1] == -1) break
+    open <- start[1] + attr(start, "match.length") - 1  # position of '('
+    args <- .splitBalancedArgs(sql, open)
+    if (is.null(args) || length(args$parts) != 3) break
+    repl <- sprintf("CASE WHEN %s THEN %s ELSE %s END",
+                    trimws(args$parts[1]), trimws(args$parts[2]), trimws(args$parts[3]))
+    sql <- paste0(substr(sql, 1, start[1] - 1), repl, substr(sql, args$closeAt + 1, nchar(sql)))
+  }
+  sql
+}
+
+.translateDateDiff <- function(sql) {
+  # DATEDIFF(unit, a, b)  ->  date_diff('unit', a, b)
+  unit_map <- c(day = "day", dd = "day", d = "day",
+                month = "month", mm = "month", m = "month",
+                year = "year", yy = "year", yyyy = "year",
+                second = "second", ss = "second", s = "second",
+                hour = "hour", hh = "hour",
+                minute = "minute", mi = "minute", n = "minute",
+                week = "week", wk = "week", ww = "week")
+  pattern <- "(?i)\\bDATEDIFF\\s*\\("
+  while (grepl(pattern, sql, perl = TRUE)) {
+    start <- regexpr(pattern, sql, perl = TRUE)
+    if (start[1] == -1) break
+    open <- start[1] + attr(start, "match.length") - 1
+    args <- .splitBalancedArgs(sql, open)
+    if (is.null(args) || length(args$parts) != 3) break
+    unit <- tolower(trimws(args$parts[1]))
+    canon <- unit_map[[unit]]
+    if (is.null(canon)) canon <- unit
+    repl <- sprintf("date_diff('%s', %s, %s)", canon,
+                    trimws(args$parts[2]), trimws(args$parts[3]))
+    sql <- paste0(substr(sql, 1, start[1] - 1), repl, substr(sql, args$closeAt + 1, nchar(sql)))
+  }
+  sql
+}
+
+.translateDateAdd <- function(sql) {
+  # DATEADD(unit, n, d)  ->  (d + INTERVAL (n) UNIT)
+  unit_map <- c(day = "DAY", dd = "DAY", d = "DAY",
+                month = "MONTH", mm = "MONTH", m = "MONTH",
+                year = "YEAR", yy = "YEAR", yyyy = "YEAR",
+                second = "SECOND", ss = "SECOND", s = "SECOND",
+                hour = "HOUR", hh = "HOUR",
+                minute = "MINUTE", mi = "MINUTE", n = "MINUTE",
+                week = "WEEK", wk = "WEEK", ww = "WEEK")
+  pattern <- "(?i)\\bDATEADD\\s*\\("
+  while (grepl(pattern, sql, perl = TRUE)) {
+    start <- regexpr(pattern, sql, perl = TRUE)
+    if (start[1] == -1) break
+    open <- start[1] + attr(start, "match.length") - 1
+    args <- .splitBalancedArgs(sql, open)
+    if (is.null(args) || length(args$parts) != 3) break
+    unit <- tolower(trimws(args$parts[1]))
+    canon <- unit_map[[unit]]
+    if (is.null(canon)) canon <- toupper(unit)
+    repl <- sprintf("(%s + INTERVAL (%s) %s)",
+                    trimws(args$parts[3]), trimws(args$parts[2]), canon)
+    sql <- paste0(substr(sql, 1, start[1] - 1), repl, substr(sql, args$closeAt + 1, nchar(sql)))
+  }
+  sql
+}
+
+.translateConvert <- function(sql) {
+  # CONVERT(type, x)  ->  CAST(x AS type)
+  # CONVERT(VARCHAR(n), x)  ->  CAST(x AS VARCHAR)   (DuckDB VARCHAR is unsized)
+  pattern <- "(?i)\\bCONVERT\\s*\\("
+  while (grepl(pattern, sql, perl = TRUE)) {
+    start <- regexpr(pattern, sql, perl = TRUE)
+    if (start[1] == -1) break
+    open <- start[1] + attr(start, "match.length") - 1
+    args <- .splitBalancedArgs(sql, open)
+    if (is.null(args) || length(args$parts) < 2) break
+    raw_type <- trimws(args$parts[1])
+    type <- sub("(?i)^(VARCHAR|NVARCHAR|CHAR|NCHAR)\\s*\\(\\s*\\d+\\s*\\)$", "\\1",
+                raw_type, perl = TRUE)
+    type <- sub("(?i)^DATETIME2?(\\s*\\(\\s*\\d+\\s*\\))?$", "TIMESTAMP", type, perl = TRUE)
+    expr <- trimws(args$parts[2])
+    repl <- sprintf("CAST(%s AS %s)", expr, type)
+    sql <- paste0(substr(sql, 1, start[1] - 1), repl, substr(sql, args$closeAt + 1, nchar(sql)))
+  }
+  sql
+}
+
+.splitBalancedArgs <- function(sql, openIdx) {
+  # Starting at openIdx (position of '('), return list(parts = c(arg1, arg2, ...),
+  # closeAt = index of matching ')'). NULL if unbalanced.
+  depth <- 0
+  parts <- character(0)
+  current <- ""
+  n <- nchar(sql)
+  i <- openIdx
+  inSingle <- FALSE
+  while (i <= n) {
+    ch <- substr(sql, i, i)
+    if (ch == "'" ) {
+      inSingle <- !inSingle
+      if (depth >= 1) current <- paste0(current, ch)
+    } else if (!inSingle && ch == "(") {
+      depth <- depth + 1
+      if (depth > 1) current <- paste0(current, ch)
+    } else if (!inSingle && ch == ")") {
+      depth <- depth - 1
+      if (depth == 0) {
+        parts <- c(parts, current)
+        return(list(parts = parts, closeAt = i))
+      }
+      current <- paste0(current, ch)
+    } else if (!inSingle && ch == "," && depth == 1) {
+      parts <- c(parts, current)
+      current <- ""
+    } else {
+      current <- paste0(current, ch)
+    }
+    i <- i + 1
+  }
+  NULL
+}
 
 # --- splitSql() : split SQL on semicolons ---
 
