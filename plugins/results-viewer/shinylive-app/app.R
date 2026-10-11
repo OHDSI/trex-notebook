@@ -278,8 +278,11 @@ if (has_ohdsi) {
   # message, call, and sys.calls() frames to the WebR console. Otherwise the
   # error is swallowed by OhdsiShinyAppBuilder's tryCatch and only surfaces as
   # an auto-dismissing shiny toast.
+  message("INSTR_SENTINEL_1: entering char wrap tryCatch")
   tryCatch({
+    message("INSTR_SENTINEL_2: about to read characterizationServer")
     .orig_char_server <- OhdsiShinyModules::characterizationServer
+    message("INSTR_SENTINEL_3: read characterizationServer OK")
     .wrapped_char_server <- function(...) {
       message("characterizationServer: entering")
       withCallingHandlers(
