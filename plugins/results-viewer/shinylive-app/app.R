@@ -49,18 +49,30 @@ for (.pkg in c("SqlRender", "DatabaseConnector", "CirceR",
 tryCatch(source("SqlRenderLite.R"), error = function(e)
   message("Failed to source SqlRenderLite.R: ", e$message))
 
-# Mirror every shiny::showNotification() to the WebR console so error toasts
-# that auto-dismiss (OhdsiShinyAppBuilder wraps each module load in tryCatch
-# and shows the error via showNotification) remain visible in logs.
+# Wrap OhdsiShinyModules::characterizationServer so any error inside it is
+# logged with full message + call to the WebR console. OhdsiShinyAppBuilder
+# wraps each module's server() in tryCatch and surfaces the error only via an
+# auto-dismissing shiny toast, which we can't reliably capture; wrapping the
+# module server function itself gets us the full condition.
 tryCatch({
-  .orig_showNotification <- shiny::showNotification
-  assignInNamespace("showNotification", function(ui, ...) {
-    try(message("SHINY_NOTIFICATION: ", paste(as.character(ui), collapse = " ")),
-        silent = TRUE)
-    .orig_showNotification(ui, ...)
-  }, ns = "shiny")
+  if (requireNamespace("OhdsiShinyModules", quietly = TRUE)) {
+    .orig_char_server <- OhdsiShinyModules::characterizationServer
+    .wrapped_char_server <- function(...) {
+      tryCatch(.orig_char_server(...), error = function(e) {
+        message("CHARACTERIZATION_SERVER_ERROR: ", conditionMessage(e))
+        cl <- conditionCall(e)
+        if (!is.null(cl))
+          message("CHARACTERIZATION_SERVER_CALL: ",
+                  paste(deparse(cl), collapse = " "))
+        stop(e)
+      })
+    }
+    assignInNamespace("characterizationServer", .wrapped_char_server,
+                      ns = "OhdsiShinyModules")
+    message("Wrapped characterizationServer for error capture")
+  }
 }, error = function(e)
-  message("Failed to patch showNotification: ", e$message))
+  message("Failed to wrap characterizationServer: ", e$message))
 
 # Force-register the OhdsiShinyAppBuilder www/images path so the header logo
 # resolves. system.file() should do this, but in WebR's mounted FS Shiny's
