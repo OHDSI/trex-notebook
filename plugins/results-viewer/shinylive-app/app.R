@@ -58,18 +58,50 @@ tryCatch({
   if (requireNamespace("OhdsiShinyModules", quietly = TRUE)) {
     .orig_char_server <- OhdsiShinyModules::characterizationServer
     .wrapped_char_server <- function(...) {
-      tryCatch(.orig_char_server(...), error = function(e) {
-        message("CHARACTERIZATION_SERVER_ERROR: ", conditionMessage(e))
-        cl <- conditionCall(e)
-        if (!is.null(cl))
-          message("CHARACTERIZATION_SERVER_CALL: ",
-                  paste(deparse(cl), collapse = " "))
-        stop(e)
-      })
+      withCallingHandlers(
+        .orig_char_server(...),
+        error = function(e) {
+          message("CHARACTERIZATION_SERVER_ERROR: ", conditionMessage(e))
+          cl <- conditionCall(e)
+          if (!is.null(cl))
+            message("CHARACTERIZATION_SERVER_CALL: ",
+                    paste(deparse(cl), collapse = " "))
+          calls <- sys.calls()
+          for (i in seq_along(calls)) {
+            try(message(sprintf("CHARACTERIZATION_SERVER_FRAME[%d]: %s", i,
+                                paste(deparse(calls[[i]]), collapse = " "))),
+                silent = TRUE)
+          }
+        }
+      )
     }
     assignInNamespace("characterizationServer", .wrapped_char_server,
                       ns = "OhdsiShinyModules")
     message("Wrapped characterizationServer for error capture")
+  }
+  if (requireNamespace("OhdsiReportGenerator", quietly = TRUE)) {
+    .orig_getTargetTable <- OhdsiReportGenerator::getTargetTable
+    .wrapped_getTargetTable <- function(...) {
+      message("getTargetTable: entering")
+      args <- list(...)
+      message("getTargetTable args: ", paste(names(args), collapse = ", "))
+      tryCatch({
+        r <- .orig_getTargetTable(...)
+        message("getTargetTable: returned ", nrow(r), " rows x ", ncol(r),
+                " cols; cols=", paste(colnames(r), collapse = ","))
+        r
+      }, error = function(e) {
+        message("getTargetTable ERROR: ", conditionMessage(e))
+        cl <- conditionCall(e)
+        if (!is.null(cl))
+          message("getTargetTable ERROR CALL: ",
+                  paste(deparse(cl), collapse = " "))
+        stop(e)
+      })
+    }
+    assignInNamespace("getTargetTable", .wrapped_getTargetTable,
+                      ns = "OhdsiReportGenerator")
+    message("Wrapped getTargetTable for error capture")
   }
 }, error = function(e)
   message("Failed to wrap characterizationServer: ", e$message))
