@@ -49,63 +49,6 @@ for (.pkg in c("SqlRender", "DatabaseConnector", "CirceR",
 tryCatch(source("SqlRenderLite.R"), error = function(e)
   message("Failed to source SqlRenderLite.R: ", e$message))
 
-# Wrap OhdsiShinyModules::characterizationServer so any error inside it is
-# logged with full message + call to the WebR console. OhdsiShinyAppBuilder
-# wraps each module's server() in tryCatch and surfaces the error only via an
-# auto-dismissing shiny toast, which we can't reliably capture; wrapping the
-# module server function itself gets us the full condition.
-tryCatch({
-  if (requireNamespace("OhdsiShinyModules", quietly = TRUE)) {
-    .orig_char_server <- OhdsiShinyModules::characterizationServer
-    .wrapped_char_server <- function(...) {
-      withCallingHandlers(
-        .orig_char_server(...),
-        error = function(e) {
-          message("CHARACTERIZATION_SERVER_ERROR: ", conditionMessage(e))
-          cl <- conditionCall(e)
-          if (!is.null(cl))
-            message("CHARACTERIZATION_SERVER_CALL: ",
-                    paste(deparse(cl), collapse = " "))
-          calls <- sys.calls()
-          for (i in seq_along(calls)) {
-            try(message(sprintf("CHARACTERIZATION_SERVER_FRAME[%d]: %s", i,
-                                paste(deparse(calls[[i]]), collapse = " "))),
-                silent = TRUE)
-          }
-        }
-      )
-    }
-    assignInNamespace("characterizationServer", .wrapped_char_server,
-                      ns = "OhdsiShinyModules")
-    message("Wrapped characterizationServer for error capture")
-  }
-  if (requireNamespace("OhdsiReportGenerator", quietly = TRUE)) {
-    .orig_getTargetTable <- OhdsiReportGenerator::getTargetTable
-    .wrapped_getTargetTable <- function(...) {
-      message("getTargetTable: entering")
-      args <- list(...)
-      message("getTargetTable args: ", paste(names(args), collapse = ", "))
-      tryCatch({
-        r <- .orig_getTargetTable(...)
-        message("getTargetTable: returned ", nrow(r), " rows x ", ncol(r),
-                " cols; cols=", paste(colnames(r), collapse = ","))
-        r
-      }, error = function(e) {
-        message("getTargetTable ERROR: ", conditionMessage(e))
-        cl <- conditionCall(e)
-        if (!is.null(cl))
-          message("getTargetTable ERROR CALL: ",
-                  paste(deparse(cl), collapse = " "))
-        stop(e)
-      })
-    }
-    assignInNamespace("getTargetTable", .wrapped_getTargetTable,
-                      ns = "OhdsiReportGenerator")
-    message("Wrapped getTargetTable for error capture")
-  }
-}, error = function(e)
-  message("Failed to wrap characterizationServer: ", e$message))
-
 # Force-register the OhdsiShinyAppBuilder www/images path so the header logo
 # resolves. system.file() should do this, but in WebR's mounted FS Shiny's
 # automatic www-from-package handling sometimes misses, so register explicitly.
@@ -329,6 +272,66 @@ if (has_ohdsi) {
   }, error = function(e) {
     message("Failed to patch getCohortGeneratorCohortMeta: ", e$message)
   })
+
+  # Instrumentation: wrap characterizationServer + getTargetTable so any
+  # synchronous error during Characterization module load is logged with full
+  # message, call, and sys.calls() frames to the WebR console. Otherwise the
+  # error is swallowed by OhdsiShinyAppBuilder's tryCatch and only surfaces as
+  # an auto-dismissing shiny toast.
+  tryCatch({
+    .orig_char_server <- OhdsiShinyModules::characterizationServer
+    .wrapped_char_server <- function(...) {
+      message("characterizationServer: entering")
+      withCallingHandlers(
+        .orig_char_server(...),
+        error = function(e) {
+          message("CHARACTERIZATION_SERVER_ERROR: ", conditionMessage(e))
+          cl <- conditionCall(e)
+          if (!is.null(cl))
+            message("CHARACTERIZATION_SERVER_CALL: ",
+                    paste(deparse(cl), collapse = " "))
+          calls <- sys.calls()
+          for (i in seq_along(calls)) {
+            try(message(sprintf("CHAR_FRAME[%d]: %s", i,
+                                paste(deparse(calls[[i]]), collapse = " "))),
+                silent = TRUE)
+          }
+        }
+      )
+    }
+    assignInNamespace("characterizationServer", .wrapped_char_server,
+                      ns = "OhdsiShinyModules")
+    message("Wrapped characterizationServer for error capture")
+  }, error = function(e)
+    message("Failed to wrap characterizationServer: ", e$message))
+
+  tryCatch({
+    if (requireNamespace("OhdsiReportGenerator", quietly = TRUE)) {
+      .orig_getTargetTable <- OhdsiReportGenerator::getTargetTable
+      .wrapped_getTargetTable <- function(...) {
+        message("getTargetTable: entering")
+        tryCatch({
+          r <- .orig_getTargetTable(...)
+          message("getTargetTable: returned ", nrow(r), "x", ncol(r),
+                  " cols=", paste(colnames(r), collapse = ","))
+          r
+        }, error = function(e) {
+          message("getTargetTable ERROR: ", conditionMessage(e))
+          cl <- conditionCall(e)
+          if (!is.null(cl))
+            message("getTargetTable ERROR CALL: ",
+                    paste(deparse(cl), collapse = " "))
+          stop(e)
+        })
+      }
+      assignInNamespace("getTargetTable", .wrapped_getTargetTable,
+                        ns = "OhdsiReportGenerator")
+      message("Wrapped getTargetTable for error capture")
+    } else {
+      message("OhdsiReportGenerator not available; skipping getTargetTable wrap")
+    }
+  }, error = function(e)
+    message("Failed to wrap getTargetTable: ", e$message))
 
   tryCatch({
     message("Building OhdsiShinyAppBuilder config...")
