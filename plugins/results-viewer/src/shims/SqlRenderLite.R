@@ -48,9 +48,15 @@ SqlRender$renderSql <- SqlRender$render
 }
 
 .substituteParams <- function(sql, params) {
-  for (name in names(params)) {
+  # Iterate longest name first so `@c_table_prefix` wins over `@c` when both
+  # exist. Match plain `@name` with NO trailing \b — HADES SQL embeds params
+  # directly before identifiers (e.g. `@c_table_prefixcohort_details`), and
+  # a word-boundary assertion would block substitution in exactly that case.
+  nms <- names(params)
+  nms <- nms[order(-nchar(nms))]
+  for (name in nms) {
     value <- as.character(params[[name]])
-    sql <- gsub(paste0("@", name, "\\b"), value, sql, perl = TRUE)
+    sql <- gsub(paste0("@", name), value, sql, perl = TRUE)
   }
   sql
 }

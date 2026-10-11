@@ -124,6 +124,28 @@ check(eq(SqlRender$translate("SELECT 'ISNULL(a, b)' FROM t", "duckdb"),
          "SELECT 'ISNULL(a, b)' FROM t"),
       "ISNULL(...) inside a string literal left alone")
 
+# --- render(): embedded prefix substitution (HADES pattern) ---
+# Regression: `@c_table_prefixcohort_details` must be substituted even though
+# the next char is a word char — a word-boundary assertion would miss this and
+# the availability-matrix per-analysis queries in getTargetsUsedInCharacterization
+# would fail silently, rendering every cell as ❌ No.
+check(eq(SqlRender$render("select * from @schema.@c_table_prefixcohort_details",
+                           schema = "main", c_table_prefix = "c_"),
+         "select * from main.c_cohort_details"),
+      "render(): @c_table_prefix embedded before an identifier is substituted")
+check(eq(SqlRender$render(paste0("select cg.cohort_name from ",
+          "(select distinct target_cohort_id from @schema.@c_table_prefixcohort_details ",
+          "where cohort_type in ('Cases')) cd inner join ",
+          "@schema.@cg_table_prefixcohort_definition cg ",
+          "on cd.target_cohort_id = cg.cohort_definition_id"),
+          schema = "main", cg_table_prefix = "cg_", c_table_prefix = "c_"),
+         paste0("select cg.cohort_name from ",
+           "(select distinct target_cohort_id from main.c_cohort_details ",
+           "where cohort_type in ('Cases')) cd inner join ",
+           "main.cg_cohort_definition cg ",
+           "on cd.target_cohort_id = cg.cohort_definition_id")),
+      "render(): full availability-matrix query renders both prefixes")
+
 # --- idempotence ---
 once <- SqlRender$translate("SELECT TOP 1 x FROM t WITH (NOLOCK)", "duckdb")
 twice <- SqlRender$translate(once, "duckdb")
