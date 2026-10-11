@@ -88,6 +88,19 @@ check(eq(SqlRender$translate("SELECT CAST(x AS DATETIME2(3)) FROM t", "duckdb"),
          "SELECT CAST(x AS TIMESTAMP) FROM t"),
       "CAST(x AS DATETIME2(3)) -> CAST(x AS TIMESTAMP)")
 
+# --- CAST with nested function call (C-1 nested-paren fix) ---
+check(eq(SqlRender$translate("SELECT CAST(DATE_TRUNC('day', x) AS DATETIME) FROM t", "duckdb"),
+         "SELECT CAST(DATE_TRUNC('day', x) AS TIMESTAMP) FROM t"),
+      "CAST(DATE_TRUNC('day', x) AS DATETIME) -> CAST(DATE_TRUNC('day', x) AS TIMESTAMP)")
+check(eq(SqlRender$translate("SELECT CAST(fn(a, b) AS DATETIME2) FROM t", "duckdb"),
+         "SELECT CAST(fn(a, b) AS TIMESTAMP) FROM t"),
+      "CAST(fn(a, b) AS DATETIME2) -> CAST(fn(a, b) AS TIMESTAMP)")
+
+# --- TRY_CAST -> CAST (C-2) ---
+check(eq(SqlRender$translate("SELECT TRY_CAST(x AS INT) FROM t", "duckdb"),
+         "SELECT CAST(x AS INT) FROM t"),
+      "TRY_CAST(x AS INT) -> CAST(x AS INT)")
+
 # --- WITH (NOLOCK) ---
 check(eq(SqlRender$translate("SELECT x FROM t WITH (NOLOCK)", "duckdb"),
          "SELECT x FROM t"),

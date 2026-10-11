@@ -185,6 +185,9 @@ SqlRender$translate <- function(sql, targetDialect = "duckdb", tempEmulationSche
   # 6. IIF(cond, a, b) -> CASE WHEN cond THEN a ELSE b END
   masked <- .translateIIF(masked)
 
+  # 6a. TRY_CAST(...) -> CAST(...) (MSSQL idiom; DuckDB uses plain CAST)
+  masked <- gsub("(?i)\\bTRY_CAST\\s*\\(", "CAST(", masked, perl = TRUE)
+
   # 7. DATEDIFF(unit, a, b) -> date_diff('unit', a, b)
   masked <- .translateDateDiff(masked)
 
@@ -195,8 +198,8 @@ SqlRender$translate <- function(sql, targetDialect = "duckdb", tempEmulationSche
   masked <- .translateConvert(masked)
 
   # 10. CAST(x AS DATETIME) / DATETIME2 -> CAST(x AS TIMESTAMP)
-  masked <- gsub("(?i)\\bCAST\\s*\\(([^)]+?)\\s+AS\\s+DATETIME2?(?:\\s*\\(\\s*\\d+\\s*\\))?\\s*\\)",
-                 "CAST(\\1 AS TIMESTAMP)", masked, perl = TRUE)
+  #     Uses balanced-paren parsing so nested calls like CAST(fn(a,b) AS DATETIME) work.
+  masked <- .translateCastDatetime(masked)
 
   # 11. Strip WITH (NOLOCK)
   masked <- gsub("(?i)\\s+WITH\\s*\\(\\s*NOLOCK\\s*\\)", "", masked, perl = TRUE)
@@ -309,6 +312,40 @@ SqlRender$translateSql <- SqlRender$translate
     repl <- sprintf("CAST(%s AS %s)", expr, type)
     sql <- paste0(substr(sql, 1, start[1] - 1), repl, substr(sql, args$closeAt + 1, nchar(sql)))
   }
+  sql
+}
+
+.translateCastDatetime <- function(sql) {
+  # CAST(<expr> AS DATETIME) / CAST(<expr> AS DATETIME2[(p)])
+  #   ->  CAST(<expr> AS TIMESTAMP)
+  # Uses balanced-paren parsing so nested calls like CAST(fn(a,b) AS DATETIME) work.
+  pattern <- "(?i)\\bCAST\\s*\\("
+  while (grepl(pattern, sql, perl = TRUE)) {
+    start <- regexpr(pattern, sql, perl = TRUE)
+    if (start[1] == -1) break
+    open <- start[1] + attr(start, "match.length") - 1
+    args <- .splitBalancedArgs(sql, open)
+    if (is.null(args) || length(args$parts) != 1) break
+    inner <- args$parts[1]
+    # Check if the single arg matches "<expr> AS DATETIME2?[(p)]"
+    dt_pat <- "^(.+)\\s+AS\\s+DATETIME2?(\\s*\\(\\s*\\d+\\s*\\))?$"
+    m <- regmatches(inner, regexec(dt_pat, inner, ignore.case = TRUE))[[1]]
+    if (length(m) == 0) {
+      # Not a DATETIME cast — skip past this CAST to avoid infinite loop
+      # We advance by replacing the found occurrence with a sentinel that won't match again.
+      # Strategy: rebuild with a placeholder, continue from after closeAt.
+      prefix <- substr(sql, 1, start[1] - 1)
+      suffix <- substr(sql, args$closeAt + 1, nchar(sql))
+      # Reconstruct verbatim — inner stays unchanged; we tag the open paren.
+      sql <- paste0(prefix, "__CAST_SKIP__(", inner, ")", suffix)
+      next
+    }
+    expr <- trimws(m[2])
+    repl <- sprintf("CAST(%s AS TIMESTAMP)", expr)
+    sql <- paste0(substr(sql, 1, start[1] - 1), repl, substr(sql, args$closeAt + 1, nchar(sql)))
+  }
+  # Restore any skip sentinels
+  sql <- gsub("__CAST_SKIP__", "CAST", sql, fixed = TRUE)
   sql
 }
 
