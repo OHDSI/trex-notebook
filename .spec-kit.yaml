@@ -1,0 +1,27 @@
+version: 1.0
+specs_dir: docs/specs
+
+validation:
+  required_sections:
+    - Problem
+    - Approach
+    - Components
+    - Acceptance Criteria
+  optional_sections:
+    - Trade-offs & Alternatives
+    - Notes & Context
+
+naming:
+  pattern: "^[a-z0-9-]+\\.md$"
+  description: "Lowercase alphanumeric and hyphens, .md extension"
+
+linking:
+  allow_external: true
+  check_relative_paths: true
+  warn_on_broken: true
+
+status_values:
+  - Draft
+  - In Progress
+  - Approved
+  - Implemented

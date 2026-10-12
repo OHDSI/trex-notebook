@@ -40,6 +40,15 @@ for (.pkg in c("SqlRender", "DatabaseConnector", "CirceR",
   })))
 }
 
+# Shim-package SqlRender's translate() uses a half-finished CSV-pattern engine
+# that silently passes MSSQL idioms (SELECT TOP n, ...) through to DuckDB,
+# which then errors with "syntax error at or near \"1\"". SqlRenderLite.R has a
+# hand-written translate(); source it AFTER SqlRender is loaded so its
+# assignInNamespace() block replaces the broken translate inside the package
+# namespace. Without this source(), SqlRenderLite is dead code.
+tryCatch(source("SqlRenderLite.R"), error = function(e)
+  message("Failed to source SqlRenderLite.R: ", e$message))
+
 # Force-register the OhdsiShinyAppBuilder www/images path so the header logo
 # resolves. system.file() should do this, but in WebR's mounted FS Shiny's
 # automatic www-from-package handling sometimes misses, so register explicitly.
@@ -263,6 +272,130 @@ if (has_ohdsi) {
   }, error = function(e) {
     message("Failed to patch getCohortGeneratorCohortMeta: ", e$message)
   })
+
+  # Instrumentation: wrap characterizationServer + getTargetTable so any
+  # synchronous error during Characterization module load is logged with full
+  # message, call, and sys.calls() frames to the WebR console. Otherwise the
+  # error is swallowed by OhdsiShinyAppBuilder's tryCatch and only surfaces as
+  # an auto-dismissing shiny toast.
+  message("INSTR_SENTINEL_1: entering char wrap tryCatch")
+  tryCatch({
+    message("INSTR_SENTINEL_2: about to read characterizationServer")
+    .orig_char_server <- OhdsiShinyModules::characterizationServer
+    message("INSTR_SENTINEL_3: read characterizationServer OK")
+    .wrapped_char_server <- function(...) {
+      message("characterizationServer: entering")
+      withCallingHandlers(
+        .orig_char_server(...),
+        error = function(e) {
+          message("CHARACTERIZATION_SERVER_ERROR: ", conditionMessage(e))
+          cl <- conditionCall(e)
+          if (!is.null(cl))
+            message("CHARACTERIZATION_SERVER_CALL: ",
+                    paste(deparse(cl), collapse = " "))
+          calls <- sys.calls()
+          for (i in seq_along(calls)) {
+            try(message(sprintf("CHAR_FRAME[%d]: %s", i,
+                                paste(deparse(calls[[i]]), collapse = " "))),
+                silent = TRUE)
+          }
+        }
+      )
+    }
+    assignInNamespace("characterizationServer", .wrapped_char_server,
+                      ns = "OhdsiShinyModules")
+    message("Wrapped characterizationServer for error capture")
+  }, error = function(e)
+    message("Failed to wrap characterizationServer: ", e$message))
+
+  tryCatch({
+    if (requireNamespace("OhdsiReportGenerator", quietly = TRUE)) {
+      # Fix OhdsiReportGenerator:::.getCVersion: when c_package_version table
+      # exists but is empty, pkversion becomes NA and the subsequent
+      # `if (majorVersion >= 3)` throws "missing value where TRUE/FALSE needed",
+      # which bubbles up and makes getCharacterizationTargets return NULL. That
+      # drops every characterization availability flag to 0 -> all rows ❌.
+      # Default to "0" (V0 schema) when the version table is missing or empty.
+      tryCatch({
+        .fixed_getCVersion <- function(connectionHandler, schema,
+                                       cTablePrefix = "c_") {
+          version <- "0"
+          tryCatch({
+            sql <- "SELECT version_number from @schema.@c_table_prefixpackage_version;"
+            res <- connectionHandler$queryDb(sql = sql, schema = schema,
+                                             c_table_prefix = cTablePrefix)
+            pkv <- tryCatch(res$versionNumber[1], error = function(e) NA)
+            if (!is.null(pkv) && !is.na(pkv) && nchar(pkv) > 0) {
+              mv <- suppressWarnings(as.integer(
+                strsplit(pkv, "\\.", fixed = FALSE)[[1]][1]))
+              if (!is.na(mv) && mv >= 3) version <- "3_0_0"
+            }
+          }, error = function(e) {})
+          version
+        }
+        assignInNamespace(".getCVersion", .fixed_getCVersion,
+                          ns = "OhdsiReportGenerator")
+        message("Patched OhdsiReportGenerator:::.getCVersion (NA-safe)")
+      }, error = function(e)
+        message("Failed to patch .getCVersion: ", e$message))
+
+      for (.fname in c("getCharacterizationTargets", "getIncidenceTargets",
+                       "getCohortDefinitions")) {
+        tryCatch({
+          .orig <- getFromNamespace(.fname, "OhdsiReportGenerator")
+          local({
+            fname <- .fname; orig <- .orig
+            wrapper <- function(...) {
+              message(sprintf("%s: entering", fname))
+              out <- tryCatch(orig(...), error = function(e) {
+                message(sprintf("%s SILENT_ERROR: %s", fname, conditionMessage(e)))
+                cl <- conditionCall(e)
+                if (!is.null(cl))
+                  message(sprintf("%s SILENT_CALL: %s", fname,
+                                  paste(deparse(cl), collapse = " ")))
+                NULL
+              })
+              if (is.null(out)) {
+                message(sprintf("%s: returned NULL", fname))
+              } else if (is.data.frame(out)) {
+                message(sprintf("%s: returned %dx%d cols=%s", fname, nrow(out),
+                                ncol(out), paste(colnames(out), collapse = ",")))
+              } else {
+                message(sprintf("%s: returned %s", fname, class(out)[1]))
+              }
+              out
+            }
+            assignInNamespace(fname, wrapper, ns = "OhdsiReportGenerator")
+          })
+          message(sprintf("Wrapped %s", .fname))
+        }, error = function(e) message(sprintf("Failed to wrap %s: %s",
+                                               .fname, e$message)))
+      }
+      .orig_getTargetTable <- OhdsiReportGenerator::getTargetTable
+      .wrapped_getTargetTable <- function(...) {
+        message("getTargetTable: entering")
+        tryCatch({
+          r <- .orig_getTargetTable(...)
+          message("getTargetTable: returned ", nrow(r), "x", ncol(r),
+                  " cols=", paste(colnames(r), collapse = ","))
+          r
+        }, error = function(e) {
+          message("getTargetTable ERROR: ", conditionMessage(e))
+          cl <- conditionCall(e)
+          if (!is.null(cl))
+            message("getTargetTable ERROR CALL: ",
+                    paste(deparse(cl), collapse = " "))
+          stop(e)
+        })
+      }
+      assignInNamespace("getTargetTable", .wrapped_getTargetTable,
+                        ns = "OhdsiReportGenerator")
+      message("Wrapped getTargetTable for error capture")
+    } else {
+      message("OhdsiReportGenerator not available; skipping getTargetTable wrap")
+    }
+  }, error = function(e)
+    message("Failed to wrap getTargetTable: ", e$message))
 
   tryCatch({
     message("Building OhdsiShinyAppBuilder config...")
