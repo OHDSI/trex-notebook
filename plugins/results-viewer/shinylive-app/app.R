@@ -310,6 +310,67 @@ if (has_ohdsi) {
 
   tryCatch({
     if (requireNamespace("OhdsiReportGenerator", quietly = TRUE)) {
+      # Fix OhdsiReportGenerator:::.getCVersion: when c_package_version table
+      # exists but is empty, pkversion becomes NA and the subsequent
+      # `if (majorVersion >= 3)` throws "missing value where TRUE/FALSE needed",
+      # which bubbles up and makes getCharacterizationTargets return NULL. That
+      # drops every characterization availability flag to 0 -> all rows ❌.
+      # Default to "0" (V0 schema) when the version table is missing or empty.
+      tryCatch({
+        .fixed_getCVersion <- function(connectionHandler, schema,
+                                       cTablePrefix = "c_") {
+          version <- "0"
+          tryCatch({
+            sql <- "SELECT version_number from @schema.@c_table_prefixpackage_version;"
+            res <- connectionHandler$queryDb(sql = sql, schema = schema,
+                                             c_table_prefix = cTablePrefix)
+            pkv <- tryCatch(res$versionNumber[1], error = function(e) NA)
+            if (!is.null(pkv) && !is.na(pkv) && nchar(pkv) > 0) {
+              mv <- suppressWarnings(as.integer(
+                strsplit(pkv, "\\.", fixed = FALSE)[[1]][1]))
+              if (!is.na(mv) && mv >= 3) version <- "3_0_0"
+            }
+          }, error = function(e) {})
+          version
+        }
+        assignInNamespace(".getCVersion", .fixed_getCVersion,
+                          ns = "OhdsiReportGenerator")
+        message("Patched OhdsiReportGenerator:::.getCVersion (NA-safe)")
+      }, error = function(e)
+        message("Failed to patch .getCVersion: ", e$message))
+
+      for (.fname in c("getCharacterizationTargets", "getIncidenceTargets",
+                       "getCohortDefinitions")) {
+        tryCatch({
+          .orig <- getFromNamespace(.fname, "OhdsiReportGenerator")
+          local({
+            fname <- .fname; orig <- .orig
+            wrapper <- function(...) {
+              message(sprintf("%s: entering", fname))
+              out <- tryCatch(orig(...), error = function(e) {
+                message(sprintf("%s SILENT_ERROR: %s", fname, conditionMessage(e)))
+                cl <- conditionCall(e)
+                if (!is.null(cl))
+                  message(sprintf("%s SILENT_CALL: %s", fname,
+                                  paste(deparse(cl), collapse = " ")))
+                NULL
+              })
+              if (is.null(out)) {
+                message(sprintf("%s: returned NULL", fname))
+              } else if (is.data.frame(out)) {
+                message(sprintf("%s: returned %dx%d cols=%s", fname, nrow(out),
+                                ncol(out), paste(colnames(out), collapse = ",")))
+              } else {
+                message(sprintf("%s: returned %s", fname, class(out)[1]))
+              }
+              out
+            }
+            assignInNamespace(fname, wrapper, ns = "OhdsiReportGenerator")
+          })
+          message(sprintf("Wrapped %s", .fname))
+        }, error = function(e) message(sprintf("Failed to wrap %s: %s",
+                                               .fname, e$message)))
+      }
       .orig_getTargetTable <- OhdsiReportGenerator::getTargetTable
       .wrapped_getTargetTable <- function(...) {
         message("getTargetTable: entering")
