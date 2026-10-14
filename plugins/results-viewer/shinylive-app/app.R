@@ -431,7 +431,9 @@ if (has_ohdsi) {
       plpTablePrefix = "plp_",
       pvTablePrefix = "pv_",
       sccsTablePrefix = "sccs_",
-      incidenceTablePrefix = "i_"
+      # OhdsiShinyModules reads CohortIncidence tables via incidenceTablePrefix
+      # (not ciTablePrefix); Strategus writes them as ci_*.
+      incidenceTablePrefix = "ci_"
     )
 
     # Build connectionDetails with a function-server that returns OUR shared
