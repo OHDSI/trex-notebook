@@ -10,12 +10,13 @@
         @update:model-value="(v) => emit('select', v as string)"
       />
       <AtlasIconButton
-        v-if="props.activeId"
+        v-if="props.activeId && !props.readOnly"
         icon="mdi-pencil"
         ariaLabel="Rename"
         size="sm"
         @click="emit('rename')"
       />
+      <AtlasChip v-if="props.readOnly" size="sm">Read-only</AtlasChip>
       <AtlasChip v-if="props.dirty" tone="warning" size="sm">Unsaved</AtlasChip>
     </div>
 
@@ -27,8 +28,13 @@
         variant="secondary"
         :disabled="!props.activeId || !props.canSave"
         @click="emit('save')"
-      >Save</AtlasButton>
-      <AtlasButton tone="danger" variant="secondary" :disabled="!props.activeId" @click="emit('delete')">Delete</AtlasButton>
+      >{{ props.readOnly ? 'Save as copy' : 'Save' }}</AtlasButton>
+      <AtlasButton
+        tone="danger"
+        variant="secondary"
+        :disabled="!props.activeId || props.readOnly"
+        @click="emit('delete')"
+      >Delete</AtlasButton>
       <SyncFromRemoteButton
         :notebook-id="props.activeId"
         @synced="emit('synced')"
@@ -44,9 +50,9 @@
 // kept — it is central to the React look and lets a user switch notebooks
 // without returning to the Studies overview, which remains the entry point.
 //
-// No "Shared" control: notebook.document has no is_shared column and the
-// schema grants authenticated unscoped CRUD with no RLS, so a toggle would be
-// decoration over a permission model that does not exist (see the spec).
+// A notebook the user does not own is read-only (the server enforces this with
+// row-level security). Its Save becomes "Save as copy", and rename and delete
+// are unavailable.
 import { computed } from 'vue'
 import { AtlasSelect, AtlasButton, AtlasIconButton, AtlasChip } from '@ohdsi/atlas-ui'
 import SyncFromRemoteButton from './SyncFromRemoteButton.vue'
@@ -57,6 +63,7 @@ const props = defineProps<{
   activeId: string | null
   canSave: boolean
   dirty?: boolean
+  readOnly?: boolean
 }>()
 
 const emit = defineEmits<{

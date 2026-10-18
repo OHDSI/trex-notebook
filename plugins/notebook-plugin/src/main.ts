@@ -115,8 +115,6 @@ export const bootstrap = async (props: PluginProps) => {
   const baseUrl = props.uiFilesUrl ?? '';
   await injectPluginCss(baseUrl);
   injectMdiCss();
-  (window as unknown as { __notebookAuthUserId?: string | null }).__notebookAuthUserId =
-    props.authContext?.user?.id ?? null;
   return vueLifecycles.bootstrap(props);
 };
 

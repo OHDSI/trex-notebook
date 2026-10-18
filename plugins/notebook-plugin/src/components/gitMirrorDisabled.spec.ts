@@ -35,7 +35,10 @@ describe("with git mirroring disabled", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    request.mockImplementation(async (q: string) =>
+      q.includes("updateNotebookDocumentByRowId")
+        ? { updateNotebookDocumentByRowId: { notebookDocument: { rowId: "n1" } } }
+        : { allNotebookDocuments: { nodes: [] } });
   });
 
   it("does NOT push to git on save", async () => {

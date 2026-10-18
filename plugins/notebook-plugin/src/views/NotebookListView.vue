@@ -23,9 +23,11 @@
       </template>
       <template #item.updatedAt="{ item }">{{ formatDate(item.updatedAt) }}</template>
       <template #item.actions="{ item }">
-        <AtlasIconButton icon="mdi-pencil" ariaLabel="Rename" size="sm" @click="openRename(item)" />
+        <!-- canEdit is false for shared and other users' notebooks; the server
+             refuses those writes anyway. -->
+        <AtlasIconButton v-if="item.canEdit !== false" icon="mdi-pencil" ariaLabel="Rename" size="sm" @click="openRename(item)" />
         <AtlasIconButton icon="mdi-content-copy" ariaLabel="Duplicate" size="sm" @click="duplicate(item.rowId)" />
-        <AtlasIconButton icon="mdi-delete" ariaLabel="Delete" size="sm" @click="openDelete(item)" />
+        <AtlasIconButton v-if="item.canEdit !== false" icon="mdi-delete" ariaLabel="Delete" size="sm" @click="openDelete(item)" />
       </template>
       <template #no-data>No notebooks yet. Create one with "New notebook".</template>
     </AtlasDataTable>
