@@ -9,6 +9,11 @@ export interface NotebookSummary {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  // Whether the signed-in user may save, rename or delete this notebook. Only
+  // the owner (or an admin) may; shared notebooks are read-only. Undefined when
+  // the server's schema predates ownership, in which case everything is
+  // editable as before.
+  canEdit?: boolean;
 }
 
 export interface NotebookDocument extends NotebookSummary {
@@ -19,7 +24,6 @@ export interface NewNotebookInput {
   name: string;
   description: string;
   content: NotebookData;
-  createdBy?: string | null;
 }
 
 export interface NotebookPatch {

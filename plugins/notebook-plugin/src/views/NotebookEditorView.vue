@@ -11,6 +11,7 @@
       :active-id="activeId"
       :can-save="!!activeId"
       :dirty="dirty"
+      :read-only="readOnly"
       @select="openNotebook"
       @create="createOpen = true"
       @save="save"
@@ -227,6 +228,10 @@ const feedbackSeverity = ref<'success' | 'danger' | 'warning'>('success')
 const feedbackMessage = ref('')
 
 const allNames = computed(() => store.notebooks.map((n) => n.name))
+// Shared notebooks and other users' notebooks can be edited and run, but not
+// saved over. `canEdit` is undefined on a server without notebook ownership,
+// which keeps the old behaviour there.
+const readOnly = computed(() => activeNotebook.value?.canEdit === false)
 const otherNames = computed(() =>
   store.notebooks.filter((n) => n.rowId !== activeId.value).map((n) => n.name),
 )
@@ -337,6 +342,10 @@ async function save(): Promise<void> {
   const id = activeId.value
   const doc = activeNotebook.value
   if (!id || !doc) return
+  if (readOnly.value) {
+    await saveCopy(doc)
+    return
+  }
   try {
     await store.update(id, {
       name: doc.name,
@@ -347,6 +356,20 @@ async function save(): Promise<void> {
     emit('saved', id)
   } catch (e) {
     showFeedback('error', `Failed to save notebook: ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
+
+// Keeps the on-screen edits, including outputs, as a new notebook the user
+// owns, and switches to it. The shared original is left untouched.
+async function saveCopy(doc: NotebookDocument): Promise<void> {
+  const name = uniqueName(`${doc.name} (copy)`, allNames.value)
+  try {
+    const id = await store.create({ name, description: doc.description, content: current.value })
+    await loadNotebook(id)
+    reportWrite(`Saved as "${name}". The original is shared and read-only.`)
+    emit('saved', id)
+  } catch (e) {
+    showFeedback('error', `Failed to save a copy: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 

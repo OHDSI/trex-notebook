@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
-import { useNotebooksStore } from "./useNotebooksStore";
+import { useNotebooksStore, READ_ONLY_MESSAGE } from "./useNotebooksStore";
 
 const request = vi.fn();
 vi.mock("../api/graphqlClient", () => ({
@@ -70,12 +70,49 @@ describe("useNotebooksStore", () => {
       .mockResolvedValueOnce({ createNotebookDocument: { notebookDocument: { rowId: "new1" } } })
       .mockResolvedValueOnce({ allNotebookDocuments: { nodes: [] } });
     const s = useNotebooksStore();
-    const id = await s.create({ name: "My nb", description: "d", content: emptyContent, createdBy: "u1" });
+    const id = await s.create({ name: "My nb", description: "d", content: emptyContent });
     expect(id).toBe("new1");
     const [q, vars] = request.mock.calls[0];
     expect(q).toContain("createNotebookDocument");
     expect((vars.input as any).notebookDocument.name).toBe("My nb");
-    expect((vars.input as any).notebookDocument.createdBy).toBe("u1");
+    // The server assigns the owner; a client-supplied one would be ignored.
+    expect((vars.input as any).notebookDocument).not.toHaveProperty("createdBy");
+  });
+
+  it("fetch asks for canEdit", async () => {
+    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    const s = useNotebooksStore();
+    await s.fetch();
+    expect(request.mock.calls[0][0]).toContain("canEdit");
+  });
+
+  it("falls back to a query without canEdit on a server that lacks it, and stays there", async () => {
+    request
+      .mockRejectedValueOnce(new Error('Cannot query field "canEdit" on type "NotebookDocument".'))
+      .mockResolvedValueOnce({ allNotebookDocuments: { nodes: [{ rowId: "n1", name: "A", description: "", createdAt: "t", updatedAt: "t", deletedAt: null }] } })
+      .mockResolvedValueOnce({ allNotebookDocuments: { nodes: [] } });
+    const s = useNotebooksStore();
+    await s.fetch();
+    expect(s.error).toBeNull();
+    expect(s.notebooks).toHaveLength(1);
+    expect(request.mock.calls[1][0]).not.toContain("canEdit");
+    await s.fetch();
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(request.mock.calls[2][0]).not.toContain("canEdit");
+  });
+
+  it("treats an update that changed no row as refused, not saved", async () => {
+    // What PostGraphile returns when row-level security hides the row.
+    request.mockResolvedValue({ updateNotebookDocumentByRowId: { notebookDocument: null } });
+    const s = useNotebooksStore();
+    await expect(s.update("n1", { name: "B" })).rejects.toThrow(READ_ONLY_MESSAGE);
+    expect(mirrorNotebook).not.toHaveBeenCalled();
+  });
+
+  it("treats a delete that changed no row as refused", async () => {
+    request.mockResolvedValue({ updateNotebookDocumentByRowId: { notebookDocument: null } });
+    const s = useNotebooksStore();
+    await expect(s.remove("n1")).rejects.toThrow(READ_ONLY_MESSAGE);
   });
 
   it("update patches name/content and stamps updatedAt", async () => {
@@ -126,7 +163,8 @@ describe("useNotebooksStore", () => {
   });
 
   it("mirrors the notebook after update", async () => {
-    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    request.mockImplementation(async (q: string) =>
+      q.includes("updateNotebookDocumentByRowId") ? { updateNotebookDocumentByRowId: { notebookDocument: { rowId: "n1" } } } : { allNotebookDocuments: { nodes: [] } });
     mirrorNotebook.mockResolvedValue({ status: "ok" });
     const s = useNotebooksStore();
     await s.update("n1", { name: "B" });
@@ -134,7 +172,8 @@ describe("useNotebooksStore", () => {
   });
 
   it("mirrors the notebook after remove, so the repo drops the file", async () => {
-    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    request.mockImplementation(async (q: string) =>
+      q.includes("updateNotebookDocumentByRowId") ? { updateNotebookDocumentByRowId: { notebookDocument: { rowId: "n1" } } } : { allNotebookDocuments: { nodes: [] } });
     mirrorNotebook.mockResolvedValue({ status: "ok" });
     const s = useNotebooksStore();
     await s.remove("n1");
@@ -149,7 +188,8 @@ describe("useNotebooksStore", () => {
   });
 
   it("a failed mirror warns but still resolves the save", async () => {
-    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    request.mockImplementation(async (q: string) =>
+      q.includes("updateNotebookDocumentByRowId") ? { updateNotebookDocumentByRowId: { notebookDocument: { rowId: "n1" } } } : { allNotebookDocuments: { nodes: [] } });
     mirrorNotebook.mockRejectedValue(new Error("push rejected"));
     const s = useNotebooksStore();
     await s.update("n1", { name: "B" });     // must NOT throw
@@ -157,7 +197,8 @@ describe("useNotebooksStore", () => {
   });
 
   it("clears a stale mirror warning on the next successful write", async () => {
-    request.mockResolvedValue({ allNotebookDocuments: { nodes: [] } });
+    request.mockImplementation(async (q: string) =>
+      q.includes("updateNotebookDocumentByRowId") ? { updateNotebookDocumentByRowId: { notebookDocument: { rowId: "n1" } } } : { allNotebookDocuments: { nodes: [] } });
     mirrorNotebook.mockRejectedValueOnce(new Error("push rejected"));
     const s = useNotebooksStore();
     await s.update("n1", { name: "B" });

@@ -5,15 +5,22 @@ import type { NotebookSummary, NotebookDocument, NewNotebookInput, NotebookPatch
 import { GraphqlClient, defaultGraphqlEndpoint } from "../api/graphqlClient";
 import { GIT_MIRROR_ENABLED, mirrorNotebook } from "../api/notebookGit";
 
-const LIST = `query {
+// `canEdit` is a computed field (notebook.document_can_edit) that only exists
+// once the server's schema has notebook ownership. Against an older schema the
+// field is unknown and the whole query fails, so the store falls back to the
+// same query without it.
+const summaryFields = (withCanEdit: boolean) =>
+  `rowId name description createdAt updatedAt deletedAt${withCanEdit ? " canEdit" : ""}`;
+
+const LIST = (withCanEdit: boolean) => `query {
   allNotebookDocuments(orderBy: UPDATED_AT_DESC) {
-    nodes { rowId name description createdAt updatedAt deletedAt }
+    nodes { ${summaryFields(withCanEdit)} }
   }
 }`;
 
-const GET = `query($id: UUID!) {
+const GET = (withCanEdit: boolean) => `query($id: UUID!) {
   allNotebookDocuments(condition: { rowId: $id }) {
-    nodes { rowId name description content createdAt updatedAt deletedAt }
+    nodes { ${summaryFields(withCanEdit)} content }
   }
 }`;
 
@@ -29,15 +36,20 @@ const UPDATE = `mutation($id: UUID!, $patch: NotebookDocumentPatch!) {
   }
 }`;
 
-// notebook.document.created_by is a uuid column; Logto-issued user ids are
-// short alphanumerics, so anything non-UUID must be omitted or the mutation
-// fails input validation (HTTP 400).
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const READ_ONLY_MESSAGE =
+  "This notebook is shared and read-only. Save a copy to keep your changes.";
 
-function currentUserId(): string | null {
-  const id = (window as unknown as { __notebookAuthUserId?: string | null }).__notebookAuthUserId ?? null;
-  return id && UUID_RE.test(id) ? id : null;
+type UpdateResult = { updateNotebookDocumentByRowId: { notebookDocument: { rowId: string } | null } | null };
+
+// Row-level security hides a row the user may not change from UPDATE. Rather
+// than an error, PostGraphile then answers with a null notebookDocument, so a
+// refused save would otherwise look like a successful one.
+function assertUpdated(d: UpdateResult): void {
+  if (!d?.updateNotebookDocumentByRowId?.notebookDocument) throw new Error(READ_ONLY_MESSAGE);
 }
+
+const isUnknownCanEdit = (e: unknown) =>
+  e instanceof Error && /canEdit/.test(e.message);
 
 export const useNotebooksStore = defineStore("notebooks", () => {
   const gql = new GraphqlClient(defaultGraphqlEndpoint());
@@ -47,6 +59,21 @@ export const useNotebooksStore = defineStore("notebooks", () => {
   // stands — the repo is simply one revision behind until the next write or an
   // overwrite-all repair run. Rendered as a warning, never an error.
   const mirrorWarning = ref<string | null>(null);
+
+  // Flips to false the first time the server rejects `canEdit`, so an older
+  // schema costs one failed request rather than one per call.
+  let canEditSupported = true;
+  async function query<T>(build: (withCanEdit: boolean) => string, variables: Record<string, unknown> = {}): Promise<T> {
+    if (canEditSupported) {
+      try {
+        return await gql.request<T>(build(true), variables);
+      } catch (e) {
+        if (!isUnknownCanEdit(e)) throw e;
+        canEditSupported = false;
+      }
+    }
+    return gql.request<T>(build(false), variables);
+  }
 
   async function mirror(id: string): Promise<void> {
     // Disabled: the mirror call 401s and Atlas's login-guard turns any 401 into a
@@ -64,7 +91,7 @@ export const useNotebooksStore = defineStore("notebooks", () => {
 
   async function fetch(): Promise<void> {
     try {
-      const d = await gql.request<{ allNotebookDocuments: { nodes: NotebookSummary[] } }>(LIST);
+      const d = await query<{ allNotebookDocuments: { nodes: NotebookSummary[] } }>(LIST);
       notebooks.value = d.allNotebookDocuments.nodes.filter((n) => n.deletedAt == null);
       error.value = null;
     } catch (e) {
@@ -73,7 +100,7 @@ export const useNotebooksStore = defineStore("notebooks", () => {
   }
 
   async function get(id: string): Promise<NotebookDocument> {
-    const d = await gql.request<{ allNotebookDocuments: { nodes: NotebookDocument[] } }>(GET, { id });
+    const d = await query<{ allNotebookDocuments: { nodes: NotebookDocument[] } }>(GET, { id });
     const node = d.allNotebookDocuments.nodes[0];
     if (!node) throw new Error("Notebook not found");
     return node;
@@ -86,7 +113,7 @@ export const useNotebooksStore = defineStore("notebooks", () => {
           name: input.name,
           description: input.description,
           content: input.content,
-          createdBy: input.createdBy ?? currentUserId(),
+          // No createdBy: the server makes the signed-in user the owner.
         },
       },
     });
@@ -97,14 +124,14 @@ export const useNotebooksStore = defineStore("notebooks", () => {
   }
 
   async function update(id: string, patch: NotebookPatch): Promise<void> {
-    await gql.request(UPDATE, { id, patch: { ...patch, updatedAt: new Date().toISOString() } });
+    assertUpdated(await gql.request<UpdateResult>(UPDATE, { id, patch: { ...patch, updatedAt: new Date().toISOString() } }));
     await mirror(id);
     await fetch();
   }
 
   async function remove(id: string): Promise<void> {
     const patch: NotebookPatch = { deletedAt: new Date().toISOString() };
-    await gql.request(UPDATE, { id, patch });
+    assertUpdated(await gql.request<UpdateResult>(UPDATE, { id, patch }));
     // Mirror after the soft-delete so the function sees deleted_at and removes
     // the file from the repo.
     await mirror(id);

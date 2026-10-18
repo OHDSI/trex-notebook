@@ -412,4 +412,41 @@ describe("NotebookEditorView", () => {
     expect(storeApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: "Fresh" }));
     expect(storeApi.get).toHaveBeenCalledWith("n3");
   });
+
+  describe("a notebook the user cannot edit", () => {
+    beforeEach(() => {
+      storeApi.get.mockImplementation(async (id: string) => ({ ...doc(id), canEdit: false }));
+    });
+
+    it("is marked read-only and offers Save as copy", async () => {
+      const w = view("n1");
+      await flushPromises();
+      expect(w.text()).toContain("Read-only");
+      expect(byLabel(w, "Save as copy")).toBeTruthy();
+      expect(byLabel(w, "Delete").attributes("disabled")).toBeDefined();
+    });
+
+    it("Save as copy creates the user's own notebook with the edited content and opens it", async () => {
+      const w = view("n1");
+      await flushPromises();
+      edit(w, { cells: [{ id: "edited" }], metadata: {} });
+      await byLabel(w, "Save as copy").trigger("click");
+      await flushPromises();
+      expect(storeApi.update).not.toHaveBeenCalled();
+      expect(storeApi.create).toHaveBeenCalledWith({
+        name: "NB n1 (copy)",
+        description: "d",
+        content: { cells: [{ id: "edited" }], metadata: {} },
+      });
+      expect(storeApi.get).toHaveBeenLastCalledWith("n3");
+    });
+  });
+
+  it("an editable notebook is not marked read-only", async () => {
+    storeApi.get.mockImplementation(async (id: string) => ({ ...doc(id), canEdit: true }));
+    const w = view("n1");
+    await flushPromises();
+    expect(w.text()).not.toContain("Read-only");
+    expect(byLabel(w, "Save")).toBeTruthy();
+  });
 });
