@@ -123,6 +123,7 @@ import NotebookDetailsDialog from '../components/NotebookDetailsDialog.vue'
 import DeleteNotebookDialog from '../components/DeleteNotebookDialog.vue'
 import DiscardChangesDialog from '../components/DiscardChangesDialog.vue'
 import { useAtlasNotebookTheme } from '../composables/useAtlasNotebookTheme'
+import { useSavedBaseline } from '../composables/useSavedBaseline'
 import { useNotebooksStore } from '../store/useNotebooksStore'
 import { RD2EReadyWebRKernel } from '../kernels/rD2EReadyWebRKernel'
 import { pyodideIndexUrl } from '../kernels/pyodideAssets'
@@ -185,11 +186,12 @@ const createOpen = ref(false)
 const detailsOpen = ref(false)
 const deleteOpen = ref(false)
 
-// Unsaved-edit tracking, restored from the pre-rebuild editor (dropped by
-// mistake during the rewrite). `applyContent`/`reportWrite` are the only
-// places allowed to clear it — both mean the notebook on screen exactly
-// matches a saved or freshly-loaded row.
-const dirty = ref(false)
+// Unsaved-edit tracking: the notebook is dirty exactly when its authored
+// content differs from the last saved or loaded content (#3570). onChange
+// fires on load and on every cell run too, so it cannot set a flag itself.
+// `applyContent` and successful saves/renames are the only places that move
+// the baseline.
+const { dirty, markSaved, capture } = useSavedBaseline(current)
 
 // Guards the three paths that can silently discard unsaved edits: switching
 // notebooks via the header picker, leaving via the Studies back link, and
@@ -240,17 +242,15 @@ function showFeedback(type: 'success' | 'error' | 'warning', message: string): v
 // A successful row write with a failed git push is a warning, not a success:
 // the notebook is saved, only the mirror is behind. Every write path (save,
 // create, rename, delete, import) shares this check so none of them can
-// silently report full success when the git mirror actually failed. Either
-// way the row write itself succeeded, so the edits are no longer unsaved.
+// silently report full success when the git mirror actually failed. The saved
+// baseline is moved by the callers, not here.
 function reportWrite(successMessage: string): void {
-  dirty.value = false
   if (store.mirrorWarning) showFeedback('warning', store.mirrorWarning)
   else showFeedback('success', successMessage)
 }
 
 function onChange(data: NotebookData): void {
   current.value = data
-  dirty.value = true
 }
 
 // The notebook's content must be pushed through the exposed handle: the Vue
@@ -259,7 +259,7 @@ function onChange(data: NotebookData): void {
 function applyContent(data: NotebookData): void {
   initialData.value = data
   current.value = data
-  dirty.value = false
+  markSaved(data)
   notebookRef.value?.setNotebookData(data)
 }
 
@@ -337,12 +337,15 @@ async function save(): Promise<void> {
   const id = activeId.value
   const doc = activeNotebook.value
   if (!id || !doc) return
+  const content = current.value
+  const commitSaved = capture()
   try {
     await store.update(id, {
       name: doc.name,
       description: doc.description,
-      content: current.value,
+      content,
     })
+    commitSaved()
     reportWrite('Notebook saved.')
     emit('saved', id)
   } catch (e) {
@@ -373,8 +376,11 @@ async function confirmDetails(payload: { name: string; description: string }): P
   detailsOpen.value = false
   const id = activeId.value
   if (!id) return
+  const content = current.value
+  const commitSaved = capture()
   try {
-    await store.update(id, { ...payload, content: current.value })
+    await store.update(id, { ...payload, content })
+    commitSaved()
     if (activeNotebook.value) {
       activeNotebook.value = { ...activeNotebook.value, ...payload }
     }
