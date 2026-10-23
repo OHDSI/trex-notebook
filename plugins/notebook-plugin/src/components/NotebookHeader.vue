@@ -17,6 +17,7 @@
         @click="emit('rename')"
       />
       <AtlasChip v-if="props.dirty" tone="warning" size="sm">Unsaved</AtlasChip>
+      <AtlasChip v-else-if="props.activeId" tone="success" size="sm">Saved</AtlasChip>
     </div>
 
     <div class="notebook-header__actions">

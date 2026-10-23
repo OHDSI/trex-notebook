@@ -74,6 +74,23 @@ describe("NotebookHeader", () => {
   it("hides the rename pencil with no active notebook", () => {
     expect(header({ activeId: null }).find('[aria-label="Rename"]').exists()).toBe(false);
   });
+
+  it("shows a Saved chip when a notebook is active and has no unsaved changes", () => {
+    const w = header({ dirty: false });
+    expect(w.find('[data-tone="success"]').text()).toBe("Saved");
+    expect(w.find('[data-tone="warning"]').exists()).toBe(false);
+  });
+
+  it("shows Unsaved instead of Saved when dirty", () => {
+    const w = header({ dirty: true });
+    expect(w.find('[data-tone="warning"]').text()).toBe("Unsaved");
+    expect(w.find('[data-tone="success"]').exists()).toBe(false);
+  });
+
+  it("shows no Saved chip without an active notebook", () => {
+    const w = header({ activeId: null });
+    expect(w.find('[data-tone="success"]').exists()).toBe(false);
+  });
 });
 
 describe("NotebookEmptyState", () => {
