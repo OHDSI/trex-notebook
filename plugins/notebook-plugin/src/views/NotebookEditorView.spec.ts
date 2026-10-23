@@ -7,8 +7,14 @@ vi.mock("@trex/notebook", () => ({
   Notebook: {
     name: "Notebook",
     props: ["data", "initialData", "kernels", "kernelConfigs", "showToolbar", "showLineNumbers", "showKernelSelector", "theme", "onChange"],
-    setup(_p: unknown, { expose }: { expose: (o: unknown) => void }) {
-      expose({ setNotebookData });
+    setup(props: { onChange?: (d: unknown) => void }, { expose }: { expose: (o: unknown) => void }) {
+      // Like the real @trex/notebook component, pushing data fires onChange.
+      expose({
+        setNotebookData: (d: unknown) => {
+          setNotebookData(d);
+          props.onChange?.(d);
+        },
+      });
       return () => null;
     },
   },
@@ -262,6 +268,66 @@ describe("NotebookEditorView", () => {
     await flushPromises();
     expect(w.find('[data-severity="warning"]').exists()).toBe(true);
     expect(w.find('[data-tone="warning"]').exists()).toBe(false);
+  });
+
+  it("opening a notebook shows it as saved, not unsaved (#3570)", async () => {
+    const w = view("n1");
+    await flushPromises();
+    expect(w.find('[data-tone="warning"]').exists()).toBe(false);
+    expect(w.find('[data-tone="success"]').text()).toBe("Saved");
+  });
+
+  it("the back button on an unchanged notebook emits back with no dialog (#3570)", async () => {
+    const w = view("n1");
+    await flushPromises();
+    await w.find(".notebook-editor__back").trigger("click");
+    expect(w.find('[data-title="Discard unsaved changes?"]').exists()).toBe(false);
+    expect(w.emitted("back")).toBeTruthy();
+  });
+
+  it("editing back to the saved content clears the unsaved chip", async () => {
+    const w = view("n1");
+    await flushPromises();
+    edit(w);
+    await flushPromises();
+    expect(w.find('[data-tone="warning"]').exists()).toBe(true);
+    edit(w, doc("n1").content);
+    await flushPromises();
+    expect(w.find('[data-tone="warning"]').exists()).toBe(false);
+  });
+
+  it("running cells (outputs and execution state only) does not mark the notebook unsaved", async () => {
+    const w = view("n1");
+    await flushPromises();
+    edit(w, { cells: [{ id: "c1", outputs: [{ type: "stream", text: "1" }], executionCount: 3, executionState: "idle" }], metadata: {} });
+    await flushPromises();
+    expect(w.find('[data-tone="warning"]').exists()).toBe(false);
+  });
+
+  it("an edit made while a save is in flight stays unsaved", async () => {
+    let finish!: () => void;
+    storeApi.update.mockImplementationOnce(() => new Promise<void>((r) => { finish = r; }));
+    const w = view("n1");
+    await flushPromises();
+    edit(w);
+    await flushPromises();
+    await byLabel(w, "Save").trigger("click");
+    edit(w, { cells: [{ id: "c3" }], metadata: {} });
+    finish();
+    await flushPromises();
+    expect(storeApi.update).toHaveBeenCalledWith("n1", expect.objectContaining({ content: { cells: [{ id: "c2" }], metadata: {} } }));
+    expect(w.find('[data-tone="warning"]').exists()).toBe(true);
+  });
+
+  it("a failed save keeps the unsaved chip", async () => {
+    storeApi.update.mockRejectedValueOnce(new Error("boom"));
+    const w = view("n1");
+    await flushPromises();
+    edit(w);
+    await flushPromises();
+    await byLabel(w, "Save").trigger("click");
+    await flushPromises();
+    expect(w.find('[data-tone="warning"]').exists()).toBe(true);
   });
 
   it("switching notebooks while dirty opens a discard-changes dialog instead of loading", async () => {
